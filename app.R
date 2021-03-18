@@ -32,6 +32,8 @@ library(readxl)
 library(ggimage) 
 library(fs)
 
+
+
 # Create a reactive object here that we can share between all the sessions.
 vals <- reactiveValues(count=0)
 
@@ -351,16 +353,19 @@ server <- function(input, output, session) {
     if ("distance" %in% colnames(results_df)){
       results_df <- subset(results_df, results_df$distance < threshold)
     }
+    
+    source(file = paste0("/media/wolf/DATA/Wolf/Arbeit/Projekte/ec-image-analyis/vascu-ec-app","/src/ciruclar_statistics.R"), local=T)
 
+    polarity_index <- compute_polarity_index(results_df)
     angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
     variance_degree  <- var(angle_degree)
-    mean_degree <- mean(angle_degree)
+    mean_degree <- mean.circular(angle_degree)
     sd_degree  <- sd(angle_degree)
     median_degree  <- median(angle_degree)
     
-    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)")
-    value <- c(nrow(results_df), mean_degree , sd_degree , median_degree)
+    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
+    value <- c(nrow(results_df), mean_degree , sd_degree , median_degree, polarity_index)
     statistics_df <- data.frame(entity,value)
     
     statistics_df
