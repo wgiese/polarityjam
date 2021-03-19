@@ -29,9 +29,8 @@ library(FNN)
 library(tidyverse)
 library(CircStats)
 library(readxl)
-library(ggimage) 
+#library(ggimage) 
 library(fs)
-
 
 
 # Create a reactive object here that we can share between all the sessions.
@@ -354,9 +353,13 @@ server <- function(input, output, session) {
       results_df <- subset(results_df, results_df$distance < threshold)
     }
     
-    source(file = paste0("/media/wolf/DATA/Wolf/Arbeit/Projekte/ec-image-analyis/vascu-ec-app","/src/ciruclar_statistics.R"), local=T)
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
 
-    polarity_index <- compute_polarity_index(results_df)
+    values <- compute_polarity_index(results_df)
+    print(values)
+    polarity_index <- values[["polarity_index"]]
+    angle_mean_deg <- values[["angle_mean_deg"]]
+    
     angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
     variance_degree  <- var(angle_degree)
@@ -365,7 +368,7 @@ server <- function(input, output, session) {
     median_degree  <- median(angle_degree)
     
     entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
-    value <- c(nrow(results_df), mean_degree , sd_degree , median_degree, polarity_index)
+    value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
     statistics_df <- data.frame(entity,value)
     
     statistics_df
@@ -392,8 +395,14 @@ server <- function(input, output, session) {
     
     bin_size = 360/input$bins
     
-    ggplot() +
-      geom_histogram(aes(results_all_df$angle_deg),
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    values <- compute_polarity_index(results_all_df)
+    print(values)
+    polarity_index <- values[["polarity_index"]]
+    angle_mean_deg <- values[["angle_mean_deg"]]
+    
+    p <- ggplot() +
+      geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
                      breaks = seq(0, 360, bin_size),
                      colour = "black",
                      fill = "grey80") +
@@ -407,6 +416,8 @@ server <- function(input, output, session) {
       ylab("") +
       theme(axis.text.y=element_blank()) +
       scale_y_sqrt()
+  p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, color="red"))
+  p
       
   })  
   
