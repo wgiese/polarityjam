@@ -29,9 +29,8 @@ library(FNN)
 library(tidyverse)
 library(CircStats)
 library(readxl)
-library(ggimage) 
+#library(ggimage) 
 library(fs)
-
 
 
 # Create a reactive object here that we can share between all the sessions.
@@ -59,6 +58,7 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                                           max = 50,
                                           step = 0.1,
                                           value = 30),
+                              textInput("exp_condition", "Exp. condition", "condition A"),
                               selectInput("dataset", "Choose a dataset:",
                                           choices = c("merged_file","statistics_file")),
                               downloadButton("downloadData", "Download")
@@ -69,6 +69,7 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                                 tabPanel("Table", tableOutput("merged_stack")),
                                 tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
                                 tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
+                                
                                 tabPanel("Statistics", tableOutput("merged_statistics"))
                               )
                             ))),
@@ -315,6 +316,7 @@ server <- function(input, output, session) {
     counter <- 1
     plist <- list()
     results_all_df <-data.frame()
+    tag <- FALSE
     
     for (file_name in file_list[1:length(file_list)]){
 
@@ -324,6 +326,12 @@ server <- function(input, output, session) {
         results_all_df  <- rbind(results_all_df, results_df )
       }
     }
+    
+    if (length(results_all_df) > 1) {
+      results_all_df$datapath <- datapath
+      results_all_df$experimental_condition <- input$exp_condition
+    }
+    
     
     results_all_df
   })
@@ -354,9 +362,13 @@ server <- function(input, output, session) {
       results_df <- subset(results_df, results_df$distance < threshold)
     }
     
-    source(file = paste0("/media/wolf/DATA/Wolf/Arbeit/Projekte/ec-image-analyis/vascu-ec-app","/src/ciruclar_statistics.R"), local=T)
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
 
-    polarity_index <- compute_polarity_index(results_df)
+    values <- compute_polarity_index(results_df)
+    print(values)
+    polarity_index <- values[["polarity_index"]]
+    angle_mean_deg <- values[["angle_mean_deg"]]
+    
     angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
     variance_degree  <- var(angle_degree)
@@ -365,7 +377,7 @@ server <- function(input, output, session) {
     median_degree  <- median(angle_degree)
     
     entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
-    value <- c(nrow(results_df), mean_degree , sd_degree , median_degree, polarity_index)
+    value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
     statistics_df <- data.frame(entity,value)
     
     statistics_df
@@ -391,12 +403,21 @@ server <- function(input, output, session) {
     }
     
     bin_size = 360/input$bins
+    exp_condition <- input$exp_condition
+    datapath <- stack_data_info$datapath 
+
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    values <- compute_polarity_index(results_all_df)
+    print(values)
     
-    polar <- data.frame(Winkel2 = c(1.5, 2.34, 1.2, 3.45, 1.67, 2.61, 1.11, 13.2), 
-                        value = c(0.1, 0.03, 0.02, 0.015, 0.01, 0.04, 0.09, 0.06))
     
-    ggplot() +
-      geom_histogram(aes(results_all_df$angle_deg),
+    #polarity_index <- values[["polarity_index"]]
+    #angle_mean_deg <- values[["angle_mean_deg"]]
+    #values <- data.frame(values)
+    #print(values)
+    
+    p <- ggplot() +
+      geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
                      breaks = seq(0, 360, bin_size),
                      colour = "black",
                      fill = "grey80") +
@@ -406,14 +427,17 @@ server <- function(input, output, session) {
       scale_x_continuous(limits = c(0, 360),
                          breaks = (c(0, 90, 180, 270))) +
       theme_minimal(base_size = 14) +
-      xlab(paste0("n = ", length(results_all_df$angle_rad))) +
+      xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df$angle_rad), exp_condition)) +
       ylab("") +
-      theme(axis.text.y=element_blank()) +
-      scale_y_sqrt() +
-      geom_segment(data = polar, aes(x = Winkel2, y = 0, xend = Winkel2, yend = value, fill = NA, color="black"))
-     # geom_line(arrow = arrow()) +
-      #geom_point()
-      
+      #theme(axis.text.y=element_blank()) +
+      scale_y_sqrt()
+
+  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 2, color="red", lineend = "butt", ))+
+        #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
+        #theme(legend.title=element_blank())
+        theme(legend.position = "none")
+  p
+
   })  
   
   
