@@ -392,6 +392,9 @@ server <- function(input, output, session) {
     
     bin_size = 360/input$bins
     
+    polar <- data.frame(Winkel2 = c(1.5, 2.34, 1.2, 3.45, 1.67, 2.61, 1.11, 13.2), 
+                        value = c(0.1, 0.03, 0.02, 0.015, 0.01, 0.04, 0.09, 0.06))
+    
     ggplot() +
       geom_histogram(aes(results_all_df$angle_deg),
                      breaks = seq(0, 360, bin_size),
@@ -406,7 +409,10 @@ server <- function(input, output, session) {
       xlab(paste0("n = ", length(results_all_df$angle_rad))) +
       ylab("") +
       theme(axis.text.y=element_blank()) +
-      scale_y_sqrt()
+      scale_y_sqrt() +
+      geom_segment(data = polar, aes(x = Winkel2, y = 0, xend = Winkel2, yend = value, fill = NA, color="black"))
+     # geom_line(arrow = arrow()) +
+      #geom_point()
       
   })  
   
