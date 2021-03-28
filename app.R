@@ -376,8 +376,11 @@ server <- function(input, output, session) {
     sd_degree  <- sd(angle_degree)
     median_degree  <- median(angle_degree)
     
-    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
-    value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
+    #entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
+    #value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
+    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index")
+    value <- c(nrow(results_df), angle_mean_deg , polarity_index)
+    
     statistics_df <- data.frame(entity,value)
     
     statistics_df
@@ -432,7 +435,7 @@ server <- function(input, output, session) {
       #theme(axis.text.y=element_blank()) +
       scale_y_sqrt()
 
-  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 2, color="red", lineend = "butt", ))+
+  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 2, color="red", lineend = "butt"), arrow = arrow())+
         #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
         #theme(legend.title=element_blank())
         theme(legend.position = "none")

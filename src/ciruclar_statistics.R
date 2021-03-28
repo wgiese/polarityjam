@@ -14,8 +14,12 @@ compute_polarity_index <- function(polarity_data) {
   cos_mean <- cos_sum/length(polarity_data$angle_rad)
   polarity_index <- sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
   angle_mean_rad <- atan2(sin_mean, cos_mean)
-  angle_mean_deg <- angle_mean_rad*180.0/3.14159
-  
+  angle_mean_deg <- angle_mean_rad*180.0/3.1415926
+  if (angle_mean_rad < 0.0) {
+    angle_mean_deg <- 360.0 + angle_mean_rad*180.0/3.1415926
+  }
+    
+
   #values <- c(polarity_index, sin_mean, cos_mean, angle_mean_deg)
   #names(values) <- c("polarity_index", "sin_mean", "cos_mean", "angle_mean_deg")
   
