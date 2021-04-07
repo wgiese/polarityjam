@@ -457,17 +457,29 @@ server <- function(input, output, session) {
     i <- 1
     angle_dists <- list()
     file_names <- list()
+    polarity_indices <- list()
+    angle_mean_degs <- list()
     
     results_all_df <- mergedStack()
     
     plist <- vector('list', length(unique(results_all_df$filename)))
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
     
     for(file_name in unique(results_all_df$filename)) {
       results_df <- subset(results_all_df, results_all_df$filename == file_name )
       
+      
+      
+      values <- compute_polarity_index(results_df)
+      print(values)
+      polarity_index <- values[["polarity_index"]]
+      angle_mean_deg <- values[["angle_mean_deg"]]
+      
       x <- results_df$angle_deg
       angle_dists[[i]] <- x
       file_names[[i]] <- file_name
+      polarity_indices[[i]] <- polarity_index
+      angle_mean_degs[[i]] <- angle_mean_deg
       i <- i+1
       
     }
@@ -482,8 +494,10 @@ server <- function(input, output, session) {
     plotseries <- function(i){
       angle_dist <- angle_dists[[i]]
       file_name <- file_names[[i]]
-      ggplot() +
-        geom_histogram(aes(angle_dist),
+      polarity_index <- polarity_indices[[i]]
+      angle_mean_deg <- angle_mean_degs[[i]]
+      p <- ggplot() +
+        geom_histogram(aes(angle_dist, y = ..ncount..),
                        breaks = seq(0, 360, bin_size),
                        colour = "black",
                        fill = "grey80") +
@@ -493,10 +507,23 @@ server <- function(input, output, session) {
         scale_x_continuous(limits = c(0, 360),
                            breaks = (c(0, 90, 180, 270))) +
         #theme_minimal(base_size = 14) +
-        xlab(paste0("n = ", length(angle_dist))) +
+        xlab(sprintf("number of cells = : %s \n polarity index: %.2f \n mean angle: %.2f", length(angle_dist), polarity_index, angle_mean_deg)) +
         ylab("") +
-        theme(axis.text.y=element_blank()) +
+        #theme(axis.text.y=element_blank()) +
         scale_y_sqrt()
+      
+        #xlab(paste0("n = ", length(angle_dist))) +
+        #ylab("") +
+        #theme(axis.text.y=element_blank()) +
+        #scale_y_sqrt()
+      
+      
+
+      p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.1, color="red", lineend = "butt"), arrow = arrow())+
+        #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
+        #theme(legend.title=element_blank())
+        theme(legend.position = "none")
+      #p
     }
     
     #plotseries(2)
