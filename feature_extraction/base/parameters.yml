@@ -1,2 +1,6 @@
-image_path : /path/to/imagefile.tif
-image_path_seg : /path/to/imagefile_seg.tif
+image_path : "/path/to/imagefile.tif"
+output_path : "/path/to/output/"
+output_filename : "image001"
+channel_junction: 0
+channel_nucleus : 1
+channel_golgi : 2
