@@ -59,6 +59,7 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                                           step = 0.1,
                                           value = 30),
                               textInput("exp_condition", "Exp. condition", "condition A"),
+                              checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               selectInput("dataset", "Choose a dataset:",
                                           choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
                               downloadButton("downloadData", "Download")
@@ -424,7 +425,8 @@ server <- function(input, output, session) {
       geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
                      breaks = seq(0, 360, bin_size),
                      colour = "black",
-                     fill = "grey80") +
+                     fill = "black",
+                     alpha = 0.5) +
       ggtitle("cellular orientation") +
       theme(axis.text.x = element_text(size = 18)) +
       coord_polar(start = -pi/2.0, direction = -1) +
@@ -432,14 +434,17 @@ server <- function(input, output, session) {
                          breaks = (c(0, 90, 180, 270))) +
       theme_minimal(base_size = 14) +
       xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df$angle_rad), exp_condition)) +
-      ylab("") +
+      ylab("polarity index") 
       #theme(axis.text.y=element_blank()) +
-      scale_y_sqrt()
+    
+  if (input$area_scaled) {
+      p <- p + scale_y_sqrt()
+  }
 
-  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 2, color="red", lineend = "butt"), arrow = arrow())+
+  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow())+
         #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
         #theme(legend.title=element_blank())
-        theme(legend.position = "none")
+        theme(legend.position = "none") 
   p
 
   })  
@@ -505,7 +510,8 @@ server <- function(input, output, session) {
         geom_histogram(aes(angle_dist, y = ..ncount..),
                        breaks = seq(0, 360, bin_size),
                        colour = "black",
-                       fill = "grey80") +
+                       fill = "black",
+                       alpha = 0.5) +
         ggtitle(file_name) +
         #theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
@@ -513,9 +519,12 @@ server <- function(input, output, session) {
                            breaks = (c(0, 90, 180, 270))) +
         #theme_minimal(base_size = 14) +
         xlab(sprintf("number of cells = : %s \n polarity index: %.2f \n mean angle: %.2f", length(angle_dist), polarity_index, angle_mean_deg)) +
-        ylab("") +
+        ylab("")
         #theme(axis.text.y=element_blank()) +
-        scale_y_sqrt()
+      
+      if (input$area_scaled) {
+          p <- p + scale_y_sqrt()
+      }
       
       #xlab(paste0("n = ", length(angle_dist))) +
       #ylab("") +
@@ -524,7 +533,7 @@ server <- function(input, output, session) {
       
       
       
-      p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.1, color="red", lineend = "butt"), arrow = arrow())+
+      p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.05, color="red", lineend = "butt"), arrow = arrow())+
         #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
         #theme(legend.title=element_blank())
         theme(legend.position = "none")
