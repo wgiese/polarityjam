@@ -141,9 +141,17 @@ for label in range(1,np.max(mask)-1):
     
     vec_x = x_golgi - x_nucleus
     vec_y = y_golgi - y_nucleus
-    angle_rad = np.arctan2(vec_y, vec_x)
+    angle_rad_ = np.arctan2(vec_x, vec_y)
     
+    angle_rad = angle_rad_
     
+    if (angle_rad_ < 0.0):
+        angle_rad = 2.0*np.pi + angle_rad_
+    
+    single_cell_props.at[counter, "vec_X"] = vec_x
+    single_cell_props.at[counter, "vec_Y"] = vec_y
+    single_cell_props.at[counter, "angle_rad"] = angle_rad
+    single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
     
     counter += 1
     
