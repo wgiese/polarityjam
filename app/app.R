@@ -47,6 +47,7 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                             sidebarPanel(
                               shinyDirButton("dir", "Input directory", "Upload"),
                               verbatimTextOutput("dir", placeholder = TRUE),
+                              actionButton("refreshStack", "Refresh"),
                               sliderInput("bins",
                                           "Number of bins:",
                                           min = 1,
@@ -299,6 +300,8 @@ server <- function(input, output, session) {
                  #  file.path(paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
  
                })
+  
+  
 
   mergedStack <- reactive({
     "
@@ -345,6 +348,9 @@ server <- function(input, output, session) {
     "
     mergedStack()
   })
+  
+  #observeEvent(input$refreshStack, { mergedStack()
+  #})
   
   mergedStatistics <- reactive({
     "
