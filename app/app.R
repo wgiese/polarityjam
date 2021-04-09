@@ -60,7 +60,7 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                                           value = 30),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               selectInput("dataset", "Choose a dataset:",
-                                          choices = c("merged_file","statistics_file")),
+                                          choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
                               downloadButton("downloadData", "Download")
                             ),
                             # Show a plot of the generated distribution
@@ -367,6 +367,7 @@ server <- function(input, output, session) {
     values <- compute_polarity_index(results_df)
     print(values)
     polarity_index <- values[["polarity_index"]]
+    signed_polarity_index <- values[["signed_polarity_index"]]
     angle_mean_deg <- values[["angle_mean_deg"]]
     
     angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
@@ -378,8 +379,8 @@ server <- function(input, output, session) {
     
     #entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
     #value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
-    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index")
-    value <- c(nrow(results_df), angle_mean_deg , polarity_index)
+    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index", "signed_polarity_index")
+    value <- c(nrow(results_df), angle_mean_deg , polarity_index, signed_polarity_index)
     
     statistics_df <- data.frame(entity,value)
     
@@ -396,7 +397,7 @@ server <- function(input, output, session) {
     statistics_df 
   })
   
-  output$merged_plot <- renderPlot({
+  merged_plot <- reactive({
     
     results_all_df <- mergedStack()
     
@@ -443,9 +444,13 @@ server <- function(input, output, session) {
 
   })  
   
+  output$merged_plot <- renderPlot({
+    
+    p <-merged_plot()
+    p
+  })  
   
-  
-  output$multi_dist_plot <- renderPlot({
+  multi_plot <- reactive({
     
     datapath <- stack_data_info$datapath
     print(datapath)
@@ -512,13 +517,13 @@ server <- function(input, output, session) {
         #theme(axis.text.y=element_blank()) +
         scale_y_sqrt()
       
-        #xlab(paste0("n = ", length(angle_dist))) +
-        #ylab("") +
-        #theme(axis.text.y=element_blank()) +
-        #scale_y_sqrt()
+      #xlab(paste0("n = ", length(angle_dist))) +
+      #ylab("") +
+      #theme(axis.text.y=element_blank()) +
+      #scale_y_sqrt()
       
       
-
+      
       p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.1, color="red", lineend = "butt"), arrow = arrow())+
         #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
         #theme(legend.title=element_blank())
@@ -537,6 +542,15 @@ server <- function(input, output, session) {
     grid.arrange(grobs = myplots, nrow = nCol) #, widths = list(10,10))
     
   })  
+  
+  output$multi_dist_plot <- renderPlot({
+    
+      multi_plot()
+    
+  })  
+  
+  
+  
   
 
   ### Panel B1
@@ -925,11 +939,29 @@ server <- function(input, output, session) {
         if (input$dataset == "statistics_file"){
           filename <- "statistics_file.csv"
         }
+        if (input$dataset == "merged_plot_file"){
+          filename <- "merge_plot.pdf"
+        }
+        if (input$dataset == "multi_plot_file"){
+          filename <- "multi_plot.pdf"
+        }
         return(filename)
       },
       content = function(file) {
         if (input$dataset == "statistics_file"){
           return(write.csv(mergedStatistics(), file, row.names = FALSE))
+        }
+        else if (input$dataset == "multi_plot_file"){
+          pdf(file, width=14,height=14)
+          p <- multi_plot()
+          plot(p)
+          dev.off()
+        }
+        else if (input$dataset == "merged_plot_file"){
+          pdf(file, width=7,height=7)
+          p <- merged_plot()
+          plot(p)
+          dev.off()
         }
         else (
           return(write.csv(mergedStack(), file, row.names = FALSE))
