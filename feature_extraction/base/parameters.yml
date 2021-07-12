@@ -1,6 +1,12 @@
+# source data/ output folders
 image_path : "/path/to/imagefile.tif"
 output_path : "/path/to/output/"
 output_filename : "image001"
+
+# segmentation parameters
 channel_junction: 0
 channel_nucleus : 1
 channel_golgi : 2
+channel_expression_marker : -1
+estimated_cell_diameter : 100
+

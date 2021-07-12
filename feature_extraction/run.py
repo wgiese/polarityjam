@@ -54,6 +54,8 @@ output_filepath = output_path + output_filename
 im_junction = img[:,:,parameters["channel_junction"]]
 im_nucleus = img[:,:,parameters["channel_nucleus"]]
 im_golgi = img[:,:,parameters["channel_golgi"]]
+if parameters["channel_expression_marker"] >= 0:
+    im_marker = img[:,:,parameters["channel_expression_marker"]]
 
 # use junction and nucleus channel for cellpose segmentation 
 im_seg = np.array([im_junction, im_nucleus])
@@ -63,7 +65,7 @@ model = models.Cellpose(gpu=True, model_type='cyto')
 
 channels = [1,2]
 
-masks, flows, styles, diams = model.eval(im_seg, diameter=100, channels=channels)
+masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
 
 io.masks_flows_to_seg(im_seg , masks, flows, diams, output_filename, channels)
 
@@ -84,7 +86,7 @@ nuclei_label = nuclei_mask*mask
 golgi_label = golgi_mask*mask
 print(np.max(mask))
 
-# feature extraction
+# shape feature extraction
 
 single_cell_props = pd.DataFrame()
 counter = 0
@@ -112,14 +114,24 @@ for label in range(1,np.max(mask)-1):
         orientation = props.orientation
         minor_axis_length = props.minor_axis_length
         major_axis_length = props.major_axis_length
-                
+        area = props.area
+        perimeter = props.perimeter     
+
     single_cell_props.at[counter, "label"] = label
     single_cell_props.at[counter, "X_cell"] = x_cell
     single_cell_props.at[counter, "Y_cell"] = y_cell
     single_cell_props.at[counter, "shape_orientation"] = x_cell
     single_cell_props.at[counter, "major_axis_length"] = major_axis_length
     single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
+    single_cell_props.at[counter, "area"] = area
+    single_cell_props.at[counter, "perimeter"] = perimeter
     
+    if parameters["channel_expression_marker"] >= 0:
+        regions = regionprops(single_cell_mask, intensity_image=im_marker)
+        for props in regions:
+            mean_expression = props.mean_intensity
+        single_cell_props.at[counter, "mean_expression"] = mean_expression
+
     regions = regionprops(single_nucleus_mask)
     for props in regions:
         x_nucleus, y_nucleus = props.centroid
@@ -154,7 +166,21 @@ for label in range(1,np.max(mask)-1):
     single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
     
     counter += 1
-    
+
+
+# marker expression feature extraction
+
+#TODO
+
+
+
+
+# junction feature extraction
+
+#TODO
+
+
+
 single_cell_props.to_csv(output_filepath + "_.csv") 
 
 # visualiztion of nuclei-golgi vectors
