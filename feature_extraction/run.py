@@ -120,7 +120,7 @@ for label in range(1,np.max(mask)-1):
     single_cell_props.at[counter, "label"] = label
     single_cell_props.at[counter, "X_cell"] = x_cell
     single_cell_props.at[counter, "Y_cell"] = y_cell
-    single_cell_props.at[counter, "shape_orientation"] = x_cell
+    single_cell_props.at[counter, "shape_orientation"] = orientation
     single_cell_props.at[counter, "major_axis_length"] = major_axis_length
     single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
     single_cell_props.at[counter, "area"] = area
