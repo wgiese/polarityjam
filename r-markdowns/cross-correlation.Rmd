@@ -1,0 +1,30 @@
+---
+title: "cross-correlation"
+author: "Wolfgang Giese"
+date: "7/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{read_data}
+filepath <- "/home/wgiese/Data/Olya/070621/features/image001_.csv"
+ec_features <- read.csv(file = filepath)
+summary(ec_features)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+#print(filepath)
+#plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

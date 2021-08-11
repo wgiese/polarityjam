@@ -27,8 +27,9 @@ def read_parameters(parameter_file):
 
     parameters = dict()
 
-    with open("base/parameters.yml") as file:
-        parameters = yaml.load(file, Loader=yaml.FullLoader)
+    if os.path.exists("base/parameters.yml"):
+        with open("base/parameters.yml") as file:
+            parameters = yaml.load(file, Loader=yaml.FullLoader)
     with open(parameter_file) as file:
         parameters_local = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -76,8 +77,8 @@ mask = cellpose_seg.item()['masks']
 for key in cellpose_seg.item():
     print(key)
 
-img_golgi_blur = gaussian_filter(img[:,:,0], sigma= 3)
-img_nuclei_blur = gaussian_filter(img[:,:,1], sigma=3)
+img_golgi_blur = gaussian_filter(img[:,:,parameters["channel_golgi"]], sigma= 3)
+img_nuclei_blur = gaussian_filter(img[:,:,parameters["channel_nucleus"]], sigma=3)
 
 nuclei_mask = np.where(img_nuclei_blur > threshold_otsu(img_nuclei_blur), True, False)
 golgi_mask = np.where(img_golgi_blur > threshold_otsu(img_golgi_blur), True, False)
