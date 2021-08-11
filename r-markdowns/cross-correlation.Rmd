@@ -7,24 +7,40 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#library(tidyverse)
 ```
 
 ## R Markdown
 
-
-```{read_data}
-filepath <- "/home/wgiese/Data/Olya/070621/features/image001_.csv"
+```{r read_data}
+filepath <- "/home/wgiese/image-data-workflows/vascu-ec-app/merged.csv"
 ec_features <- read.csv(file = filepath)
-summary(ec_features)
+#summary(ec_features)
 ```
 
 ## Including Plots
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-#print(filepath)
+```{r select_features, echo=TRUE}
+print(head(ec_features))
+ec_features_select <- ec_features[,c("area", "perimeter", "mean_expression", "major_axis_length", "minor_axis_length", "shape_orientation", "angle_rad")]
 #plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r feature_pair_plot, echo=TRUE}
+pairs(ec_features_select)
+#plot(pressure)ec_features_select <- ec_features[,c("area", "perimeter", "mean_expression", "major_axis_length", "minor_axis_length", "shape_orientation", "flow_alignment")]
+#plot(pressure)
+```
+
+
+```{r feature_pair_plot2, echo=TRUE}
+ec_features_select2 <- ec_features[,c("area", "perimeter", "mean_expression", "shape_orientation", "angle_rad")]
+pairs(ec_features_select2)
+#plot(pressure)
+#plot(pressure)
+```

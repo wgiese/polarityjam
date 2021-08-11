@@ -116,6 +116,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask):
         single_cell_props.at[counter, "X_cell"] = x_cell
         single_cell_props.at[counter, "Y_cell"] = y_cell
         single_cell_props.at[counter, "shape_orientation"] = orientation
+        single_cell_props.at[counter, "flow_shape_alignment"] = np.sin(orientation)
         single_cell_props.at[counter, "major_axis_length"] = major_axis_length
         single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
         single_cell_props.at[counter, "area"] = area
@@ -158,6 +159,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask):
         single_cell_props.at[counter, "vec_X"] = vec_x
         single_cell_props.at[counter, "vec_Y"] = vec_y
         single_cell_props.at[counter, "angle_rad"] = angle_rad
+        single_cell_props.at[counter, "flow_alignment"] = np.sin(angle_rad)
         single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
         
         counter += 1
