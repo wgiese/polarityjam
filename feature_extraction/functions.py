@@ -64,6 +64,20 @@ def get_nuclei_mask(parameters, img, cellpose_mask):
 
     return nuclei_label
 
+def get_nuclei_cellpose(parameters, img, cellpose_mask):
+
+    model = cellpose.models.Cellpose(gpu=True, model_type='nuclei')
+
+    channels = [0,0]
+
+    masks, flows, styles, diams = model.eval(img, diameter=parameters["estimated_cell_diameter"], channels=channels)
+    #masks, flows, styles, diams = model.eval(img, channels=channels)
+
+    nuclei_mask = np.where(masks > 0, True, False)
+
+    nuclei_label = nuclei_mask*cellpose_mask
+
+    return nuclei_label
 
 def get_golgi_mask(parameters, img, cellpose_mask):
 
@@ -78,7 +92,8 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask):
 
-    nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
+    #nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
+    nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
     golgi_mask = get_golgi_mask(parameters, img, cell_mask)
     if parameters["channel_expression_marker"] >= 0:
         im_marker = img[:,:,parameters["channel_expression_marker"]]
@@ -112,28 +127,56 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask):
             area = props.area
             perimeter = props.perimeter     
 
+
+        regions = skimage.measure.regionprops(single_nucleus_mask)
+        for props in regions:
+            x_nucleus, y_nucleus = props.centroid
+            orientation_nuc = props.orientation
+            minor_axis_length_nuc = props.minor_axis_length
+            major_axis_length_nuc = props.major_axis_length
+            area_nuc = props.area
+            perimeter_nuc = props.perimeter     
+
+
         single_cell_props.at[counter, "label"] = label
         single_cell_props.at[counter, "X_cell"] = x_cell
         single_cell_props.at[counter, "Y_cell"] = y_cell
         single_cell_props.at[counter, "shape_orientation"] = orientation
-        single_cell_props.at[counter, "flow_shape_alignment"] = np.sin(orientation)
+        single_cell_props.at[counter, "flow_shape_alignment"] = np.sin(orientation) # assumes flow from left to right anlong x-axis
         single_cell_props.at[counter, "major_axis_length"] = major_axis_length
         single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
         single_cell_props.at[counter, "area"] = area
         single_cell_props.at[counter, "perimeter"] = perimeter
         
+        single_cell_props.at[counter, "X_nuc"] = x_nucleus
+        single_cell_props.at[counter, "Y_nuc"] = y_nucleus
+        single_cell_props.at[counter, "shape_orientation_nuc"] = orientation_nuc
+        single_cell_props.at[counter, "flow_shape_alignment_nuc"] = np.sin(orientation_nuc) # assumes flow from left to right anlong x-axis
+        single_cell_props.at[counter, "major_axis_length"] = major_axis_length_nuc
+        single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length_nuc
+        single_cell_props.at[counter, "area"] = area_nuc
+        single_cell_props.at[counter, "perimeter"] = perimeter_nuc
+ 
+
+
         if parameters["channel_expression_marker"] >= 0:
             regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
             for props in regions:
                 mean_expression = props.mean_intensity
             single_cell_props.at[counter, "mean_expression"] = mean_expression
+            
+            regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
+            for props in regions:
+                mean_expression_nuc = props.mean_intensity
+            single_cell_props.at[counter, "mean_expression_nuc"] = mean_expression_nuc
 
-        regions = skimage.measure.regionprops(single_nucleus_mask)
-        for props in regions:
-            x_nucleus, y_nucleus = props.centroid
-        
-        single_cell_props.at[counter, "X_nuc"] = x_nucleus
-        single_cell_props.at[counter, "Y_nuc"] = y_nucleus
+            cytosol_mask = np.logical_xor(single_cell_mask.astype(bool), single_nucleus_mask.astype(bool))
+
+            regions = skimage.measure.regionprops(cytosol_mask.astype(int), intensity_image=im_marker)
+            for props in regions:
+                mean_expression_cyt = props.mean_intensity
+            single_cell_props.at[counter, "mean_expression_cyt"] = mean_expression_cyt
+
         
         regions = skimage.measure.regionprops(single_golgi_mask)
         for props in regions:
