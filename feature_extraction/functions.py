@@ -9,6 +9,8 @@ import scipy.ndimage as ndi
 import skimage.filters 
 import skimage.measure
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 def read_parameters(parameter_file):
 
@@ -90,7 +92,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
     return golgi_label
 
 
-def get_features_from_cellpose_seg(parameters, img, cell_mask):
+def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
     #nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
     nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
@@ -207,6 +209,41 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask):
         
         counter += 1
 
+        im_junction = img[:,:,int(parameters["channel_junction"])]
+    
+    plot_segmentation(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
 
     return single_cell_props
+
+def plot_segmentation(parameters, im_junction, masks, single_cell_props, filename):
+    
+    output_path = "" #parameters['output_path']
+    output_filename = parameters["output_filename"]
+    output_filepath = output_path + output_filename
+
+    fig, ax = plt.subplots()
+    
+    cell_mask = masks[0] 
+    nuclei_mask = masks[1].astype(bool)
+    golgi_mask = masks[2].astype(bool)
+
+    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+    golgi_mask_ = np.where(golgi_mask == True, 1, 0)
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+    ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+    ax.imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+    ax.imshow(np.ma.masked_where(golgi_mask_ == 0, golgi_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+
+    for index, row in single_cell_props.iterrows():
+        ax.plot( row["Y_nuc"], row["X_nuc"], '.g', markersize=1)
+        ax.plot( row["Y_golgi"], row["X_golgi"], '.m', markersize=1)
+        ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"]- row["Y_nuc"],row["X_golgi"]- row["X_nuc"], color = 'white', width = 2)
+
+    ax.set_xlim(0,im_junction.shape[0])
+    ax.set_ylim(0,im_junction.shape[1])
+    plt.savefig(filename + "_nuclei_golgi_vector.pdf")
+    plt.savefig(filename + "_nuclei_golgi_vector.png")
+
+    return 0
 
