@@ -52,9 +52,7 @@ def get_cellpose_segmentation(parameters, im_seg):
 
     channels = [1,2]
 
-    masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
-
-    del model
+    masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)  
 
     return masks
 
@@ -212,12 +210,14 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         counter += 1
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
+    im_marker = img[:,:,int(parameters["channel_expression_marker"])]
     
-    plot_segmentation(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+    plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+    plot_marker(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
 
     return single_cell_props
 
-def plot_segmentation(parameters, im_junction, masks, single_cell_props, filename):
+def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
     
     output_path = parameters['output_path']
     output_filename = parameters["output_filename"]
@@ -246,6 +246,40 @@ def plot_segmentation(parameters, im_junction, masks, single_cell_props, filenam
     ax.set_ylim(0,im_junction.shape[1])
     plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
     plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
+
+    return 0
+
+
+def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
+    
+    output_path = parameters['output_path']
+    output_filename = parameters["output_filename"]
+    output_filepath = output_path + output_filename
+
+    fig, ax = plt.subplots(1,3, figsize=(30,10))
+    
+    cell_mask = masks[0] 
+    nuclei_mask = masks[1].astype(bool)
+
+    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+
+    ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    ax[1].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    ax[1].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+
+    ax[2].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    ax[2].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
+
+    for index, row in single_cell_props.iterrows():
+        ax[2].text( row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"],1)), color = "w", fontsize=6)
+        ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"],1)), color = "w", fontsize=6)
+    #    ax.plot( row["Y_golgi"], row["X_golgi"], '.m', markersize=1)
+    #    ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"]- row["Y_nuc"],row["X_golgi"]- row["X_nuc"], color = 'white', width = 2)
+
+    #ax.set_xlim(0,im_marker.shape[0])
+    #ax.set_ylim(0,im_marker.shape[1])
+    plt.savefig(output_path + filename + "_marker_expression.pdf")
+    plt.savefig(output_path + filename + "_marker_expression.png")
 
     return 0
 

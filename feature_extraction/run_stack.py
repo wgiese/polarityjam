@@ -43,10 +43,15 @@ for ind, filepath in enumerate(file_list):
     
     print("processing", filepath.split("/")[-1].split(".")[0])
     filename = filepath.split("/")[-1]
-    
+  
     img = functions.read_image(parameters,filepath)
     img_seg = functions.get_image_for_segmentation(parameters,img)
-    
+
+    fig, ax = plt.subplots(1,2)
+    ax[0].imshow(img_seg[0,:,:])
+    ax[1].imshow(img_seg[1,:,:])
+    plt.savefig(output_path + filename + "-seg.png")
+
     cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
     print("Number of cell labels: ")
     print(np.max(cellpose_mask))
