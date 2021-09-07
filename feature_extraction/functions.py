@@ -54,6 +54,8 @@ def get_cellpose_segmentation(parameters, im_seg):
 
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
 
+    del model
+
     return masks
 
 def get_nuclei_mask(parameters, img, cellpose_mask):
@@ -209,7 +211,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         
         counter += 1
 
-        im_junction = img[:,:,int(parameters["channel_junction"])]
+    im_junction = img[:,:,int(parameters["channel_junction"])]
     
     plot_segmentation(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
 
@@ -217,7 +219,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
 def plot_segmentation(parameters, im_junction, masks, single_cell_props, filename):
     
-    output_path = "" #parameters['output_path']
+    output_path = parameters['output_path']
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
@@ -242,8 +244,8 @@ def plot_segmentation(parameters, im_junction, masks, single_cell_props, filenam
 
     ax.set_xlim(0,im_junction.shape[0])
     ax.set_ylim(0,im_junction.shape[1])
-    plt.savefig(filename + "_nuclei_golgi_vector.pdf")
-    plt.savefig(filename + "_nuclei_golgi_vector.png")
+    plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
+    plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
 
     return 0
 
