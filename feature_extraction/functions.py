@@ -11,6 +11,7 @@ import skimage.measure
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import math
 
 def read_parameters(parameter_file):
 
@@ -154,8 +155,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         single_cell_props.at[counter, "Y_nuc"] = y_nucleus
         single_cell_props.at[counter, "shape_orientation_nuc"] = orientation_nuc
         single_cell_props.at[counter, "flow_shape_alignment_nuc"] = np.sin(orientation_nuc) # assumes flow from left to right anlong x-axis
-        single_cell_props.at[counter, "major_axis_length"] = major_axis_length_nuc
-        single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length_nuc
+        single_cell_props.at[counter, "major_axis_length_nuc"] = major_axis_length_nuc
+        single_cell_props.at[counter, "minor_axis_length_nuc"] = minor_axis_length_nuc
         single_cell_props.at[counter, "area"] = area_nuc
         single_cell_props.at[counter, "perimeter"] = perimeter_nuc
  
@@ -215,7 +216,10 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
     if parameters["plot_polarity"]:
         plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
     if parameters["plot_marker"]:
-        plot_marker(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+        plot_marker(parameters, im_marker, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+    if parameters["plot_alignment"]:
+        plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+
 
     return single_cell_props
 
@@ -290,4 +294,86 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     plt.savefig(output_path + filename + "_marker_expression.png")
 
     return 0
+
+def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
+
+    output_path = parameters['output_path']
+    output_filename = parameters["output_filename"]
+    output_filepath = output_path + output_filename
+
+    fig, ax = plt.subplots(1,2)
+
+    cell_mask = masks[0]
+    nuclei_mask = masks[1].astype(bool)
+
+    #regions = regionprops(mask)
+    #for props in regions:
+    #    y0, x0 = props.centroid
+    #    orientation = props.orientation
+    #    x1 = x0 + math.cos(orientation) * 0.5 * props.minor_axis_length
+    #    y1 = y0 - math.sin(orientation) * 0.5 * props.minor_axis_length
+    #    x2 = x0 - math.sin(orientation) * 0.5 * props.major_axis_length
+    #    y2 = y0 - math.cos(orientation) * 0.5 * props.major_axis_length
+
+    #ax.plot((x0, x1), (y0, y1), '--r', linewidth=0.5)
+    #ax.plot((x0, x2), (y0, y2), '--r', linewidth=0.5)
+    #ax.plot(x0, y0, '.b', markersize=5)
+
+    #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+    ax[0].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+
+    ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+    #ax[1].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
+
+    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+    ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+
+
+
+    for index, row in single_cell_props.iterrows():
+        orientation = row['shape_orientation']
+        x0 = row['X_cell']
+        y0 = row['Y_cell']
+        x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length']
+        x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
+        y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+        
+        ax[0].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+        ax[0].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+        ax[0].plot(y0, x0, '.b', markersize=5)
+
+        orientation_degree = 180.0*orientation/np.pi
+        ax[0].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
+        
+        orientation = row['shape_orientation_nuc']
+        x0 = row['X_nuc']
+        y0 = row['Y_nuc']
+        x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+        y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+        x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+        y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+
+        ax[1].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+        ax[1].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+        ax[1].plot(y0, x0, '.b', markersize=5)
+
+        orientation_degree = 180.0*orientation/np.pi
+        ax[1].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
+
+        #ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"],1)), color = "w", fontsize=6)
+
+    ax[0].set_title("alignment cell shape")
+    ax[1].set_title("alignment nuclei shape")
+    plt.tight_layout()
+    ax[0].set_xlim(0,im_junction.shape[0])
+    ax[0].set_ylim(0,im_junction.shape[1])
+    ax[1].set_xlim(0,im_junction.shape[0])
+    ax[1].set_ylim(0,im_junction.shape[1])
+    plt.savefig(output_path + filename + "_alignment.pdf")
+    plt.savefig(output_path + filename + "_alignment.png")
+
+    return 0
+
 
