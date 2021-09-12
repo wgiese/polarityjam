@@ -289,10 +289,9 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
 
     fig, ax = plt.subplots(1,3, figsize=(30,10))
     
-    cell_mask = masks[0].astype(bool) 
+    cell_mask = masks[0] 
     nuclei_mask = masks[1].astype(bool)
 
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
     nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
 
     #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
