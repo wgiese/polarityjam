@@ -307,26 +307,45 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     #outline_nuc_ = np.where(outline_nuc == True, 30, 0)
     #ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
  
-    for label in range(1,np.max(nuclei_mask)+1):
-        single_nuc_mask = np.where(nuclei_mask ==label, 1, 0)
-        outline_nuc = get_outline_from_mask(single_nuc_mask, parameters["outline_width"])
-        outline_nuc_ = np.where(outline_nuc == True, 30, 0)
-        ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
-    
-    #print("Number of cells:")
-    #print(np.max(cell_mask))    
-    #print("Number of nuclei:")
-    #print(np.max(cell_mask))    
+    outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
+    outline_nuc_ = np.where(outline_nuc == True, 30, 0)
+    ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+
+    outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+    outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+
     for label in range(1,np.max(cell_mask)+1):
         single_cell_mask = np.where(cell_mask ==label, 1, 0)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
         outline_cell_ = np.where(outline_cell == True, 30, 0)
-        ax[1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
-        ax[1].imshow(np.ma.masked_where(outline_cell_ == 0, outline_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        outlines_cell += outline_cell_
         
         outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
         outline_mem_ = np.where(outline_mem == True, 30, 0)
-        ax[2].imshow(np.ma.masked_where(outline_mem_ == 0, outline_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        outlines_mem += outline_mem_
+    
+        #ax[1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        #ax[1].imshow(np.ma.masked_where(outline_cell_ == 0, outline_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+    
+    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
+    ax[1].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+        
+    outlines_mem_ = np.where(outlines_mem > 0, 30, 0)
+    ax[2].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+    
+    '''
+    for label in range(1,np.max(cell_mask)+1):
+        single_cell_mask = np.where(cell_mask ==label, 1, 0)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
+        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        #ax[1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        #ax[1].imshow(np.ma.masked_where(outline_cell_ == 0, outline_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        
+        outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
+        outline_mem_ = np.where(outline_mem == True, 30, 0)
+        #ax[2].imshow(np.ma.masked_where(outline_mem_ == 0, outline_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+    '''
+
 
     for index, row in single_cell_props.iterrows():
         ax[0].text( row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"],1)), color = "w", fontsize=6)
@@ -334,6 +353,7 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
         ax[2].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"],1)), color = "w", fontsize=6)
     #    ax.plot( row["Y_golgi"], row["X_golgi"], '.m', markersize=1)
     #    ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"]- row["Y_nuc"],row["X_golgi"]- row["X_nuc"], color = 'white', width = 2)
+    
 
     ax[0].set_title("mean intensity nucleus")
     ax[1].set_title("mean intensity cytosol")
