@@ -20,7 +20,7 @@ plot_marker: True
 plot_alignment: True
 
 outline_width : 2
-
+show_polarity_angles: True
 
 # segmentation parameters
 channel_junction: 0
@@ -29,5 +29,5 @@ channel_golgi : 2
 channel_expression_marker : -1
 estimated_cell_diameter : 100
 
-membrane_thickness : 3
+membrane_thickness : 5
 
