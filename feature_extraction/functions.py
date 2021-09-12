@@ -95,8 +95,8 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
-    #nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
-    nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
+    nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
+    #nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
     golgi_mask = get_golgi_mask(parameters, img, cell_mask)
     if parameters["channel_expression_marker"] >= 0:
         im_marker = img[:,:,parameters["channel_expression_marker"]]
@@ -166,21 +166,35 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
             regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
             for props in regions:
                 mean_expression = props.mean_intensity
+                area_cell = props.area
             single_cell_props.at[counter, "mean_expression"] = mean_expression
+            single_cell_props.at[counter, "sum_expression"] = mean_expression*area_cell
             
             regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
             for props in regions:
                 mean_expression_nuc = props.mean_intensity
+                area_nuc = props.area
             single_cell_props.at[counter, "mean_expression_nuc"] = mean_expression_nuc
+            single_cell_props.at[counter, "sum_expression_nuc"] = mean_expression_nuc*area_nuc
 
             cytosol_mask = np.logical_xor(single_cell_mask.astype(bool), single_nucleus_mask.astype(bool))
 
             regions = skimage.measure.regionprops(cytosol_mask.astype(int), intensity_image=im_marker)
             for props in regions:
                 mean_expression_cyt = props.mean_intensity
+                area_cyt = props.area
             single_cell_props.at[counter, "mean_expression_cyt"] = mean_expression_cyt
+            single_cell_props.at[counter, "sum_expression_cyt"] = mean_expression_cyt*area_cyt
+            
+            membrane_mask = get_outline_from_mask(single_cell_mask.astype(bool), parameters["membrane_thickness"])
 
-        
+            regions = skimage.measure.regionprops(membrane_mask.astype(int), intensity_image=im_marker)
+            for props in regions:
+                mean_expression_mem = props.mean_intensity
+                area_mem = props.area
+            single_cell_props.at[counter, "mean_expression_mem"] = mean_expression_mem
+            single_cell_props.at[counter, "sum_expression_mem"] = mean_expression_mem*area_mem
+    
         regions = skimage.measure.regionprops(single_golgi_mask)
         for props in regions:
             x_golgi, y_golgi = props.centroid
@@ -222,6 +236,14 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
 
     return single_cell_props
+
+def get_outline_from_mask(mask, width = 1):
+ 
+    dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations = width)
+    eroded_mask = ndi.morphology.binary_erosion(mask.astype(bool), iterations = width)
+    outline_mask = np.logical_xor(dilated_mask, eroded_mask)
+    
+    return outline_mask
 
 def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
     
@@ -265,11 +287,12 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
-    fig, ax = plt.subplots(1,2, figsize=(20,10))
+    fig, ax = plt.subplots(1,3, figsize=(30,10))
     
-    cell_mask = masks[0] 
+    cell_mask = masks[0].astype(bool) 
     nuclei_mask = masks[1].astype(bool)
 
+    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
     nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
 
     #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
@@ -277,22 +300,53 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     #ax[1].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
 
     ax[1].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    ax[2].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
     #ax[2].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
+
+
+    #outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
+    #outline_nuc_ = np.where(outline_nuc == True, 30, 0)
+    #ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+ 
+    for label in range(1,np.max(nuclei_mask)+1):
+        single_nuc_mask = np.where(nuclei_mask ==label, 1, 0)
+        outline_nuc = get_outline_from_mask(single_nuc_mask, parameters["outline_width"])
+        outline_nuc_ = np.where(outline_nuc == True, 30, 0)
+        ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+    
+    #print("Number of cells:")
+    #print(np.max(cell_mask))    
+    #print("Number of nuclei:")
+    #print(np.max(cell_mask))    
+    for label in range(1,np.max(cell_mask)+1):
+        single_cell_mask = np.where(cell_mask ==label, 1, 0)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
+        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        ax[1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        ax[1].imshow(np.ma.masked_where(outline_cell_ == 0, outline_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+        
+        outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
+        outline_mem_ = np.where(outline_mem == True, 30, 0)
+        ax[2].imshow(np.ma.masked_where(outline_mem_ == 0, outline_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
 
     for index, row in single_cell_props.iterrows():
         ax[0].text( row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"],1)), color = "w", fontsize=6)
-        ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"],1)), color = "w", fontsize=6)
+        ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_cyt"],1)), color = "w", fontsize=6)
+        ax[2].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"],1)), color = "w", fontsize=6)
     #    ax.plot( row["Y_golgi"], row["X_golgi"], '.m', markersize=1)
     #    ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"]- row["Y_nuc"],row["X_golgi"]- row["X_nuc"], color = 'white', width = 2)
 
     ax[0].set_title("mean intensity nucleus")
     ax[1].set_title("mean intensity cytosol")
+    ax[2].set_title("mean intensity membrane")
 
     #ax.set_xlim(0,im_marker.shape[0])
     #ax.set_ylim(0,im_marker.shape[1])
     plt.savefig(output_path + filename + "_marker_expression.pdf")
     plt.savefig(output_path + filename + "_marker_expression.png")
-
+    
+    #print("plotted expression")
+        
     return 0
 
 def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
