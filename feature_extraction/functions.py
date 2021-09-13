@@ -124,7 +124,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         regions = skimage.measure.regionprops(single_cell_mask)
         for props in regions:
             x_cell, y_cell = props.centroid
-            orientation = props.orientation
+            # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
+            orientation = np.pi/2.0 - props.orientation
             minor_axis_length = props.minor_axis_length
             major_axis_length = props.major_axis_length
             area = props.area
@@ -134,7 +135,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         regions = skimage.measure.regionprops(single_nucleus_mask)
         for props in regions:
             x_nucleus, y_nucleus = props.centroid
-            orientation_nuc = props.orientation
+            # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
+            orientation_nuc = np.pi/2.0 - props.orientation
             minor_axis_length_nuc = props.minor_axis_length
             major_axis_length_nuc = props.major_axis_length
             area_nuc = props.area
@@ -408,11 +410,18 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
         orientation = row['shape_orientation']
         x0 = row['X_cell']
         y0 = row['Y_cell']
-        x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length']
-        y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-        x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
-        y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
         
+        #x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        #y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length']
+        #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
+        #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+        
+        x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
+        y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
+        y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
+        
+
         ax[0].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax[0].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax[0].plot(y0, x0, '.b', markersize=5)
@@ -423,11 +432,16 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
         orientation = row['shape_orientation_nuc']
         x0 = row['X_nuc']
         y0 = row['Y_nuc']
-        x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-        y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-        x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-        y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+        #x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+        #y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+        #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+        #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
 
+        x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+        y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+        x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+        y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+        
         ax[1].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax[1].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax[1].plot(y0, x0, '.b', markersize=5)
