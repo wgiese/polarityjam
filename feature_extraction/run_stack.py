@@ -67,7 +67,7 @@ for ind, filepath in enumerate(file_list):
     if len(merged_properties_df.index) < 10:
         merged_properties_df = properties_df.copy()
     else:
-        merged_properties_df.append(properties_df, ignore_index=True)
+        merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
         
     merged_properties_df.to_csv(output_path + "merged.csv")
 
