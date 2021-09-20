@@ -35,6 +35,7 @@ def read_parameters(parameter_file):
 def read_image(parameters, filename):
 
     img = skimage.io.imread(filename)
+
     return img
 
 def get_image_for_segmentation(parameters, img):
@@ -143,6 +144,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
             perimeter_nuc = props.perimeter     
 
 
+        single_cell_props.at[counter, "filename"] = filename
         single_cell_props.at[counter, "label"] = label
         single_cell_props.at[counter, "X_cell"] = x_cell
         single_cell_props.at[counter, "Y_cell"] = y_cell
