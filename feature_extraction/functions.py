@@ -43,16 +43,21 @@ def get_image_for_segmentation(parameters, img):
     print(parameters["channel_junction"])
     print(img.shape)
     im_junction = img[:,:,int(parameters["channel_junction"])]
-    im_nucleus = img[:,:,int(parameters["channel_nucleus"])]
-    im_seg = np.array([im_junction, im_nucleus])
+    if parameters["channel_nucleus"] >= 0:
+    	im_nucleus = img[:,:,int(parameters["channel_nucleus"])]
+    	im_seg = np.array([im_junction, im_nucleus])
+    else:
+    	return im_junction
 
     return im_seg
 
 def get_cellpose_segmentation(parameters, im_seg):
 
     model = cellpose.models.Cellpose(gpu=True, model_type='cyto')
-
-    channels = [1,2]
+    if parameters["channel_nucleus"] >= 0:
+    	channels = [1,2]
+    else:
+    	channels = [0,0]
 
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)  
 
