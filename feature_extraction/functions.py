@@ -36,6 +36,10 @@ def read_image(parameters, filename):
 
     img = skimage.io.imread(filename)
 
+    if img.shape[0] < min(img.shape[1],img.shape[2]):
+        print("Warning: channel is on the first dimension of the image.")
+        img = img.reshape(np.shape[1], np.shape[2], np.shape[0])
+
     return img
 
 def get_image_for_segmentation(parameters, img):
@@ -101,9 +105,12 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
-    nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
+    if parameters["channel_nucleus"] >= 0: 
+        nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
     #nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
-    golgi_mask = get_golgi_mask(parameters, img, cell_mask)
+    if parameters["channel_golgi"] >= 0:
+        golgi_mask = get_golgi_mask(parameters, img, cell_mask)
+    
     if parameters["channel_expression_marker"] >= 0:
         im_marker = img[:,:,parameters["channel_expression_marker"]]
 
