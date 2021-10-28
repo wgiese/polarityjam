@@ -69,29 +69,30 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
-    fig, ax = plt.subplots(1,3, figsize=(30,10))
+    sub_figs = len(masks) + 1
+    fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
     
-    cell_mask = masks[0] 
-    nuclei_mask = masks[1].astype(bool)
+    cell_mask = masks[0]
+    if sub_figs > 2: 
+        nuclei_mask = masks[1].astype(bool)
 
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+        nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
 
-    #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
-    ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
-    #ax[1].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+    for i in range(sub_figs):
+        ax[i].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
 
-    ax[1].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
-    ax[2].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
-    #ax[2].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
+    #ax[1].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    #ax[2].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
 
 
     #outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
     #outline_nuc_ = np.where(outline_nuc == True, 30, 0)
     #ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
  
-    outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
-    outline_nuc_ = np.where(outline_nuc == True, 30, 0)
-    ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
+    if sub_figs > 2:
+        outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
+        outline_nuc_ = np.where(outline_nuc == True, 30, 0)
+        ax[sub_figs - 1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
 
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
     outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
@@ -110,10 +111,10 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
         #ax[1].imshow(np.ma.masked_where(outline_cell_ == 0, outline_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
     
     outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
-    ax[1].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+    ax[0].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
         
     outlines_mem_ = np.where(outlines_mem > 0, 30, 0)
-    ax[2].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+    ax[1].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
     
     '''
     for label in range(1,np.max(cell_mask)+1):
@@ -130,16 +131,20 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
 
 
     for index, row in single_cell_props.iterrows():
-        ax[0].text( row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"],1)), color = "w", fontsize=6)
-        ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_cyt"],1)), color = "w", fontsize=6)
-        ax[2].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"],1)), color = "w", fontsize=6)
+        
+        ax[0].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"],1)), color = "w", fontsize=6)
+        ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"],1)), color = "w", fontsize=6)
+        if sub_figs > 2:
+            ax[sub_figs-1].text( row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"],1)), color = "w", fontsize=6)
+
     #    ax.plot( row["Y_golgi"], row["X_golgi"], '.m', markersize=1)
     #    ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"]- row["Y_nuc"],row["X_golgi"]- row["X_nuc"], color = 'white', width = 2)
     
 
-    ax[0].set_title("mean intensity nucleus")
-    ax[1].set_title("mean intensity cytosol")
-    ax[2].set_title("mean intensity membrane")
+    ax[0].set_title("mean intensity cell")
+    ax[1].set_title("mean intensity membrane")
+    if sub_figs > 2:
+       ax[sub_figs - 1].set_title("mean intensity nucleus")
 
     #ax.set_xlim(0,im_marker.shape[0])
     #ax.set_ylim(0,im_marker.shape[1])
@@ -156,10 +161,12 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
-    fig, ax = plt.subplots(1,2)
+    sub_figs = len(masks)
+    fig, ax = plt.subplots(1, sub_figs)
 
     cell_mask = masks[0]
-    nuclei_mask = masks[1].astype(bool)
+    if sub_figs > 1:
+        nuclei_mask = masks[1].astype(bool)
 
     #regions = regionprops(mask)
     #for props in regions:
@@ -175,14 +182,20 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
     #ax.plot(x0, y0, '.b', markersize=5)
 
     #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
-    ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
-    ax[0].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+    
+    if sub_figs > 1:
+        ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+        ax[0].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
 
-    ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
-    #ax[1].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
+        ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+        #ax[1].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
 
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
-    ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+        nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+        ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+    else:
+        ax.imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+        ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+
 
 
 
@@ -201,43 +214,60 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
         x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
         y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
         
+        if sub_figs > 1:
+            ax[0].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+            ax[0].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+            ax[0].plot(y0, x0, '.b', markersize=5)
+            orientation_degree = 180.0*orientation/np.pi
+            ax[0].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
+        else:
+            ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+            ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+            ax.plot(y0, x0, '.b', markersize=5)
+            orientation_degree = 180.0*orientation/np.pi
+            ax.text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
+               
 
-        ax[0].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
-        ax[0].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
-        ax[0].plot(y0, x0, '.b', markersize=5)
-
-        orientation_degree = 180.0*orientation/np.pi
-        ax[0].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
         
-        orientation = row['shape_orientation_nuc']
-        x0 = row['X_nuc']
-        y0 = row['Y_nuc']
-        #x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-        #y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-        #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-        #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+        if sub_figs > 1:
+            orientation = row['shape_orientation_nuc']
+            x0 = row['X_nuc']
+            y0 = row['Y_nuc']
+            #x1 = x0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            #y1 = y0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+            #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+            #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
 
-        x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-        y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-        x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
-        y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-        
-        ax[1].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
-        ax[1].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
-        ax[1].plot(y0, x0, '.b', markersize=5)
+            x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+            y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+            
+            ax[1].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+            ax[1].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+            ax[1].plot(y0, x0, '.b', markersize=5)
 
-        orientation_degree = 180.0*orientation/np.pi
-        ax[1].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
+            orientation_degree = 180.0*orientation/np.pi
+            ax[1].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
 
         #ax[1].text( row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"],1)), color = "w", fontsize=6)
 
-    ax[0].set_title("alignment cell shape")
-    ax[1].set_title("alignment nuclei shape")
+    if sub_figs > 1:
+        ax[0].set_title("alignment cell shape")
+        ax[0].set_xlim(0,im_junction.shape[0])
+        ax[0].set_ylim(0,im_junction.shape[1])
+    
+        ax[1].set_title("alignment nuclei shape")
+        ax[1].set_xlim(0,im_junction.shape[0])
+        ax[1].set_ylim(0,im_junction.shape[1])
+    else:
+        ax.set_title("alignment cell shape")
+        ax.set_xlim(0,im_junction.shape[0])
+        ax.set_ylim(0,im_junction.shape[1])
+    
+    
+
     plt.tight_layout()
-    ax[0].set_xlim(0,im_junction.shape[0])
-    ax[0].set_ylim(0,im_junction.shape[1])
-    ax[1].set_xlim(0,im_junction.shape[0])
-    ax[1].set_ylim(0,im_junction.shape[1])
     plt.savefig(output_path + filename + "_alignment.pdf")
     plt.savefig(output_path + filename + "_alignment.png")
 
