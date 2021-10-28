@@ -13,180 +13,12 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import math
 import numpy as np
-import pysal as psy
 import tifffile as tiff
 from skimage.measure import regionprops
 from skimage.future.graph import RAG
 import networkx as nw
-from splot.esda import moran_scatterplot
-from esda.moran import Moran_Local
+import plot_fcts
 
-#Run morans eye on the features you have gathered
-#function requires a region adjancency graph with node associated features
-#feature of choice can be passed to function in the feature argument "orientation" for instance
-#depends math
-def average_angles(angles):
-    """Average (mean) of angles
-
-    Return the average of an input sequence of angles. The result is between
-    ``0`` and ``2 * math.pi``.
-    If the average is not defined (e.g. ``average_angles([0, math.pi]))``,
-    a ``ValueError`` is raised.
-    """
-
-    x = sum(math.cos(a) for a in angles)
-    y = sum(math.sin(a) for a in angles)
-
-    if x == 0 and y == 0:
-        #raise ValueError(
-        #    "The angle average of the inputs is undefined: %r" % angles)
-        print("propper doggered innit")
-        return(3.3)
-    # To get outputs from -pi to +pi, delete everything but math.atan2() here.
-    return np.rad2deg(math.fmod(math.atan2(y, x)+ 2 * math.pi, 2 * math.pi))
-#depends skleanr rag
-def remove_islands(frame_graph, mask):
-    list_of_islands = []
-    #Get list of islands - nodes with no neighbkluors,
-    #remove nodes with neighbours
-    #frame_graph = orientation_graph(dat_no_edges[i,:,:])
-    for nodez in frame_graph.nodes:
-        if len(list(frame_graph.neighbors(nodez))) == 0:
-            list_of_islands.append(nodez)
-    
-    print(list_of_islands)
-    #remove islands from image and graph
-    for elemet in np.unique(list_of_islands):
-        frame_graph.remove_node(elemet)
-        mask[:,:][mask[:,:] == elemet] = 0
-    return(frame_graph,mask)
-##Border removal function assumes image is symmetrical
-#neeed to full around a bit with values on lines 55-62 if not symmetrical
-#depend np
-def remove_edges(mask):
-    segments = mask.astype("int")
-    end_1,end_2 = mask.shape[0],mask.shape[1]
-
-    start_1, start_2 = 0,0
-
-    the_start = np.empty(mask.shape[0])
-    the_start.fill(int(start_1))
-    the_end = np.empty(mask.shape[0])
-    the_end.fill(int(end_1 - 1 ))
-    lower_right_arr = np.asarray(range(start_1,end_1))
-
-    #list of points with 0, 0 - max
-    roof = np.asarray([the_start,lower_right_arr])
-    #list of of points with max 0-max
-    floor = np.asarray([the_end,lower_right_arr])
-    #list of point 0-max, 0
-    left_wall = np.asarray([lower_right_arr,the_start])
-    #list of point 0-max, max
-    right_wall = np.asarray([lower_right_arr,the_end])
-
-    concat_arr = np.hstack([left_wall,right_wall,roof,floor]).astype("int")
-    x_indexed = segments[(concat_arr[1,:]),(concat_arr[0,:])]
-
-    for elemet in np.unique(x_indexed):
-        segments[segments == elemet] = 0
-    return(segments)
-#depends rag and regionprops
-def orientation_graph(img):
-
-    rag = RAG(img.astype("int"))
-    rag.remove_node(0)
-
-    regions = regionprops(img.astype("int"))
-    for region in regions:
-        rag.nodes[region['label']]['orientation'] = region['orientation']
-        rag.nodes[region['label']]['area'] = region['area']
-        rag.nodes[region['label']]['polarity'] = region['major_axis_length'] / region['minor_axis_length']
-        rag.nodes[region['label']]['aspect_ratio'] = (region["bbox"][2] - region["bbox"][0]) / (region["bbox"][3] - region["bbox"][1])
-    return(rag)
-#depends pysal skleanr-rag
-def morans_data_prep(rag,feature):
-    weihgts = psy.lib.weights.W.from_networkx(rag)
-
-    moron_eye_feature_list = []
-
-    rag_labels = list(rag.nodes)
-    moran_keys = weihgts.neighbors.keys()
-
-    for nombritas in zip(rag_labels,moran_keys):
-        #print(nombritas)
-        #print(len(list(rag.neighbors(nombritas[0]))))
-        #print(len(weihgts.neighbors[nombritas[1]]))
-
-        feature2append = rag.nodes[nombritas[0]]
-        single_feature = (feature2append[feature])
-
-        moron_eye_feature_list.append(single_feature)
-
-    return(moron_eye_feature_list,weihgts)
-
-# weights, feature_list = morans_I(features_no_island_Edges,'orientation')
-
-#carry out morans I and local morans, get stuff out of them
-#should not that your feature from previous function is used
-#depends pysal
-def run_morans(moron_eye_feature_list,weihgts):
-    mi = psy.explore.esda.Moran(moron_eye_feature_list, weihgts, two_tailed=False)
-    moran_loc = Moran_Local(moron_eye_feature_list, weihgts)
-
-    return(mi,moran_loc)
-
-#A function to perform nearest neighbour comparisions you must give  it the label of the mask
-# its pixel values
-# and the corresponding region adjacency graph
-# no depends
-def smallestSignedAngleBetween(x, y):
-    a = x - y
-    if a > 180:
-        a -= 360 
-    if a < -180:
-        a += 360 
-    return(a)
-def nearest_neighbour_comparisions(rag,mask_label):
-            orientation_list = []
-            area_list = []
-            
-            focal_orientation = rag.nodes[mask_label]['orientation']
-            focal_area = rag.nodes[mask_label]['area']
-
-            region_graph = rag
-            naybes = region_graph.neighbors(mask_label)
-            
-            for first_n in naybes:
-                first_o = region_graph.nodes[first_n]['orientation']
-                first_a = region_graph.nodes[first_n]['area']
-                smlst_ar = focal_area / first_a
-                smlst_sa = smallestSignedAngleBetween(np.rad2deg(focal_orientation),np.rad2deg(first_o))
-                orientation_list.append(math.radians(smlst_sa))
-                area_list.append(smlst_ar)
-                
-            return(np.mean(area_list),average_angles(orientation_list))
-            return(a)
-# Dont include example implimentation but can be used to determine
-#angle between nucleus and golgi that can be compared with
-# cel orientation
-def angle_between_points(p1, p2):
-    d1 = p2[0] - p1[0]
-    d2 = p2[1] - p1[1]
-    if d1 == 0:
-        if d2 == 0:  # same points?
-            deg = 0
-        else:
-            deg = 0 if p1[1] > p2[1] else 180
-    elif d2 == 0:
-        deg = 90 if p1[0] < p2[0] else 270
-    else:
-        deg = math.atan(d2 / d1) / pi * 180
-        lowering = p1[1] < p2[1]
-        if (lowering and deg < 0) or (not lowering and deg > 0):
-            deg += 270
-        else:
-            deg += 90
-    return deg
 
 def read_parameters(parameter_file):
 
@@ -412,11 +244,11 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
     
     if parameters["plot_polarity"]:
-        plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+        plot_fcts.plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
     if parameters["plot_marker"]:
-        plot_marker(parameters, im_marker, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+        plot_fcts.plot_marker(parameters, im_marker, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
     if parameters["plot_alignment"]:
-        plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+        plot_fcts.plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
 
 
     return single_cell_props
