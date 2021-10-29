@@ -155,6 +155,49 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
         
     return 0
 
+def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filename):
+
+    output_path = parameters['output_path']
+    output_filename = parameters["output_filename"]
+    output_filepath = output_path + output_filename
+    
+    #sub_figs = len(masks) + 1
+    #fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
+    fig, ax = plt.subplots(1, figsize=(10,10))
+
+    
+    cell_mask = masks[0]
+    ax.imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
+    
+    outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+
+    for label in range(1,np.max(cell_mask)+1):
+        single_cell_mask = np.where(cell_mask ==label, 1, 0)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
+        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        outlines_cell += outline_cell_
+        
+    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
+    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+     
+
+    for index, row in single_cell_props.iterrows():
+        ax.plot( row["Y_cell"], row["X_cell"], '.m', markersize=1)
+        ax.plot( row["Y_weighted"], row["X_weighted"], '.m', markersize=1)
+        ax.arrow(row["Y_cell"], row["X_cell"], row["Y_weighted"]- row["Y_cell"],row["X_weighted"]- row["X_cell"], color = 'white', width = 2)
+        #if parameters["show_polarity_angles"]:
+        #    ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"],0))), color = "yellow", fontsize = 6)
+
+    ax.set_title("marker polarity")
+
+    #ax.set_xlim(0,im_marker.shape[0])
+    #ax.set_ylim(0,im_marker.shape[1])
+    plt.savefig(output_path + filename + "_marker_polarity.pdf")
+    plt.savefig(output_path + filename + "_marker_polarity.png")
+ 
+    return 0
+
+
 def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
 
     output_path = parameters['output_path']
