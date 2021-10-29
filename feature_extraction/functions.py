@@ -196,8 +196,13 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
             for props in regions:
                 mean_expression = props.mean_intensity
                 area_cell = props.area
+                #x_weighted, y_weighted = props.centroid_weighted
+
             single_cell_props.at[counter, "mean_expression"] = mean_expression
             single_cell_props.at[counter, "sum_expression"] = mean_expression*area_cell
+            #single_cell_porps.at[counter, "X_weighted"] = x_weighted
+            #single_cell_porps.at[counter, "Y_weighted"] = y_weighted
+ 
             
             if parameters["channel_nucleus"] >= 0:
                 regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
@@ -224,7 +229,12 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
                 area_mem = props.area
             single_cell_props.at[counter, "mean_expression_mem"] = mean_expression_mem
             single_cell_props.at[counter, "sum_expression_mem"] = mean_expression_mem*area_mem
-    
+ 
+            ### compute marker polarity
+
+            
+
+   
         if (parameters["channel_nucleus"] >= 0) and (parameters["channel_golgi"] >= 0):
             regions = skimage.measure.regionprops(single_golgi_mask)
             for props in regions:
