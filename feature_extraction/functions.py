@@ -114,7 +114,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
     return golgi_label
 
 
-def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
+def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
 
     if parameters["channel_nucleus"] >= 0: 
         nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
@@ -279,7 +279,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
-    
+
     if parameters["plot_polarity"] and (parameters["channel_golgi"] >= 0):
         plot_fcts.plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] >= 0):
@@ -292,6 +292,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
     if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
         plot_fcts.plot_alignment(parameters, im_junction, [cell_mask], single_cell_props, filename)
 
+
     return single_cell_props
 
 def get_outline_from_mask(mask, width = 1):
@@ -302,9 +303,9 @@ def get_outline_from_mask(mask, width = 1):
     
     return outline_mask
 
-def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
+def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, output_path):
     
-    output_path = parameters['output_path']
+    #output_path = parameters['output_path']
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
@@ -338,9 +339,9 @@ def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
     return 0
 
 
-def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
+def plot_marker(parameters, im_marker, masks, single_cell_props, filename, output_path):
     
-    output_path = parameters['output_path']
+    #output_path = parameters['output_path']
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
@@ -430,9 +431,9 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
         
     return 0
 
-def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
+def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, output_path):
 
-    output_path = parameters['output_path']
+    #output_path = parameters['output_path']
     output_filename = parameters["output_filename"]
     output_filepath = output_path + output_filename
 
