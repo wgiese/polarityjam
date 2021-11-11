@@ -35,7 +35,7 @@ input_path = parameters["input_path"]
 
 
 file_list = glob.glob(input_path + "*.tif")
-merged_properties_df = pd.DataFrame()
+#merged_properties_df = pd.DataFrame()
 
 for ind, filepath in enumerate(file_list):
  
@@ -69,11 +69,11 @@ for ind, filepath in enumerate(file_list):
     #properties_df.to_csv("image_%s.csv" % ind)
     properties_df.to_csv(output_path + filename.split(".")[0] + ".csv")
     
-    if len(merged_properties_df.index) < 10:
-        merged_properties_df = properties_df.copy()
-    else:
-        merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
+    #if len(merged_properties_df.index) < 10:
+    #    merged_properties_df = properties_df.copy()
+    #else:
+    #    merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
         
-    merged_properties_df.to_csv(output_path + "merged.csv")
+    #merged_properties_df.to_csv(output_path + "merged.csv")
 
 

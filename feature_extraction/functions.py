@@ -8,6 +8,7 @@ import cellpose.models
 import scipy.ndimage as ndi
 import skimage.filters 
 import skimage.measure
+import skimage.segmentation
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -64,13 +65,16 @@ def get_image_for_segmentation(parameters, img):
 
 def get_cellpose_segmentation(parameters, im_seg):
 
-    model = cellpose.models.Cellpose(gpu=True, model_type='cyto')
+    model = cellpose.models.Cellpose(gpu=parameters['use_gpu'], model_type='cyto')
     if parameters["channel_nucleus"] >= 0:
     	channels = [1,2]
     else:
     	channels = [0,0]
 
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)  
+
+    if parameters["clear_border"]:
+        masks = skimage.segmentation.clear_border(masks)
 
     return masks
 
@@ -86,7 +90,7 @@ def get_nuclei_mask(parameters, img, cellpose_mask):
 
 def get_nuclei_cellpose(parameters, img, cellpose_mask):
 
-    model = cellpose.models.Cellpose(gpu=True, model_type='nuclei')
+    model = cellpose.models.Cellpose(gpu=parameters["use_gpu"], model_type='nuclei')
 
     channels = [0,0]
 
@@ -129,9 +133,13 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         single_cell_mask = np.where(cell_mask ==label, 1, 0)
         if parameters["channel_nucleus"] >= 0:
             single_nucleus_mask = np.where(nuclei_mask==label, 1, 0)
-        if parameters["channel_golgi"] >= 0:
-            single_golgi_mask = np.where(golgi_mask ==label, 1, 0)    
-        
+            if len(single_nucleus_mask[single_nucleus_mask==1]) < parameters["min_nucleus_size"]:
+                continue
+            if parameters["channel_golgi"] >= 0:
+                single_golgi_mask = np.where(golgi_mask ==label, 1, 0)    
+                if len(single_golgi_mask[single_golgi_mask==1]) < parameters["min_golgi_size"]:
+                    continue
+
         #area_golgi_px2 = len(single_golgi_mask[single_golgi_mask==1])
         #area_nucleus_px2 = len(single_nucleus_mask[single_nucleus_mask==1])    
         
@@ -141,8 +149,12 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
         #print(len(single_cell_mask[single_cell_mask==1]))
         #print(len(single_nucleus_mask[single_nucleus_mask==1]))
         #print(len(single_golgi_mask[single_golgi_mask==1]))
-          
+        
+        if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
+            continue
+  
         regions = skimage.measure.regionprops(single_cell_mask)
+        
         for props in regions:
             x_cell, y_cell = props.centroid
             # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
@@ -190,6 +202,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
             single_cell_props.at[counter, "perimeter"] = perimeter_nuc
      
 
+        ### compute marker polarity
 
         if parameters["channel_expression_marker"] >= 0:
             regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
@@ -230,7 +243,6 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename):
             single_cell_props.at[counter, "mean_expression_mem"] = mean_expression_mem
             single_cell_props.at[counter, "sum_expression_mem"] = mean_expression_mem*area_mem
  
-            ### compute marker polarity
 
             
 

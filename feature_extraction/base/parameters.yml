@@ -12,6 +12,14 @@ output_filename : "image001"
 
 input_path : "/path/to/imagefile.tif"
 
+## cellpose/segmentation parameters
+
+use_gpu:  False
+clear_border: True
+min_cell_size: 50
+min_nucleus_size: 10
+min_golgi_size: 10
+
 
 ## plot options
 
