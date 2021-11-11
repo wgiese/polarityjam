@@ -14,9 +14,7 @@ library(ggplot2)
 ## Read data
 
 ```{r read_data}
-#filepath <- "/home/wgiese/image-data-workflows/vascu-ec-app/merged.csv"
-#filepath <- "/home/wgiese/Data/Olya/pSMAD158_intensity_analysis/siRNA/siCTRL/4h/6dyn/BSA 0.1%/analysis_output/merged.csv"
-filepath <- "/home/wgiese/Data/Olya/pSMAD158_intensity_analysis/no transfection/16h flow/6dyn/BSA 0.1%/analysis_output/merged.csv"
+filepath <- "../test_data/120821_BSA_01.csv"
 
 ec_features <- read.csv(file = filepath)
 #summary(ec_features)
