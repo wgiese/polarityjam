@@ -35,7 +35,7 @@ input_path = parameters["input_path"]
 
 
 file_list = glob.glob(input_path + "*.tif")
-merged_properties_df = pd.DataFrame()
+#merged_properties_df = pd.DataFrame()
 
 for ind, filepath in enumerate(file_list):
  
@@ -47,10 +47,15 @@ for ind, filepath in enumerate(file_list):
     img = functions.read_image(parameters,filepath)
     img_seg = functions.get_image_for_segmentation(parameters,img)
 
-    fig, ax = plt.subplots(1,2)
-    ax[0].imshow(img_seg[0,:,:])
-    ax[1].imshow(img_seg[1,:,:])
-    plt.savefig(output_path + filename + "-seg.png")
+    if parameters["channel_nucleus"] >= 0:
+    	fig, ax = plt.subplots(1,2)
+    	ax[0].imshow(img_seg[0,:,:])
+    	ax[1].imshow(img_seg[1,:,:])
+    	plt.savefig(output_path + filename + "-seg.png")
+    else:
+    	fig, ax = plt.subplots()
+    	ax.imshow(img_seg[:,:])
+    	plt.savefig(output_path + filename + "-seg.png")
 
     cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
     print("Number of cell labels: ")
@@ -64,11 +69,11 @@ for ind, filepath in enumerate(file_list):
     #properties_df.to_csv("image_%s.csv" % ind)
     properties_df.to_csv(output_path + filename.split(".")[0] + ".csv")
     
-    if len(merged_properties_df.index) < 10:
-        merged_properties_df = properties_df.copy()
-    else:
-        merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
+    #if len(merged_properties_df.index) < 10:
+    #    merged_properties_df = properties_df.copy()
+    #else:
+    #    merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
         
-    merged_properties_df.to_csv(output_path + "merged.csv")
+    #merged_properties_df.to_csv(output_path + "merged.csv")
 
 

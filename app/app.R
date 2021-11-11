@@ -63,6 +63,8 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               selectInput("dataset", "Choose a dataset:",
                                           choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
+                              selectInput("image_file_format", "Choose image file format:",
+                                          choices = c(".pdf",".eps",".png")),
                               downloadButton("downloadData", "Download")
                             ),
                             # Show a plot of the generated distribution
@@ -139,38 +141,38 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
            ### Panel B2 (remove): "Histogram"
            ### statistics for single image histograms
            
-           tabPanel("Histogram",
-                    sidebarLayout(
-                      sidebarPanel(
-                        #shinyFilesButton("file", "File select", "Please select a file", multiple = FALSE),
-                        fileInput("file1", "Choose CSV File",
-                                  accept = c( "text/csv",
-                                              "text/comma-separated-values,text/plain",
-                                              ".csv", ".xlsx")
-                        ),      
-                        tags$hr(),
-                        checkboxInput("header", "File upload", TRUE),
-                        sliderInput("bins",
-                                    "Number of bins:",
-                                    min = 1,
-                                    max = 30,
-                                    value = 10),
-                        sliderInput("max_golgi_nuclei_distance",
-                                    "Max. distance nuclei to golgi",
-                                    min = 0,
-                                    max = 5,
-                                    step = 0.1,
-                                    value = 5)
-                      ),
-                      # Show a plot of the generated distribution
-                      mainPanel(
-                        tabsetPanel(
-                          tabPanel("Plot", plotOutput("distPlot")), 
-                          tabPanel("OrientationPlot", plotOutput("orientationPlot")),
-                          tabPanel("Table", tableOutput("contents")),
-                          tabPanel("Summary", verbatimTextOutput("summary"))
-                        )
-                      ))),
+#           tabPanel("Histogram",
+#                    sidebarLayout(
+#                      sidebarPanel(
+#                        #shinyFilesButton("file", "File select", "Please select a file", multiple = FALSE),
+#                        fileInput("file1", "Choose CSV File",
+#                                  accept = c( "text/csv",
+#                                              "text/comma-separated-values,text/plain",
+#                                              ".csv", ".xlsx")
+#                        ),      
+#                        tags$hr(),
+#                        checkboxInput("header", "File upload", TRUE),
+#                        sliderInput("bins",
+#                                    "Number of bins:",
+#                                    min = 1,
+#                                    max = 30,
+#                                    value = 10),
+#                        sliderInput("max_golgi_nuclei_distance",
+#                                    "Max. distance nuclei to golgi",
+#                                    min = 0,
+#                                    max = 5,
+#                                    step = 0.1,
+#                                    value = 5)
+#                      ),
+#                      # Show a plot of the generated distribution
+#                      mainPanel(
+#                        tabsetPanel(
+#                          tabPanel("Plot", plotOutput("distPlot")), 
+#                          tabPanel("OrientationPlot", plotOutput("orientationPlot")),
+#                          tabPanel("Table", tableOutput("contents")),
+#                          tabPanel("Summary", verbatimTextOutput("summary"))
+#                        )
+#                      ))),
            
            ### Panel C: Compare 
            ### statistical comparison of two histograms
@@ -381,13 +383,19 @@ server <- function(input, output, session) {
     
     variance_degree  <- var(angle_degree)
     mean_degree <- mean.circular(angle_degree)
+    rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
+    rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
+    rayleigh_test <- rayleigh_test_res$p.value
+    rayleigh_test_mu <- rayleigh_test_mu_res$p.value
+    #print(struct(rayleight_test))
+    #print(struct(rayleight_test_mu))
     sd_degree  <- sd(angle_degree)
     median_degree  <- median(angle_degree)
     
     #entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
     #value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
-    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index", "signed_polarity_index")
-    value <- c(nrow(results_df), angle_mean_deg , polarity_index, signed_polarity_index)
+    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index", "signed_polarity_index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
+    value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, signed_polarity_index, rayleigh_test, rayleigh_test_mu)
     
     statistics_df <- data.frame(entity,value)
     
@@ -402,7 +410,7 @@ server <- function(input, output, session) {
     
     statistics_df <- mergedStatistics()
     statistics_df 
-  })
+  }, digits = 3)
   
   merged_plot <- reactive({
     
@@ -817,65 +825,6 @@ server <- function(input, output, session) {
     p1
   })
   
-
-    output$distPlot <- renderPlot({
-        
-        inFile <- input$file1
-        
-        if (is.null(inFile))
-            return(NULL)
-        
-        print(list.files(inFile$datapath))
-        
-        results_df <- read.csv(inFile$datapath, header = input$header)
-        
-        
-        results_df <- subset( results_df, results_df$distance < input$max_golgi_nuclei_distance)
-        
-        
-        x <- results_df$angle_deg
-
-        bin_size = 360/input$bins
-        
-        ggplot() +
-            geom_histogram(aes(results_df$angle_deg),
-                           breaks = seq(0, 360, bin_size),
-                           colour = "black",
-                           fill = "grey80") +
-            ggtitle("cellular orientation") +
-            theme(axis.text.x = element_text(size = 18)) +
-            coord_polar(start = -pi/2.0, direction = -1) +
-            scale_x_continuous(limits = c(0, 360),
-                               breaks = (c(0, 90, 180, 270))) +
-            theme_minimal(base_size = 14) +
-            xlab(paste0("n = ", length(results_df$angle_rad))) +
-            ylab("") +
-            theme(axis.text.y=element_blank()) +
-            scale_y_sqrt()
-    })
-    
-    
-    output$orientationPlot <- renderPlot({
-      
-        inFile <- input$file1
-        
-        if (is.null(inFile))
-            return(NULL)
-        
-        results_df <- read.csv(inFile$datapath, header = input$header)
-
-        scale_factor = 1.4453
-        
-        plot(NA,NA, xlim=c(0,10), ylim=c(0,10))
-        
-        Arrows(25,  975, 125, 975, lwd=10, arr.type="triangle", arr.width = 1.0, arr.col = "red", col="red")
-        
-        for(i in 1:nrow(results_df)){
-          row <- results_df[i,]
-          Arrows(row$X_nuclei*scale_factor,  row$Y_nuclei*scale_factor, row$X_golgi*scale_factor, row$Y_golgi*scale_factor, lwd=2, arr.type="triangle",arr.col = "yellow")
-          
-        }
-    })
     
     output$merge_nuclei_golgi <- renderPlot({
       
@@ -955,10 +904,11 @@ server <- function(input, output, session) {
           filename <- "statistics_file.csv"
         }
         if (input$dataset == "merged_plot_file"){
-          filename <- "merge_plot.pdf"
+          filename <- paste0("merge_plot", input$image_file_format)
         }
         if (input$dataset == "multi_plot_file"){
-          filename <- "multi_plot.pdf"
+          filename <- paste0("multi_plot", input$image_file_format)
+
         }
         return(filename)
       },
@@ -966,14 +916,38 @@ server <- function(input, output, session) {
         if (input$dataset == "statistics_file"){
           return(write.csv(mergedStatistics(), file, row.names = FALSE))
         }
-        else if (input$dataset == "multi_plot_file"){
-          pdf(file, width=14,height=14)
-          p <- multi_plot()
+        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
+            pdf(file, width=14, height=14)
+            p <- multi_plot()
+            plot(p)
+            dev.off()
+        }
+        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".png")) {
+            png(file, width=960, height=960)
+            p <- multi_plot()
+            plot(p)
+            dev.off()
+        }
+        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".eps")) {
+            eps(file, width=14, height=14)
+            p <- multi_plot()
+            plot(p)
+            dev.off()
+        }
+        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+          pdf(file, width=7,height=7)
+          p <- merged_plot()
           plot(p)
           dev.off()
         }
-        else if (input$dataset == "merged_plot_file"){
-          pdf(file, width=7,height=7)
+        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".png")){
+          png(file, width=960,height=960)
+          p <- merged_plot()
+          plot(p)
+          dev.off()
+        }
+        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+          eps(file, width=7,height=7)
           p <- merged_plot()
           plot(p)
           dev.off()
@@ -1026,64 +1000,50 @@ server <- function(input, output, session) {
     
     
     
+#TODO: delete
     
-    output$summary <- renderText({ 
-        
-        inFile <- input$file1
-        
-        if (is.null(inFile))
-            return(NULL)
-        
-        results_df <- read.csv(inFile$datapath, header = input$header)
-        
-        cos_sum <- 0.0
-        sin_sum <- 0.0
-        mean_angle <- 0.0
-        
-        for (row in 1:nrow(results_df)) {
-            #print(row)
-            cos_sum <- cos_sum + cos(results_df[row,"angle_rad"]) 
-            sin_sum <- sin_sum + sin(results_df[row,"angle_rad"]) 
-        }
-        
-        if ( nrow(results_df) > 0) {
-            #cos_sum <- cos_sum/nrow(results_df)
-            #sin_sum <- sin_sum/nrow(results_df)
-            mean_angle <- atan2(sin_sum/nrow(results_df),cos_sum/nrow(results_df))
-        }
-        
-        print(angular.variance(results_df$angle_rad))
-        #print(mean.circular(as.circular(results_df$angle_rad))*180.0/3.14)
-        
-        
-        
-        output1 <- paste0("Mean angle of the distribution ",mean_angle*180.0/3.14 ,"\n")
-        output2 <- paste0("Variance angle of the distribution ",angular.variance(results_df$angle_rad)*180.0/3.14 ,"\n")
-        
-        
-        
-        
-        
-        output3 <- "For details of the computation see (\"Mean_of_circular_quantities\")\n"
-        output4 <- "https://en.wikipedia.org/wiki/Mean_of_circular_quantities \n https://en.wikipedia.org/wiki/Directional_statistics"
-        print(paste0(output1,output2,output3,output4))
-        
-    })
-    
-    
-    output$contents <- renderTable({
-        # input$file1 will be NULL initially. After the user selects
-        # and uploads a file, it will be a data frame with 'name',
-        # 'size', 'type', and 'datapath' columns. The 'datapath'
-        # column will contain the local filenames where the data can
-        # be found.
-        inFile <- input$file1
-        
-        if (is.null(inFile))
-            return(NULL)
-        
-        read.csv(inFile$datapath, header = input$header)
-    })
+#    output$summary <- renderText({ 
+#        
+#        inFile <- input$file1
+#        
+#        if (is.null(inFile))
+#            return(NULL)
+#        
+#        results_df <- read.csv(inFile$datapath, header = input$header)
+#        
+#        cos_sum <- 0.0
+#        sin_sum <- 0.0
+#        mean_angle <- 0.0
+#        
+#        for (row in 1:nrow(results_df)) {
+#            #print(row)
+#            cos_sum <- cos_sum + cos(results_df[row,"angle_rad"]) 
+#            sin_sum <- sin_sum + sin(results_df[row,"angle_rad"]) 
+#        }
+#        
+#        if ( nrow(results_df) > 0) {
+#            #cos_sum <- cos_sum/nrow(results_df)
+#            #sin_sum <- sin_sum/nrow(results_df)
+#            mean_angle <- atan2(sin_sum/nrow(results_df),cos_sum/nrow(results_df))
+#        }
+#        
+#        print(angular.variance(results_df$angle_rad))
+#        #print(mean.circular(as.circular(results_df$angle_rad))*180.0/3.14)
+#        
+#        
+#        
+#        output1 <- paste0("Mean angle of the distribution ",mean_angle*180.0/3.14 ,"\n")
+#        output2 <- paste0("Variance angle of the distribution ",angular.variance(results_df$angle_rad)*180.0/3.14 ,"\n")
+#        
+#        
+#        
+#        
+#        
+#        output3 <- "For details of the computation see (\"Mean_of_circular_quantities\")\n"
+#        output4 <- "https://en.wikipedia.org/wiki/Mean_of_circular_quantities \n https://en.wikipedia.org/wiki/Directional_statistics"
+#        print(paste0(output1,output2,output3,output4))
+#        
+#    })
     
     ### Panel C
     
