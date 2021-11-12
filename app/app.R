@@ -38,7 +38,7 @@ vals <- reactiveValues(count=0)
 
 ###### UI: User interface #########
 
-ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.1)",
+ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity data (beta 0.2)",
                  
                 ### Panel A: Image stack histogram
                  
@@ -59,6 +59,8 @@ ui <- navbarPage("PolApp - a web app for visualizing cell polarity data (beta 0.
                                           max = 50,
                                           step = 0.1,
                                           value = 30),
+                              selectInput("feature_select", "Choose a feature:",
+                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","marker_polarity")),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               selectInput("dataset", "Choose a dataset:",
@@ -429,25 +431,45 @@ server <- function(input, output, session) {
     values <- compute_polarity_index(results_all_df)
     print(values)
     
+    #choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","marker_polarity"))
+ 
     
+
+    feature <- "angle_rad"
+    plot_title <- "cellular orientation"
+
+    if (input$feature_select == "major_axis_shape_orientation")
+    {
+        feature <- 'shape_orientation'
+        plot_title <- "axial orientation of major axis"
+    }
+    
+    #print(feature)
+    #x_data <- results_all_df$angle_deg
+    #print(x_data)
+    x_data <- unlist(results_all_df[feature])*180.0/pi
+    #print("feature")
+    print(x_data)
     #polarity_index <- values[["polarity_index"]]
     #angle_mean_deg <- values[["angle_mean_deg"]]
     #values <- data.frame(values)
     #print(values)
     
     p <- ggplot() +
-      geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
+      #geom_histogram(aes(x = results_all_df[feature], y = ..ncount..),
+      #geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
+      geom_histogram(aes(x = x_data, y = ..ncount..),
                      breaks = seq(0, 360, bin_size),
                      colour = "black",
                      fill = "black",
                      alpha = 0.5) +
-      ggtitle("cellular orientation") +
+      #ggtitle(plot_title) +
       theme(axis.text.x = element_text(size = 18)) +
       coord_polar(start = -pi/2.0, direction = -1) +
       scale_x_continuous(limits = c(0, 360),
                          breaks = (c(0, 90, 180, 270))) +
       theme_minimal(base_size = 14) +
-      xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df$angle_rad), exp_condition)) +
+      xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df[feature]), exp_condition)) +
       ylab("polarity index") 
       #theme(axis.text.y=element_blank()) +
     
