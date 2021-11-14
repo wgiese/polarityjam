@@ -14,7 +14,7 @@ library(ggplot2)
 ## Read data
 
 ```{r read_data}
-filepath <- "../test_data/120821_BSA_01.csv"
+filepath <- "../test_data/stack_EC_microscopy/120821 BSA #01.csv"
 
 ec_features <- read.csv(file = filepath)
 #summary(ec_features)
@@ -26,25 +26,7 @@ You can also embed plots, for example:
 
 ```{r select_features, echo=TRUE}
 print(head(ec_features))
-#ec_features_select <- ec_features[,c("area", "perimeter", "mean_expression", "major_axis_length", "minor_axis_length", "shape_orientation", "angle_rad")]
 ec_features_select <- ec_features[,c("area", "perimeter",  "major_axis_length", "minor_axis_length", "shape_orientation", "angle_rad", "shape_orientation_nuc")]
-for(i in 1:nrow(ec_features_select)) {
-    row <- ec_features_select[i,]
-    shape_orientation_adj = row$shape_orientation
-    shape_orientation_nuc_adj = row$shape_orientation_nuc
-    if( row$shape_orientation < 3.1415926/2.0) {
-      shape_orientation_adj = row$shape_orientation + 3.1415926
-    }
-    if( row$shape_orientation_nuc< 3.1415926/2.0) {
-      shape_orientation_nuc_adj = row$shape_orientation_nuc + 3.1415926
-    }
-    ec_features_select[i,"shape_orientation_adj"] = shape_orientation_adj 
-    ec_features_select[i,"shape_orientation_nuc_adj"] = shape_orientation_nuc_adj 
-    # do stuff with row
-}
-print(ec_features_select[3,])
-
-
 print(head(ec_features_select))
 #plot(pressure)
 ```

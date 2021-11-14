@@ -38,7 +38,7 @@ vals <- reactiveValues(count=0)
 
 ###### UI: User interface #########
 
-ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity data (beta 0.2)",
+ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta 0.2)",
                  
                 ### Panel A: Image stack histogram
                  
