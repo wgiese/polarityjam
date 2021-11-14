@@ -437,27 +437,23 @@ server <- function(input, output, session) {
 
     feature <- "angle_rad"
     plot_title <- "cellular orientation"
+ 
+    x_data <- unlist(results_all_df[feature])*180.0/pi
+
+    source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+
 
     if (input$feature_select == "major_axis_shape_orientation")
     {
         feature <- 'shape_orientation'
         plot_title <- "axial orientation of major axis"
+        
+        x_data <- results_all_df[feature]        
+        print(x_data)
+        x_data <- unlist(transform_2_axial(x_data))*180.0/pi
     }
     
-    #print(feature)
-    #x_data <- results_all_df$angle_deg
-    #print(x_data)
-    x_data <- unlist(results_all_df[feature])*180.0/pi
-    #print("feature")
-    print(x_data)
-    #polarity_index <- values[["polarity_index"]]
-    #angle_mean_deg <- values[["angle_mean_deg"]]
-    #values <- data.frame(values)
-    #print(values)
-    
     p <- ggplot() +
-      #geom_histogram(aes(x = results_all_df[feature], y = ..ncount..),
-      #geom_histogram(aes(x = results_all_df$angle_deg, y = ..ncount..),
       geom_histogram(aes(x = x_data, y = ..ncount..),
                      breaks = seq(0, 360, bin_size),
                      colour = "black",
