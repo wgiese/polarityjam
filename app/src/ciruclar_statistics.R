@@ -41,3 +41,4 @@ compute_polarity_index <- function(polarity_data) {
   
   return(values)
 }
+

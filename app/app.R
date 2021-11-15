@@ -53,17 +53,30 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                           "Number of bins:",
                                           min = 1,
                                           max = 30,
-                                          value = 10),
-                              sliderInput("max_golgi_nuclei_distance",
-                                          "Max. distance nuclei to golgi",
+                                          value = 12),
+                              sliderInput("min_eccentricity",
+                                          "Mininum eccentricity",
                                           min = 0,
-                                          max = 50,
+                                          max = 1,
                                           step = 0.1,
-                                          value = 30),
+                                          value = 0.0),
+                              sliderInput("min_nuclei_golgi_dist",
+                                          "Minimum nuclei golgi distance",
+                                          min = 0,
+                                          max = 10,
+                                          step = 1,
+                                          value = 0),
+                              #sliderInput("max_golgi_nuclei_distance",
+                              #            "Max. distance nuclei to golgi",
+                              #            min = 0,
+                              #            max = 50,
+                              #            step = 0.1,
+                              #            value = 30),
                               selectInput("feature_select", "Choose a feature:",
-                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","mean_expression","area","perimeter")),
+                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
+                              checkboxInput("left_axial", "2-axial hist on left", FALSE),
                               selectInput("dataset", "Choose a dataset:",
                                           choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
                               selectInput("image_file_format", "Choose image file format:",
@@ -369,10 +382,10 @@ server <- function(input, output, session) {
     print("Data Frame:")
     print(head(results_df))
     
-    threshold <- input$max_golgi_nuclei_distance
-    if ("distance" %in% colnames(results_df)){
-      results_df <- subset(results_df, results_df$distance < threshold)
-    }
+    #threshold <- input$max_golgi_nuclei_distance
+    #if ("distance" %in% colnames(results_df)){
+    #  results_df <- subset(results_df, results_df$distance < threshold)
+    #}
     
     source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
 
@@ -422,12 +435,34 @@ server <- function(input, output, session) {
     
     parameters <- fromJSON(file = "parameters/parameters.json")
     
+    
     results_all_df <- mergedStack()
     
-    threshold <- input$max_golgi_nuclei_distance
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance < threshold)
+    for(i in 1:nrow(results_all_df)) {
+      row <- results_all_df[i,]
+      a <- row$major_axis_length
+      b <- row$minor_axis_length
+      
+      eccentricity <- sqrt(1.0 - b*b/(a*a))
+      results_all_df[i,"eccentricity"] = eccentricity 
     }
+    
+    
+    threshold <- input$min_eccentricity
+    if ("eccentricity" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+    }
+    threshold <- input$min_nuclei_golgi_dist
+    if ("distance" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+    }
+    
+    
+    
+    #threshold <- input$max_golgi_nuclei_distance
+    #if ("distance" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$distance < threshold)
+    #}
     
     bin_size = 360/input$bins
     exp_condition <- input$exp_condition
@@ -451,8 +486,7 @@ server <- function(input, output, session) {
 
     
 
-
-
+   
     
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
@@ -464,14 +498,18 @@ server <- function(input, output, session) {
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
       
       x_data <- results_all_df[feature]        
-      print(x_data)
-      #x_data <- unlist(transform_2_axial(x_data))*180.0/pi
-      x_data <- unlist(results_all_df[feature])*180.0/pi
+      #print(x_data)
+      if (input$left_axial) {
+        x_data <- unlist(transform_2_axial(x_data))*180.0/pi
+      } else {
+        x_data <- unlist(results_all_df[feature])*180.0/pi
+      }
       p <- rose_plot_2_axial(parameters, input, x_data)
       
     } else {
       
       x_data <- unlist(results_all_df[feature])
+      print(x_data)
       p <- linear_histogram(parameters, input, x_data)
     }
     

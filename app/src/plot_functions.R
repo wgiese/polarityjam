@@ -32,7 +32,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular) 
     scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
     theme_minimal(base_size = 14) +
-   # xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df[feature]), exp_condition)) +
+    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) +
     ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
@@ -62,7 +62,7 @@ rose_plot_2_axial <- function(parameters, input, feature_circular) {
     scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
     theme_minimal(base_size = 14) +
-    # xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df[feature]), exp_condition)) +
+    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) +
     ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
