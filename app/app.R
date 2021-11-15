@@ -447,7 +447,6 @@ server <- function(input, output, session) {
       results_all_df[i,"eccentricity"] = eccentricity 
     }
     
-    
     threshold <- input$min_eccentricity
     if ("eccentricity" %in% colnames(results_all_df)){
       results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
@@ -457,37 +456,12 @@ server <- function(input, output, session) {
       results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
     }
     
-    
-    
-    #threshold <- input$max_golgi_nuclei_distance
-    #if ("distance" %in% colnames(results_all_df)){
-    #  results_all_df <- subset(results_all_df, results_all_df$distance < threshold)
-    #}
-    
     bin_size = 360/input$bins
     exp_condition <- input$exp_condition
     datapath <- stack_data_info$datapath 
 
-    
-    #values <- compute_polarity_index(results_all_df)
-    #print(values)
-    
-    
-    
-    
-    #choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","marker_polarity"))
- 
-    
-
     feature <- parameters[input$feature_select][[1]][1]
-    plot_title <- "cellular orientation"
- 
-    #x_data <- unlist(results_all_df[feature])*180.0/pi
 
-    
-
-   
-    
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
       statistics <- compute_polarity_index(results_all_df)
@@ -525,12 +499,17 @@ server <- function(input, output, session) {
   
   multi_plot <- reactive({
     
+    source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    
+    parameters <- fromJSON(file = "parameters/parameters.json")
+    
+    
     datapath <- stack_data_info$datapath
     print(datapath)
     
     file_list <- list.files(datapath)
     print(file_list)
-    
     
     i <- 1
     angle_dists <- list()
@@ -540,20 +519,39 @@ server <- function(input, output, session) {
     
     results_all_df <- mergedStack()
     
+    for(row_nr in 1:nrow(results_all_df)) {
+      row <- results_all_df[row_nr,]
+      a <- row$major_axis_length
+      b <- row$minor_axis_length
+      
+      eccentricity <- sqrt(1.0 - b*b/(a*a))
+      results_all_df[row_nr,"eccentricity"] = eccentricity 
+    }
+    
+    threshold <- input$min_eccentricity
+    if ("eccentricity" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+    }
+    threshold <- input$min_nuclei_golgi_dist
+    if ("distance" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+    }
+    
+    feature <- parameters[input$feature_select][[1]][1]
+    
     plist <- vector('list', length(unique(results_all_df$filename)))
-    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
     
     for(file_name in unique(results_all_df$filename)) {
       results_df <- subset(results_all_df, results_all_df$filename == file_name )
       
-      
-      
       values <- compute_polarity_index(results_df)
+      
+      
       print(values)
       polarity_index <- values[["polarity_index"]]
       angle_mean_deg <- values[["angle_mean_deg"]]
       
-      x <- results_df$angle_deg
+      x <- unlist(results_df[feature])
       angle_dists[[i]] <- x
       file_names[[i]] <- file_name
       polarity_indices[[i]] <- polarity_index
@@ -574,38 +572,58 @@ server <- function(input, output, session) {
       file_name <- file_names[[i]]
       polarity_index <- polarity_indices[[i]]
       angle_mean_deg <- angle_mean_degs[[i]]
-      p <- ggplot() +
-        geom_histogram(aes(angle_dist, y = ..ncount..),
-                       breaks = seq(0, 360, bin_size),
-                       colour = "black",
-                       fill = "black",
-                       alpha = 0.5) +
-        ggtitle(file_name) +
-        #theme(axis.text.x = element_text(size = 18)) +
-        coord_polar(start = -pi/2.0, direction = -1) +
-        scale_x_continuous(limits = c(0, 360),
-                           breaks = (c(0, 90, 180, 270))) +
-        #theme_minimal(base_size = 14) +
-        xlab(sprintf("number of cells = : %s \n polarity index: %.2f \n mean angle: %.2f", length(angle_dist), polarity_index, angle_mean_deg)) +
-        ylab("")
-        #theme(axis.text.y=element_blank()) +
       
-      if (input$area_scaled) {
-          p <- p + scale_y_sqrt()
+      results_df <- subset(results_all_df, results_all_df$filename == file_name)
+      
+      
+      if (parameters[input$feature_select][[1]][2] == "axial") {
+        statistics <- compute_polarity_index(results_df)
+        x_data <- unlist(results_df[feature])*180.0/pi
+        p <- rose_plot_circular(parameters, input, statistics, x_data)
+        
+      }
+      else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+        
+        x_data <- results_df[feature]        
+        #print(x_data)
+        if (input$left_axial) {
+          x_data <- unlist(transform_2_axial(x_data))*180.0/pi
+        } else {
+          x_data <- unlist(results_df[feature])*180.0/pi
+        }
+        p <- rose_plot_2_axial(parameters, input, x_data)
+        
+      } else {
+        
+        x_data <- unlist(results_df[feature])
+        p <- linear_histogram(parameters, input, x_data)
       }
       
-      #xlab(paste0("n = ", length(angle_dist))) +
-      #ylab("") +
-      #theme(axis.text.y=element_blank()) +
-      #scale_y_sqrt()
       
+      #p <- ggplot() +
+      #  geom_histogram(aes(angle_dist, y = ..ncount..),
+      #                 breaks = seq(0, 360, bin_size),
+      #                 colour = "black",
+      #                 fill = "black",
+      #                 alpha = 0.5) +
+      #  ggtitle(file_name) +
+      #  #theme(axis.text.x = element_text(size = 18)) +
+      #  coord_polar(start = -pi/2.0, direction = -1) +
+      #  scale_x_continuous(limits = c(0, 360),
+      #                     breaks = (c(0, 90, 180, 270))) +
+      #  #theme_minimal(base_size = 14) +
+      #  xlab(sprintf("number of cells = : %s \n polarity index: %.2f \n mean angle: %.2f", length(angle_dist), polarity_index, angle_mean_deg)) +
+      #  ylab("")
+      #  #theme(axis.text.y=element_blank()) +
       
+      #if (input$area_scaled) {
+      #    p <- p + scale_y_sqrt()
+      #}
       
-      p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.05, color="red", lineend = "butt"), arrow = arrow())+
-        #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
-        #theme(legend.title=element_blank())
-        theme(legend.position = "none")
-      #p
+
+      #p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.05, color="red", lineend = "butt"), arrow = arrow())+
+      #  theme(legend.position = "none")
+
     }
     
     #plotseries(2)
