@@ -31,6 +31,7 @@ library(CircStats)
 library(readxl)
 #library(ggimage) 
 library(fs)
+library(rjson)
 
 
 # Create a reactive object here that we can share between all the sessions.
@@ -60,7 +61,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                           step = 0.1,
                                           value = 30),
                               selectInput("feature_select", "Choose a feature:",
-                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","marker_polarity")),
+                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","mean_expression","area","perimeter")),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               selectInput("dataset", "Choose a dataset:",
@@ -416,6 +417,11 @@ server <- function(input, output, session) {
   
   merged_plot <- reactive({
     
+    source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    
+    parameters <- fromJSON(file = "parameters/parameters.json")
+    
     results_all_df <- mergedStack()
     
     threshold <- input$max_golgi_nuclei_distance
@@ -427,57 +433,49 @@ server <- function(input, output, session) {
     exp_condition <- input$exp_condition
     datapath <- stack_data_info$datapath 
 
-    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
-    values <- compute_polarity_index(results_all_df)
-    print(values)
+    
+    #values <- compute_polarity_index(results_all_df)
+    #print(values)
+    
+    
+    
     
     #choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","marker_polarity"))
  
     
 
-    feature <- "angle_rad"
+    feature <- parameters[input$feature_select][[1]][1]
     plot_title <- "cellular orientation"
  
-    x_data <- unlist(results_all_df[feature])*180.0/pi
+    #x_data <- unlist(results_all_df[feature])*180.0/pi
 
-    source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+    
 
 
-    if (input$feature_select == "major_axis_shape_orientation")
-    {
-        feature <- 'shape_orientation'
-        plot_title <- "axial orientation of major axis"
-        
-        x_data <- results_all_df[feature]        
-        print(x_data)
-        x_data <- unlist(transform_2_axial(x_data))*180.0/pi
+
+    
+    if (parameters[input$feature_select][[1]][2] == "axial") {
+      
+      statistics <- compute_polarity_index(results_all_df)
+      x_data <- unlist(results_all_df[feature])*180.0/pi
+      p <- rose_plot_circular(parameters, input, statistics, x_data)
+      
+    }
+    else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+      
+      x_data <- results_all_df[feature]        
+      print(x_data)
+      #x_data <- unlist(transform_2_axial(x_data))*180.0/pi
+      x_data <- unlist(results_all_df[feature])*180.0/pi
+      p <- rose_plot_2_axial(parameters, input, x_data)
+      
+    } else {
+      
+      x_data <- unlist(results_all_df[feature])
+      p <- linear_histogram(parameters, input, x_data)
     }
     
-    p <- ggplot() +
-      geom_histogram(aes(x = x_data, y = ..ncount..),
-                     breaks = seq(0, 360, bin_size),
-                     colour = "black",
-                     fill = "black",
-                     alpha = 0.5) +
-      #ggtitle(plot_title) +
-      theme(axis.text.x = element_text(size = 18)) +
-      coord_polar(start = -pi/2.0, direction = -1) +
-      scale_x_continuous(limits = c(0, 360),
-                         breaks = (c(0, 90, 180, 270))) +
-      theme_minimal(base_size = 14) +
-      xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df[feature]), exp_condition)) +
-      ylab("polarity index") 
-      #theme(axis.text.y=element_blank()) +
-    
-  if (input$area_scaled) {
-      p <- p + scale_y_sqrt()
-  }
-
-  p <- p + geom_segment(data = values, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow())+
-        #scale_linetype_manual("segment legend",values=c("segment legend"=2)) +
-        #theme(legend.title=element_blank())
-        theme(legend.position = "none") 
-  p
+    p
 
   })  
   
