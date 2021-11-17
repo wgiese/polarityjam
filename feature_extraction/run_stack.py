@@ -62,7 +62,7 @@ for ind, filepath in enumerate(file_list):
     print(np.max(cellpose_mask))
     #nuclei_mask = functions.get_nuclei_mask(parameters, img, cellpose_mask)
     #golgi_mask = functions.get_golgi_mask(parameters, img, cellpose_mask)
-    properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, filename)
+    properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, filename, output_path)
     
     
     print(properties_df.head())

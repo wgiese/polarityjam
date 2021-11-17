@@ -161,6 +161,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             orientation = np.pi/2.0 - props.orientation
             minor_axis_length = props.minor_axis_length
             major_axis_length = props.major_axis_length
+            eccentricity = props.eccentricity
             area = props.area
             perimeter = props.perimeter     
 
@@ -174,6 +175,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         single_cell_props.at[counter, "flow_shape_alignment"] = np.sin(orientation) # assumes flow from left to right anlong x-axis
         single_cell_props.at[counter, "major_axis_length"] = major_axis_length
         single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
+        single_cell_props.at[counter, "eccentricity"] = eccentricity
         single_cell_props.at[counter, "area"] = area
         single_cell_props.at[counter, "perimeter"] = perimeter
         
