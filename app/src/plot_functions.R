@@ -20,13 +20,16 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular) 
   
   bin_size = 360/input$bins
   
+  #feature <- parameters[input$feature_select][[1]][1]
+  plot_title <- parameters[input$feature_select][[1]][3]
+  
   p <- ggplot() +
     geom_histogram(aes(x = feature_circular, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
                    colour = "black",
                    fill = "black",
                    alpha = 0.5) +
-    #ggtitle(plot_title) +
+    ggtitle(plot_title) +
     theme(axis.text.x = element_text(size = 18)) +
     coord_polar(start = -pi/2.0, direction = -1) +
     scale_x_continuous(limits = c(0, 360),
@@ -49,6 +52,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular) 
 rose_plot_2_axial <- function(parameters, input, feature_circular) {
   
   #bin_size = 360/input$bins
+  plot_title <- parameters[input$feature_select][[1]][3]
   
   p <- ggplot() +
     geom_histogram(aes(x = feature_circular, y = ..ncount..),
@@ -56,14 +60,14 @@ rose_plot_2_axial <- function(parameters, input, feature_circular) {
                    colour = "black",
                    fill = "black",
                    alpha = 0.5) +
-    #ggtitle(plot_title) +
+    ggtitle(plot_title) +
     theme(axis.text.x = element_text(size = 18)) +
     coord_polar(start = -pi/2.0, direction = -1) +
     scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
     theme_minimal(base_size = 14) +
-    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) +
-    ylab("polarity index") 
+    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) #+
+    #ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
   if (input$area_scaled) {
@@ -77,6 +81,7 @@ rose_plot_2_axial <- function(parameters, input, feature_circular) {
 linear_histogram <- function(parameters, input, feature_linear) {
   
   bin_size = max(feature_linear)/input$bins
+  plot_title <- parameters[input$feature_select][[1]][3]
   
   p <- ggplot() +
     geom_histogram(aes(x = feature_linear, y = ..ncount..),
@@ -84,10 +89,10 @@ linear_histogram <- function(parameters, input, feature_linear) {
                    colour = "black",
                    fill = "black",
                    alpha = 0.5) +
-    #ggtitle(plot_title) +
+    ggtitle(plot_title) +
     theme(axis.text.x = element_text(size = 18)) +
-    theme_minimal(base_size = 14)
-    # xlab(sprintf("number of cells = : %s \n condition: %s", length(results_all_df[feature]), exp_condition)) +
+    theme_minimal(base_size = 14) +
+    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
 
   return(p)
   

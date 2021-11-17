@@ -1,9 +1,9 @@
 { 
-   "nuclei_golgi_polarity": ["angle_rad","axial"],
-   "major_axis_shape_orientation": ["shape_orientation", "2-axial"],
-   "major_axis_nucleus_orientation": ["shape_orientation_nuc","2-axial"],
-   "eccentricity": ["eccentricity", "linear"],
-   "mean_expression": ["mean_expression", "linear"],
-   "perimeter": ["perimeter", "linear"],
-   "area": ["area", "linear"]
+   "nuclei_golgi_polarity": ["angle_rad","axial", "cell polarity"],
+   "major_axis_shape_orientation": ["shape_orientation", "2-axial", "cell shape orientation"],
+   "major_axis_nucleus_orientation": ["shape_orientation_nuc","2-axial", "nucleus shape orientation"],
+   "eccentricity": ["eccentricity", "linear", "eccentricity"],
+   "mean_expression": ["mean_expression", "linear", "mean intensity"],
+   "perimeter": ["perimeter", "linear", "perimeter"],
+   "area": ["area", "linear", "area"]
 }
