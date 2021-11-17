@@ -212,12 +212,32 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
                 mean_expression = props.mean_intensity
                 area_cell = props.area
                 x_weighted, y_weighted = props.weighted_centroid
-
+                x_cell, y_cell = props.centroid
+            
             single_cell_props.at[counter, "mean_expression"] = mean_expression
             single_cell_props.at[counter, "sum_expression"] = mean_expression*area_cell
             single_cell_props.at[counter, "X_weighted"] = x_weighted
             single_cell_props.at[counter, "Y_weighted"] = y_weighted
- 
+             
+            distance2 = (x_cell - x_weighted)**2
+            distance2 += (y_cell - y_weighted)**2
+            
+            single_cell_props.at[counter, "maker_vec_norm"] = np.sqrt(distance2)
+            
+            vec_x = x_weighted - x_cell
+            vec_y = y_weighted - y_cell
+            angle_rad_ = np.arctan2(vec_x, vec_y)
+            
+            angle_rad = angle_rad_
+            
+            if (angle_rad_ < 0.0):
+                angle_rad = 2.0*np.pi + angle_rad_
+            
+            single_cell_props.at[counter, "marker_polarity_rad"] = angle_rad
+            single_cell_props.at[counter, "marker_polarity_deg"] = 180.0*angle_rad/np.pi   
+        
+
+
             
             if parameters["channel_nucleus"] >= 0:
                 regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
@@ -293,6 +313,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         plot_fcts.plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask], single_cell_props, filename)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
         plot_fcts.plot_alignment(parameters, im_junction, [cell_mask], single_cell_props, filename)
+    if parameters["plot_ratio_method"]:
+        plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename)
 
 
     return single_cell_props
