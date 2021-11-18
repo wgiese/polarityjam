@@ -316,4 +316,64 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
 
     return 0
 
+def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filename):
+
+    output_path = parameters['output_path']
+    output_filename = parameters["output_filename"]
+    output_filepath = output_path + output_filename
+
+    sub_figs = len(masks)
+    fig, ax = plt.subplots(1, sub_figs)
+
+    cell_mask = masks[0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
+    ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+
+    outlines_cell = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+
+    for label in range(1,np.max(cell_mask)+1):
+        single_cell_mask = np.where(cell_mask ==label, 1, 0)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
+        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        outlines_cell += outline_cell_
+
+    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
+    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+
+
+    for index, row in single_cell_props.iterrows():
+        orientation = row['shape_orientation']
+        x0 = row['X_cell']
+        y0 = row['Y_cell']
+        
+        
+        x1 = x0 + math.sin(np.pi/4.0) * 0.5 * row['major_axis_length']
+        y1 = y0 + math.cos(np.pi/4.0) * 0.5 * row['major_axis_length']
+        x2 = x0 + math.cos(np.pi/4.0) * 0.5 * row['major_axis_length']
+        y2 = y0 - math.sin(np.pi/4.0) * 0.5 * row['major_axis_length']
+        
+        ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+        ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+        ax.plot(y0, x0, '.b', markersize=5)
+        
+        x1 = x0 - math.sin(np.pi/4.0) * 0.5 * row['major_axis_length']
+        y1 = y0 - math.cos(np.pi/4.0) * 0.5 * row['major_axis_length']
+        x2 = x0 - math.cos(np.pi/4.0) * 0.5 * row['major_axis_length']
+        y2 = y0 + math.sin(np.pi/4.0) * 0.5 * row['major_axis_length']
+        
+        ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
+        ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+        ax.plot(y0, x0, '.b', markersize=5)
+               
+        ax.set_title("ratio method")
+        ax.set_xlim(0,im_junction.shape[0])
+        ax.set_ylim(0,im_junction.shape[1])
+    
+    plt.tight_layout()
+    plt.savefig(output_path + filename + "_ratio_method.pdf")
+    plt.savefig(output_path + filename + "_ratio_method.png")
+
+    return 0
+
 

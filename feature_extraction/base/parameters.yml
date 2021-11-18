@@ -4,15 +4,19 @@ output_path : "/path/to/output/"
 
 ##  source data/ output folders for run.py
 
-image_path : "/path/to/imagefile.tif"
+image_filename : "/path/to/imagefile.tif"
 output_filename : "image001"
 
 
 ##  source data/ output folders for run_stack.py
 
-input_path : "/path/to/imagefile.tif"
+input_path : "/path/to/image/folder/"
 
 ## cellpose/segmentation parameters
+
+#in case a manually annotated cellpose mask exists
+manually_annotated_mask: "" 
+use_given_mask: False
 
 use_gpu:  False
 clear_border: True
@@ -26,6 +30,7 @@ min_golgi_size: 10
 plot_polarity: True
 plot_marker: True
 plot_alignment: True
+plot_ratio_method: False
 
 outline_width : 2
 show_polarity_angles: True

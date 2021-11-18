@@ -67,7 +67,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                           step = 1,
                                           value = 0),
                               selectInput("feature_select", "Choose a feature:",
-                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","marker_polarity","area","perimeter")),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               checkboxInput("left_axial", "2-axial hist on left", FALSE),
@@ -387,11 +387,17 @@ server <- function(input, output, session) {
     datapath <- stack_data_info$datapath 
 
     feature <- parameters[input$feature_select][[1]][1]
+    
+    print("Feature:")
+    print(feature)
 
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
-      statistics <- compute_polarity_index(results_all_df)
+      print("Axial feature!")
+      
+      
       x_data <- unlist(results_all_df[feature])*180.0/pi
+      statistics <- compute_polarity_index(unlist(results_all_df[feature]))
       p <- rose_plot_circular(parameters, input, statistics, x_data)
       
     }
@@ -470,18 +476,18 @@ server <- function(input, output, session) {
     for(file_name in unique(results_all_df$filename)) {
       results_df <- subset(results_all_df, results_all_df$filename == file_name )
       
-      values <- compute_polarity_index(results_df)
+      #values <- compute_polarity_index(results_df)
       
       
-      print(values)
-      polarity_index <- values[["polarity_index"]]
-      angle_mean_deg <- values[["angle_mean_deg"]]
+      #print(values)
+      #polarity_index <- values[["polarity_index"]]
+      #angle_mean_deg <- values[["angle_mean_deg"]]
       
       x <- unlist(results_df[feature])
       angle_dists[[i]] <- x
       file_names[[i]] <- file_name
-      polarity_indices[[i]] <- polarity_index
-      angle_mean_degs[[i]] <- angle_mean_deg
+      #polarity_indices[[i]] <- polarity_index
+      #angle_mean_degs[[i]] <- angle_mean_deg
       i <- i+1
       
     }
@@ -496,14 +502,14 @@ server <- function(input, output, session) {
     plotseries <- function(i){
       angle_dist <- angle_dists[[i]]
       file_name <- file_names[[i]]
-      polarity_index <- polarity_indices[[i]]
-      angle_mean_deg <- angle_mean_degs[[i]]
+      #polarity_index <- polarity_indices[[i]]
+      #angle_mean_deg <- angle_mean_degs[[i]]
       
       results_df <- subset(results_all_df, results_all_df$filename == file_name)
       
       
       if (parameters[input$feature_select][[1]][2] == "axial") {
-        statistics <- compute_polarity_index(results_df)
+        statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature])*180.0/pi
         p <- rose_plot_circular(parameters, input, statistics, x_data)
         
