@@ -379,7 +379,7 @@ server <- function(input, output, session) {
     }
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
     }
     
     bin_size = 360/input$bins
@@ -466,7 +466,7 @@ server <- function(input, output, session) {
     }
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
     }
     
     feature <- parameters[input$feature_select][[1]][1]
