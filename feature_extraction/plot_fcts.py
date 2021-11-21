@@ -97,7 +97,12 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
     outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
 
-    for label in range(1,np.max(cell_mask)+1):
+    #for label in range(1,np.max(cell_mask)+1):
+    for label in np.unique(cell_mask):
+        
+        if label == 0:
+            continue
+
         single_cell_mask = np.where(cell_mask ==label, 1, 0)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
         outline_cell_ = np.where(outline_cell == True, 30, 0)
@@ -171,7 +176,12 @@ def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filena
     
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
 
-    for label in range(1,np.max(cell_mask)+1):
+    #for label in range(1,np.max(cell_mask)+1):
+    for label in np.unique(cell_mask):
+        
+        if label == 0:
+            continue
+
         single_cell_mask = np.where(cell_mask ==label, 1, 0)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
         outline_cell_ = np.where(outline_cell == True, 30, 0)
@@ -332,7 +342,13 @@ def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filenam
 
     outlines_cell = np.zeros((im_junction.shape[0], im_junction.shape[1]))
 
-    for label in range(1,np.max(cell_mask)+1):
+    #for label in range(1,np.max(cell_mask)+1):
+
+    for label in np.unique(cell_mask):
+        
+        if label == 0:
+            continue
+
         single_cell_mask = np.where(cell_mask ==label, 1, 0)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
         outline_cell_ = np.where(outline_cell == True, 30, 0)
