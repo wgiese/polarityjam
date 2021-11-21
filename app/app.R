@@ -90,7 +90,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                  
 
             
-           ### Panel B1: Single image analysis
+           ### Panel B: Correlation analysis
 
            tabPanel("Correlation analysis",
                     sidebarLayout(
@@ -114,7 +114,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                       ),
                       mainPanel(
                       tabsetPanel(
-                        tabPanel("Plot", plotOutput("merge_nuclei_golgi", height = "1000px"))#,
+                        tabPanel("Plot", plotOutput("correlation_plot", height = "1000px"))#,
                         #tabPanel("Statistics", tableOutput("singleImageStatistics"))
                       )
                       ))),
@@ -379,7 +379,7 @@ server <- function(input, output, session) {
     }
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
     }
     
     bin_size = 360/input$bins
@@ -466,7 +466,7 @@ server <- function(input, output, session) {
     }
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity > threshold)
+      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
     }
     
     feature <- parameters[input$feature_select][[1]][1]
@@ -692,15 +692,20 @@ server <- function(input, output, session) {
       print(inFileCorrelationData$datapath)
       correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
       
-      feature <- parameters[input$feature_select][[1]][1]
+      feature_1 <- parameters[input$feature_select_1][[1]][1]
+      feature_2 <- parameters[input$feature_select_2][[1]][1]
       
+      plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
+      colnames(plot_df) <- c("x","y")
+      p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point()
+      p
       
     })
     
     output$correlation_plot <- renderPlot({
       
-      plot_correlation()
-      
+      p <- plot_correlation()
+      p
     })  
     
     
