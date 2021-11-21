@@ -393,12 +393,13 @@ server <- function(input, output, session) {
 
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
-      print("Axial feature!")
+        print("Axial feature!")
       
       
-      x_data <- unlist(results_all_df[feature])*180.0/pi
-      statistics <- compute_polarity_index(unlist(results_all_df[feature]))
-      p <- rose_plot_circular(parameters, input, statistics, x_data)
+        x_data <- unlist(results_all_df[feature])*180.0/pi
+        statistics <- compute_polarity_index(unlist(results_all_df[feature]))
+        plot_title <- parameters[input$feature_select][[1]][3]
+        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title)
       
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -410,13 +411,15 @@ server <- function(input, output, session) {
       } else {
         x_data <- unlist(results_all_df[feature])*180.0/pi
       }
-      p <- rose_plot_2_axial(parameters, input, x_data)
+        plot_title <- parameters[input$feature_select][[1]][3]
+        p <- rose_plot_2_axial(parameters, input, x_data, plot_title)
       
     } else {
       
-      x_data <- unlist(results_all_df[feature])
-      print(x_data)
-      p <- linear_histogram(parameters, input, x_data)
+        x_data <- unlist(results_all_df[feature])
+        print(x_data)
+        plot_title <- parameters[input$feature_select][[1]][3]
+        p <- linear_histogram(parameters, input, x_data, plot_title)
     }
     
     p
@@ -511,7 +514,8 @@ server <- function(input, output, session) {
       if (parameters[input$feature_select][[1]][2] == "axial") {
         statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature])*180.0/pi
-        p <- rose_plot_circular(parameters, input, statistics, x_data)
+        plot_title <- file_name
+        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title)
         
       }
       else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -523,12 +527,14 @@ server <- function(input, output, session) {
         } else {
           x_data <- unlist(results_df[feature])*180.0/pi
         }
-        p <- rose_plot_2_axial(parameters, input, x_data)
+        plot_title <- file_name
+        p <- rose_plot_2_axial(parameters, input, x_data, plot_title)
         
       } else {
         
         x_data <- unlist(results_df[feature])
-        p <- linear_histogram(parameters, input, x_data)
+        plot_title <- file_name
+        p <- linear_histogram(parameters, input, x_data, plot_title)
       }
       
       

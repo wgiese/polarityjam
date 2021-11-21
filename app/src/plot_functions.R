@@ -16,12 +16,12 @@ transform_2_axial <- function(feature_2_axial) {
 
 #rose_plot_2_axial <- function(feature_2_axial)
 
-rose_plot_circular <- function(parameters, input, statistics, feature_circular) {
+rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title) {
   
   bin_size = 360/input$bins
   
   #feature <- parameters[input$feature_select][[1]][1]
-  plot_title <- parameters[input$feature_select][[1]][3]
+  #plot_title <- parameters[input$feature_select][[1]][3]
   
   p <- ggplot() +
     geom_histogram(aes(x = feature_circular, y = ..ncount..),
@@ -49,10 +49,10 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular) 
 }
 
 
-rose_plot_2_axial <- function(parameters, input, feature_circular) {
+rose_plot_2_axial <- function(parameters, input, feature_circular, plot_title) {
   
   #bin_size = 360/input$bins
-  plot_title <- parameters[input$feature_select][[1]][3]
+  #plot_title <- parameters[input$feature_select][[1]][3]
   
   p <- ggplot() +
     geom_histogram(aes(x = feature_circular, y = ..ncount..),
@@ -78,10 +78,10 @@ rose_plot_2_axial <- function(parameters, input, feature_circular) {
   
 }
 
-linear_histogram <- function(parameters, input, feature_linear) {
+linear_histogram <- function(parameters, input, feature_linear, plot_title) {
   
   bin_size = max(feature_linear)/input$bins
-  plot_title <- parameters[input$feature_select][[1]][3]
+  #plot_title <- parameters[input$feature_select][[1]][3]
   
   p <- ggplot() +
     geom_histogram(aes(x = feature_linear, y = ..ncount..),
