@@ -315,29 +315,53 @@ server <- function(input, output, session) {
     
     source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
 
-    values <- compute_polarity_index(results_df)
-    print(values)
-    polarity_index <- values[["polarity_index"]]
-    signed_polarity_index <- values[["signed_polarity_index"]]
-    angle_mean_deg <- values[["angle_mean_deg"]]
+    threshold <- input$min_eccentricity
+    if ("eccentricity" %in% colnames(results_df)){
+      results_df <- subset(results_df, results_df$eccentricity> threshold)
+    }
+    threshold <- input$min_nuclei_golgi_dist
+    if ("distance" %in% colnames(results_df)){
+      results_df <- subset(results_df, results_df$distance > threshold)
+    }
+
+
     
-    angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
+    #values <- compute_polarity_index(results_df)
+    #print(values)
+    #polarity_index <- values[["polarity_index"]]
+    ##signed_polarity_index <- values[["signed_polarity_index"]]
+    #angle_mean_deg <- values[["angle_mean_deg"]]
     
-    variance_degree  <- var(angle_degree)
-    mean_degree <- mean.circular(angle_degree)
-    rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
-    rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
-    rayleigh_test <- rayleigh_test_res$p.value
-    rayleigh_test_mu <- rayleigh_test_mu_res$p.value
-    #print(struct(rayleight_test))
-    #print(struct(rayleight_test_mu))
-    sd_degree  <- sd(angle_degree)
-    median_degree  <- median(angle_degree)
+    #angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
-    #entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
-    #value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
-    entity <- c("nucleus-golgi pairs", "circular sample mean (degree)", "polarity index", "signed_polarity_index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
-    value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, signed_polarity_index, rayleigh_test, rayleigh_test_mu)
+    #variance_degree  <- var(angle_degree)
+    #mean_degree <- mean.circular(angle_degree)
+    #rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
+    #rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
+    #rayleigh_test <- rayleigh_test_res$p.value
+    #rayleigh_test_mu <- rayleigh_test_mu_res$p.value
+    ###print(struct(rayleight_test))
+    ##print(struct(rayleight_test_mu))
+    #sd_degree  <- sd(angle_degree)
+    #median_degree  <- median(angle_degree)
+    
+    ##entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
+    ##value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
+    
+    #print("Values in data frame")
+    #print(angle_mean_deg)
+    #print(polarity_index)
+    #print(rayleigh_test)
+    #print(rayleigh_test_mu)
+    
+    angle_mean_deg <- 0
+    polarity_index <- 0
+    rayleigh_test <- 0
+    rayleigh_test_mu <- 0
+    
+    entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
+    
+    value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
     
     statistics_df <- data.frame(entity,value)
     
