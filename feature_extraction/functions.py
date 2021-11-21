@@ -195,7 +195,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
                 major_axis_length_nuc = props.major_axis_length
                 area_nuc = props.area
                 perimeter_nuc = props.perimeter     
-
+                eccentricity_nuc = props.eccentricity
 
             
             single_cell_props.at[counter, "X_nuc"] = x_nucleus
@@ -206,6 +206,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "minor_axis_length_nuc"] = minor_axis_length_nuc
             single_cell_props.at[counter, "area"] = area_nuc
             single_cell_props.at[counter, "perimeter"] = perimeter_nuc
+            single_cell_props.at[counter, "eccentricity_nuc"] = eccentricity_nuc
      
 
         ### compute marker polarity

@@ -58,6 +58,7 @@ def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
     ax.set_xlim(0,im_junction.shape[0])
     ax.set_ylim(0,im_junction.shape[1])
     plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
+    plt.savefig(output_path + filename + "_nuclei_golgi_vector.svg")
     plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
 
     return 0
@@ -215,7 +216,7 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
     output_filepath = output_path + output_filename
 
     sub_figs = len(masks)
-    fig, ax = plt.subplots(1, sub_figs)
+    fig, ax = plt.subplots(1, sub_figs, figsize=(sub_figs*5,5))
 
     cell_mask = masks[0]
     if sub_figs > 1:
@@ -236,21 +237,58 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
 
     #ax[0].imshow(im_marker, cmap=plt.cm.gray, alpha = 1.0)
     
+    cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+
+    for index, row in single_cell_props.iterrows():
+        label = int(row['label'])
+        if label == 0:
+            continue
+        single_cell_mask = np.where(cell_mask ==label, 1, 0)*row['eccentricity']
+        cell_eccentricity += single_cell_mask
+
     if sub_figs > 1:
         ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
-        ax[0].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
-
+        #ax[0].imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+        #ax[0].imshow(cell_eccentricity, cmap=plt.cm.bwr, alpha = 0.25)
+        
+        cax_0 = ax[0].imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr,  vmin=0, vmax=1.0, alpha = 0.5)
+        cbar = fig.colorbar(cax_0, ax=ax[0], shrink = 0.3)#, extend='both')
+        cbar.set_label('eccentricity')
         ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
         #ax[1].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
 
+        
+        nuclei_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+        for index, row in single_cell_props.iterrows():
+            label = int(row['label'])
+            if label == 0:
+                continue
+            single_cell_mask = np.where(cell_mask ==label, True, 0)*row['eccentricity']
+            single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
+            #np.where(nuclei_mask == label, 1, 0)*row['eccentricity_nuc']
+            single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0)*row['eccentricity_nuc']
+            nuclei_eccentricity += single_nuclei_mask
+
+        print(nuclei_eccentricity)
+        print(np.max(nuclei_eccentricity))
+        print(np.min(nuclei_eccentricity))
+
         nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
-        ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=100, alpha = 0.5)
+        ##nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+        #ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=1.0, alpha = 0.5)
+        cax_1 = ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_eccentricity),  plt.cm.bwr, vmin=0, vmax=1.0, alpha = 0.5)
+        #fig.colorbar(ax=ax[0])
+        cbar = fig.colorbar(cax_1, ax=ax[1], shrink = 0.3)#, extend='both')
+        cbar.set_label('eccentricity')
+
     else:
         ax.imshow(im_junction, cmap=plt.cm.gray, alpha = 1.0)
-        ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
+        #ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha = 0.25)
 
+        #ax.imshow(cell_eccentricity, cmap=plt.cm.Wistia, alpha = 0.25)
 
-
+        ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha = 0.25)
+        #fig.colorbar(ax=ax)
 
     for index, row in single_cell_props.iterrows():
         orientation = row['shape_orientation']
@@ -268,14 +306,14 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
         y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
         
         if sub_figs > 1:
-            ax[0].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
-            ax[0].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+            ax[0].plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
+            ax[0].plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
             ax[0].plot(y0, x0, '.b', markersize=5)
             orientation_degree = 180.0*orientation/np.pi
             ax[0].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
         else:
-            ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
-            ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
+            ax.plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
+            ax.plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
             ax.plot(y0, x0, '.b', markersize=5)
             orientation_degree = 180.0*orientation/np.pi
             ax.text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
@@ -296,9 +334,9 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
             x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
             y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
             
-            ax[1].plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
-            ax[1].plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
-            ax[1].plot(y0, x0, '.b', markersize=5)
+            ax[1].plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
+            ax[1].plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
+            #ax[1].plot(y0, x0, '.b', markersize=5)
 
             orientation_degree = 180.0*orientation/np.pi
             ax[1].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
@@ -322,6 +360,7 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
 
     plt.tight_layout()
     plt.savefig(output_path + filename + "_alignment.pdf")
+    plt.savefig(output_path + filename + "_alignment.svg")
     plt.savefig(output_path + filename + "_alignment.png")
 
     return 0
@@ -355,7 +394,7 @@ def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filenam
         outlines_cell += outline_cell_
 
     outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
-    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.5)
+    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_),  plt.cm.bwr, vmin=0, vmax=100, alpha = 0.5)
 
 
     for index, row in single_cell_props.iterrows():
