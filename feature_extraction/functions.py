@@ -180,7 +180,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         single_cell_props.at[counter, "major_axis_length"] = major_axis_length
         single_cell_props.at[counter, "minor_axis_length"] = minor_axis_length
         single_cell_props.at[counter, "eccentricity"] = eccentricity
-        single_cell_props.at[counter, "major_to_minor_ratio"] = major_axis-length/minor_axis_length
+        single_cell_props.at[counter, "major_to_minor_ratio"] = major_axis_length/minor_axis_length
         single_cell_props.at[counter, "area"] = area
         single_cell_props.at[counter, "perimeter"] = perimeter
         
@@ -208,7 +208,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "area"] = area_nuc
             single_cell_props.at[counter, "perimeter"] = perimeter_nuc
             single_cell_props.at[counter, "eccentricity_nuc"] = eccentricity_nuc
-            single_cell_props.at[counter, "major_to_minor_ratio_nuc"] = major_axis-length/minor_axis_length
+            single_cell_props.at[counter, "major_to_minor_ratio_nuc"] = major_axis_length/minor_axis_length
 
         ### compute marker polarity
 
@@ -309,18 +309,18 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
 
     if parameters["plot_polarity"] and (parameters["channel_golgi"] >= 0):
-        plot_fcts.plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename)
+        plot_fcts.plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename, output_path)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] >= 0):
-        plot_fcts.plot_marker(parameters, im_marker, [cell_mask, nuclei_mask], single_cell_props, filename)
+        plot_fcts.plot_marker(parameters, im_marker, [cell_mask, nuclei_mask], single_cell_props, filename, output_path)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
-        plot_fcts.plot_marker(parameters, im_marker, [cell_mask], single_cell_props, filename)
-        plot_fcts.plot_marker_polarity(parameters, im_marker, [cell_mask], single_cell_props, filename)
+        plot_fcts.plot_marker(parameters, im_marker, [cell_mask], single_cell_props, filename, output_path)
+        plot_fcts.plot_marker_polarity(parameters, im_marker, [cell_mask], single_cell_props, filename, output_path)
     if parameters["plot_alignment"] and (parameters["channel_nucleus"] >= 0):
-        plot_fcts.plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask], single_cell_props, filename)
+        plot_fcts.plot_alignment(parameters, im_junction, [cell_mask, nuclei_mask], single_cell_props, filename, output_path)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
-        plot_fcts.plot_alignment(parameters, im_junction, [cell_mask], single_cell_props, filename)
+        plot_fcts.plot_alignment(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
     if parameters["plot_ratio_method"]:
-        plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename)
+        plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
 
 
     return single_cell_props

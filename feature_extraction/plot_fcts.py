@@ -27,11 +27,11 @@ def get_outline_from_mask(mask, width = 1):
     
     return outline_mask
 
-def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
+def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, output_path):
     
-    output_path = parameters['output_path']
-    output_filename = parameters["output_filename"]
-    output_filepath = output_path + output_filename
+    #output_path = parameters['output_path']
+    #output_filename = parameters["output_filename"]
+    #output_filepath = output_path + output_filename
 
     fig, ax = plt.subplots(figsize=(10,10))
     
@@ -64,12 +64,8 @@ def plot_polarity(parameters, im_junction, masks, single_cell_props, filename):
     return 0
 
 
-def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
+def plot_marker(parameters, im_marker, masks, single_cell_props, filename, output_path):
     
-    output_path = parameters['output_path']
-    output_filename = parameters["output_filename"]
-    output_filepath = output_path + output_filename
-
     sub_figs = len(masks) + 1
     fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
     
@@ -161,12 +157,8 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename):
         
     return 0
 
-def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filename):
+def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filename, output_path):
 
-    output_path = parameters['output_path']
-    output_filename = parameters["output_filename"]
-    output_filepath = output_path + output_filename
-    
     #sub_figs = len(masks) + 1
     #fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
     fig, ax = plt.subplots(1, figsize=(10,10))
@@ -209,11 +201,7 @@ def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filena
     return 0
 
 
-def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
-
-    output_path = parameters['output_path']
-    output_filename = parameters["output_filename"]
-    output_filepath = output_path + output_filename
+def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, output_path):
 
     sub_figs = len(masks)
     fig, ax = plt.subplots(1, sub_figs, figsize=(sub_figs*5,5))
@@ -383,11 +371,7 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
 
     return 0
 
-def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filename):
-
-    output_path = parameters['output_path']
-    output_filename = parameters["output_filename"]
-    output_filepath = output_path + output_filename
+def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filename, output_path):
 
     sub_figs = len(masks)
     fig, ax = plt.subplots(1, sub_figs)

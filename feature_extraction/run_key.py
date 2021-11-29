@@ -32,16 +32,23 @@ print("Read parameters from: %s" % parameter_file)
 parameters = functions.read_parameters(parameter_file)
 key_file = pd.read_csv(parameters['key_file'])
 output_path_base = parameters['output_path']    
+summary_df = pd.DataFrame()
+summary_ind = 0
+
 
 for index, row in key_file.iterrows():
         
-    input_path = parameters['input_path'] + row['filepath']
-    subfolder = "/results_%sdyn_%sh_%s/" % (row["shear_stress"], row['flow_exposure_time'], row['treatment'])
+    input_path = parameters['input_path'] + str(row['folder_name'])
+    #subfolder = "/results_%sdyn_%sh_%s/" % (row["shear_stress"], row['flow_exposure_time'], row['treatment'])
+    subfolder = str(row["short_name"]) + "/"
     output_path = output_path_base + subfolder    
     if not os.path.exists(output_path):
         os.mkdir(output_path)
 
-    print(input_path)
+    print("input path: %s" % input_path)
+    print("output path: %s" % output_path)
+    
+
 
     file_list = glob.glob(input_path + "*.tif")
     merged_properties_df = pd.DataFrame()
@@ -67,7 +74,7 @@ for index, row in key_file.iterrows():
 
         cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
         print("Number of cell labels: ")
-        print(np.max(cellpose_mask))
+        print(len(np.unique(cellpose_mask)))
         #nuclei_mask = functions.get_nuclei_mask(parameters, img, cellpose_mask)
         #golgi_mask = functions.get_golgi_mask(parameters, img, cellpose_mask)
         properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, filename, output_path)
@@ -81,7 +88,16 @@ for index, row in key_file.iterrows():
             merged_properties_df = properties_df.copy()
         else:
             merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
-            
-        merged_properties_df.to_csv(output_path + "merged.csv")
+
+        summary_df.at[summary_ind, "folder_name"] = row["folder_name"] 
+        summary_df.at[summary_ind, "short_name"] = row["short_name"] 
+        summary_df.at[summary_ind, "filepath"] = filepath 
+        summary_df.at[summary_ind, "cell_number"] = len(np.unique(cellpose_mask))
+
+        summary_df.to_csv(output_path_base + "summary_table" + ".csv")
+        
+        summary_ind += 1
+           
+        #merged_properties_df.to_csv(output_path + "merged.csv")
 
 
