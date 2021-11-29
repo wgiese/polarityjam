@@ -300,20 +300,25 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
         #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
         #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
         
-        x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-        y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
-        x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
-        y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
-        
+        x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
+        y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
+        y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
+
+        x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
+        y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
+        x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+        y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
+
         if sub_figs > 1:
-            ax[0].plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
-            ax[0].plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
+            ax[0].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
+            ax[0].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax[0].plot(y0, x0, '.b', markersize=5)
             orientation_degree = 180.0*orientation/np.pi
             ax[0].text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
         else:
-            ax.plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
-            ax.plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
+            ax.plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
+            ax.plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax.plot(y0, x0, '.b', markersize=5)
             orientation_degree = 180.0*orientation/np.pi
             ax.text( y0, x0, str(int(np.round(orientation_degree,0))), color = "yellow", fontsize=4)
@@ -329,13 +334,26 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename):
             #x2 = x0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
             #y2 = y0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
 
-            x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-            y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-            x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
-            y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-            
-            ax[1].plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
-            ax[1].plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
+            #x1 = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+            #y1 = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            #x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            #y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+         
+            x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
+            y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+            x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
+            y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
+
+            x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
+            y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
+            x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+            y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
+
+            ax[1].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
+            ax[1].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
+
+            #ax[1].plot((y0, y1), (x0, x1), '--w', linewidth=0.5)
+            #ax[1].plot((y0, y2), (x0, x2), '--w', linewidth=0.5)
             #ax[1].plot(y0, x0, '.b', markersize=5)
 
             orientation_degree = 180.0*orientation/np.pi
