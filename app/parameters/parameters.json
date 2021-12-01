@@ -3,6 +3,7 @@
    "major_axis_shape_orientation": ["shape_orientation", "2-axial", "cell shape orientation"],
    "major_axis_nucleus_orientation": ["shape_orientation_nuc","2-axial", "nucleus shape orientation"],
    "eccentricity": ["eccentricity", "linear", "eccentricity"],
+   "major_over_minor_ratio": ["major_to_minor_ratio_nuc", "linear"],
    "mean_expression": ["mean_expression", "linear", "mean intensity"],
    "marker_polarity": ["marker_polarity_rad", "axial", "marker polarity"],
    "perimeter": ["perimeter", "linear", "perimeter"],

@@ -67,7 +67,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                           step = 1,
                                           value = 0),
                               selectInput("feature_select", "Choose a feature:",
-                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","marker_polarity","area","perimeter")),
+                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio", "mean_expression","marker_polarity","area","perimeter")),
                               textInput("exp_condition", "Exp. condition", "condition A"),
                               checkboxInput("area_scaled", "area scaled histogram", TRUE),
                               checkboxInput("left_axial", "2-axial hist on left", FALSE),
