@@ -326,11 +326,11 @@ server <- function(input, output, session) {
 
 
     
-    #values <- compute_polarity_index(results_df)
+    values <- compute_polarity_index(results_df)
     #print(values)
-    #polarity_index <- values[["polarity_index"]]
+    polarity_index <- values[["polarity_index"]]
     ##signed_polarity_index <- values[["signed_polarity_index"]]
-    #angle_mean_deg <- values[["angle_mean_deg"]]
+    angle_mean_deg <- values[["angle_mean_deg"]]
     
     #angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
