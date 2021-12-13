@@ -327,15 +327,15 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, 
             #x2 = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
             #y2 = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
          
-            x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-            y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
-            x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
-            y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
+            x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+            y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
+            y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
 
-            x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
-            y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
-            x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
-            y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
+            x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
+            x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
 
             ax[1].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
             ax[1].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
