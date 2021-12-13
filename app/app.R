@@ -314,17 +314,25 @@ server <- function(input, output, session) {
     #}
     
     source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    parameters <- fromJSON(file = "parameters/parameters.json")
 
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_df)){
-      results_df <- subset(results_df, results_df$eccentricity> threshold)
-    }
+    feature <- parameters[input$feature_select][[1]][1]
+
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_df)){
       results_df <- subset(results_df, results_df$distance > threshold)
     }
 
-
+    if (parameters[input$feature_select][[1]][2] == "axial") {
+      
+        x_data <- unlist(results_df[feature])*180.0/pi
+        statistics <- compute_circular_statistics(results_df, feature, parameters)
+    }
+    else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+    } else {
+      
+    }
     
     values <- compute_polarity_index(results_df)
     #print(values)
@@ -354,16 +362,16 @@ server <- function(input, output, session) {
     #print(rayleigh_test)
     #print(rayleigh_test_mu)
     
-    angle_mean_deg <- 0
-    polarity_index <- 0
-    rayleigh_test <- 0
-    rayleigh_test_mu <- 0
+    #angle_mean_deg <- 0
+    #polarity_index <- 0
+    #rayleigh_test <- 0
+    #rayleigh_test_mu <- 0
     
-    entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
+    #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
     
-    value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
+    #value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
     
-    statistics_df <- data.frame(entity,value)
+    statistics_df <- statistics#data.frame(entity,value)
     
     statistics_df
     
@@ -397,10 +405,6 @@ server <- function(input, output, session) {
       results_all_df[i,"eccentricity"] = eccentricity 
     }
     
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
-    }
     threshold <- input$min_nuclei_golgi_dist
     if ("distance" %in% colnames(results_all_df)){
       results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
@@ -421,7 +425,7 @@ server <- function(input, output, session) {
       
       
         x_data <- unlist(results_all_df[feature])*180.0/pi
-        statistics <- compute_polarity_index(unlist(results_all_df[feature]))
+        statistics <- compute_circular_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title)
       
@@ -536,7 +540,9 @@ server <- function(input, output, session) {
       
       
       if (parameters[input$feature_select][[1]][2] == "axial") {
-        statistics <- compute_polarity_index(unlist(results_df[feature]))
+        
+        statistics <- compute_circular_statistics(results_all_df, feature, parameters)
+        #statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature])*180.0/pi
         plot_title <- file_name
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title)
