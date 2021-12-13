@@ -433,14 +433,14 @@ server <- function(input, output, session) {
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
       
       x_data <- results_all_df[feature]        
-      #print(x_data)
+      statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
       if (input$left_axial) {
         x_data <- unlist(transform_2_axial(x_data))*180.0/pi
       } else {
         x_data <- unlist(results_all_df[feature])*180.0/pi
       }
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- rose_plot_2_axial(parameters, input, x_data, plot_title)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title)
       
     } else {
       
@@ -552,13 +552,14 @@ server <- function(input, output, session) {
         
         x_data <- results_df[feature]        
         #print(x_data)
+        statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
         if (input$left_axial) {
           x_data <- unlist(transform_2_axial(x_data))*180.0/pi
         } else {
           x_data <- unlist(results_df[feature])*180.0/pi
         }
         plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, x_data, plot_title)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title)
         
       } else {
         

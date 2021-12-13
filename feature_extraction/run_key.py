@@ -25,7 +25,7 @@ import functions
 if len(sys.argv) > 1:
     parameter_file = sys.argv[1]
 else:
-    parameter_file = "../feature_extraction/local/parameters.yml"
+    parameter_file = "base/parameters.yml"
    
 print("Read parameters from: %s" % parameter_file)
 
@@ -66,11 +66,15 @@ for index, row in key_file.iterrows():
       
         img = functions.read_image(parameters,filepath)
         img_seg = functions.get_image_for_segmentation(parameters,img)
-
-        fig, ax = plt.subplots(1,2)
-        ax[0].imshow(img_seg[0,:,:])
-        ax[1].imshow(img_seg[1,:,:])
-        plt.savefig(output_path + filename + "-seg.png")
+        if parameters["channel_nucleus"] >= 0:
+            fig, ax = plt.subplots(1,2)
+            ax[0].imshow(img_seg[0,:,:])
+            ax[1].imshow(img_seg[1,:,:])
+            plt.savefig(output_path + filename + "-seg.png")
+        else:
+            fig, ax = plt.subplots()
+            ax.imshow(img_seg[:,:])
+            plt.savefig(output_path + filename + "-seg.png")
 
         cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
         print("Number of cell labels: ")
