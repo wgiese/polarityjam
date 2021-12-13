@@ -329,7 +329,7 @@ server <- function(input, output, session) {
         statistics <- compute_circular_statistics(results_df, feature, parameters)
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
-    
+        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
     } else {
       
     }
