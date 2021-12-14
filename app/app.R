@@ -323,10 +323,40 @@ server <- function(input, output, session) {
       results_df <- subset(results_df, results_df$distance > threshold)
     }
 
+    statistics_df <- as.data.frame(matrix(nrow=5,ncol=2))
+    colnames(statistics_df) <- c("entity", "value")
+
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
         x_data <- unlist(results_df[feature])*180.0/pi
         statistics <- compute_circular_statistics(results_df, feature, parameters)
+        
+        print(statistics)
+
+        statistics_df[1,1] <- "cells"
+        statistics_df[1,2] <- nrow(results_df)
+        statistics_df[2,1] <- "mean (degree)"
+        statistics_df[2,2] <- statistics[1,"mean"]
+        statistics_df[3,1] <- "polarity index"
+        statistics_df[3,2] <- statistics[1,"polarity_index"]
+        statistics_df[4,1] <- "Rayleigh test, p-value:"
+        statistics_df[4,2] <- statistics[1,"rayleigh_test"]
+        statistics_df[5,1] <- "Rayleigh test, p-value (with mu = 180): "
+        statistics_df[5,2] <- statistics[1,"rayleigh_test_mu"]
+
+
+
+
+        #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
+        #values <- c( nrow(results_df), statistics[1,"mean"],  statistics[1,"polarity_index"], statistics[1,"rayleigh_test"], 0.0) # statistics[1,"rayleigh_test_mu"])
+        
+        #print("entity")
+        #print(entity)
+        #print("value")
+        #print(values)
+        
+        #statistics_df <- data.frame(entity,values)
+
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
         statistics <- compute_2_axial_statistics(results_df, feature, parameters)
@@ -334,11 +364,11 @@ server <- function(input, output, session) {
       
     }
     
-    values <- compute_polarity_index(results_df)
+    #values <- compute_polarity_index(results_df)
     #print(values)
-    polarity_index <- values[["polarity_index"]]
+    #polarity_index <- values[["polarity_index"]]
     ##signed_polarity_index <- values[["signed_polarity_index"]]
-    angle_mean_deg <- values[["angle_mean_deg"]]
+    #angle_mean_deg <- values[["angle_mean_deg"]]
     
     #angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
     
@@ -362,7 +392,7 @@ server <- function(input, output, session) {
     #print(rayleigh_test)
     #print(rayleigh_test_mu)
     
-    #angle_mean_deg <- 0
+    #angle_mean_deg <- statistics
     #polarity_index <- 0
     #rayleigh_test <- 0
     #rayleigh_test_mu <- 0
@@ -371,7 +401,11 @@ server <- function(input, output, session) {
     
     #value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
     
-    statistics_df <- statistics#data.frame(entity,value)
+    
+    #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
+    #value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
+
+    #statistics_df <- data.frame(entity,values)
     
     statistics_df
     

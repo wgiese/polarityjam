@@ -46,7 +46,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     }
 
  
-  p <- p + geom_segment(data = statistics, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
+  p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
   return(p)
   
 }
@@ -77,14 +77,10 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
     p <- p + scale_y_sqrt()
   }
 
-    print("Up axial!")
-    print(statistics[1,"angle_mean_deg"]) 
-
     if (input$left_axial) {
-        print("Left axial!")
-        print(statistics[1,"angle_mean_deg"]) 
-        if( statistics[1,"angle_mean_deg"] < 90.0) {
-      	    statistics[1,"angle_mean_deg"] = statistics[1,"angle_mean_deg"] + 180.0
+        print(statistics[1,"mean"]) 
+        if( statistics[1,"mean"] < 90.0) {
+      	    statistics[1,"mean"] = statistics[1,"mean"] + 180.0
     	}
     }
  
