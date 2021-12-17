@@ -38,12 +38,20 @@ file_list = glob.glob(input_path + "*.tif")
 #merged_properties_df = pd.DataFrame()
 
 for ind, filepath in enumerate(file_list):
- 
+
+    
     output_path = parameters['output_path']
     
     print("processing", filepath.split("/")[-1].split(".")[0])
-    filename = filepath.split("/")[-1]
-  
+    filename = filepath.split("/")[-1]  
+
+    filepath_, file_extension = os.path.splitext(filepath)
+    print("filename_: %s" % filepath_)
+    print("file extension: %s" % file_extension)
+
+    if not ((file_extension != ".tif") or (file_extension != ".tiff")):
+        continue 
+    
     img = functions.read_image(parameters,filepath)
     img_seg = functions.get_image_for_segmentation(parameters,img)
 
@@ -57,7 +65,14 @@ for ind, filepath in enumerate(file_list):
     	ax.imshow(img_seg[:,:])
     	plt.savefig(output_path + filename + "-seg.png")
 
-    cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
+    if os.path.exists(filepath_ + "_seg.npy"):
+        #in case an annotated mask is available
+        cellpose_seg = np.load(filepath_ + "_seg.npy", allow_pickle = True)
+        cellpose_mask = cellpose_seg.item()['masks']
+        if parameters["clear_border"]:
+            cellpose_mask = skimage.segmentation.clear_border(cellpose_mask)
+    else:
+        cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
     print("Number of cell labels: ")
     print(np.max(cellpose_mask))
     #nuclei_mask = functions.get_nuclei_mask(parameters, img, cellpose_mask)
