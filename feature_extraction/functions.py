@@ -312,6 +312,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         plot_fcts.plot_polarity(parameters, im_junction, [cell_mask, nuclei_mask, golgi_mask], single_cell_props, filename, output_path)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] >= 0):
         plot_fcts.plot_marker(parameters, im_marker, [cell_mask, nuclei_mask], single_cell_props, filename, output_path)
+        plot_fcts.plot_marker_polarity(parameters, im_marker, [cell_mask], single_cell_props, filename, output_path)
     if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
         plot_fcts.plot_marker(parameters, im_marker, [cell_mask], single_cell_props, filename, output_path)
         plot_fcts.plot_marker_polarity(parameters, im_marker, [cell_mask], single_cell_props, filename, output_path)

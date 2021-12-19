@@ -85,28 +85,29 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
     }
  
  
-    p <- p + geom_segment(data = statistics, aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
+    p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
   return(p)
   
 }
 
-linear_histogram <- function(parameters, input, feature_linear, plot_title) {
+linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title) {
   
-  bin_size = max(feature_linear)/input$bins
-  #plot_title <- parameters[input$feature_select][[1]][3]
+    bin_size = max(feature_linear)/input$bins
+    #plot_title <- parameters[input$feature_select][[1]][3]
   
-  p <- ggplot() +
-    geom_histogram(aes(x = feature_linear, y = ..ncount..),
+    p <- ggplot() +
+        geom_histogram(aes(x = feature_linear, y = ..ncount..),
                    breaks = seq(0, max(feature_linear), bin_size),
                    colour = "black",
                    fill = "black",
                    alpha = 0.5) +
-    ggtitle(plot_title) +
-    theme(axis.text.x = element_text(size = 18)) +
-    theme_minimal(base_size = 14) +
-    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
+        ggtitle(plot_title) +
+        theme(axis.text.x = element_text(size = 18)) +
+        theme_minimal(base_size = 14) +
+        xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
 
-  return(p)
+    p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
+    return(p)
   
 }
 

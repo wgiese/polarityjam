@@ -333,16 +333,25 @@ server <- function(input, output, session) {
         
         print(statistics)
 
+        p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
+        #if (statistics[1,"rayleigh_test"] < 0.001)
+        #    p_value <- "p < 0.001"
+        p_value_mu <- signif(statistics[1,"rayleigh_test_mu"], digits = 3)
+        #if (statistics[1,"rayleigh_test_mu"] < 0.001)
+        #    p_value_mu <- "p < 0.001"
+     
+
+
         statistics_df[1,1] <- "cells"
         statistics_df[1,2] <- nrow(results_df)
         statistics_df[2,1] <- "mean (degree)"
-        statistics_df[2,2] <- statistics[1,"mean"]
+        statistics_df[2,2] <- signif(statistics[1,"mean"], digits = 3)
         statistics_df[3,1] <- "polarity index"
-        statistics_df[3,2] <- statistics[1,"polarity_index"]
+        statistics_df[3,2] <- signif(statistics[1,"polarity_index"], digits = 3)
         statistics_df[4,1] <- "Rayleigh test, p-value:"
-        statistics_df[4,2] <- statistics[1,"rayleigh_test"]
-        statistics_df[5,1] <- "Rayleigh test, p-value (with mu = 180): "
-        statistics_df[5,2] <- statistics[1,"rayleigh_test_mu"]
+        statistics_df[4,2] <- p_value
+        statistics_df[5,1] <- "Rayleigh test, p-value (cond. mean = 180): "
+        statistics_df[5,2] <- p_value_mu
 
 
 
@@ -360,8 +369,31 @@ server <- function(input, output, session) {
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
         statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+
+        p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
+        
+        statistics_df[1,1] <- "cells"
+        statistics_df[1,2] <- nrow(results_df)
+        statistics_df[2,1] <- "mean (degree)"
+        statistics_df[2,2] <- signif(statistics[1,"mean"], digits = 3)
+        statistics_df[3,1] <- "polarity index"
+        statistics_df[3,2] <- signif(statistics[1,"polarity_index"], digits = 3)
+        statistics_df[4,1] <- "Rayleigh test, p-value:"
+        statistics_df[4,2] <- p_value
+
     } else {
       
+        statistics <- compute_linear_statistics(results_df, feature, parameters)
+    
+        statistics_df[1,1] <- "cells"
+        statistics_df[1,2] <- nrow(results_df)
+        statistics_df[2,1] <- "mean"
+        statistics_df[2,2] <- signif(statistics[1,"mean"], digits = 3)
+        statistics_df[3,1] <- "standard deviation"
+        statistics_df[3,2] <- signif(statistics[1,"std"], digits = 3)
+        statistics_df[4,1] <- "median"
+        statistics_df[4,2] <- signif(statistics[1,"median"], digits = 3)
+
     }
     
     #values <- compute_polarity_index(results_df)
@@ -479,9 +511,9 @@ server <- function(input, output, session) {
     } else {
       
         x_data <- unlist(results_all_df[feature])
-        print(x_data)
+        statistics <- compute_linear_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- linear_histogram(parameters, input, x_data, plot_title)
+        p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
     }
     
     p
@@ -598,8 +630,9 @@ server <- function(input, output, session) {
       } else {
         
         x_data <- unlist(results_df[feature])
+        statistics <- compute_linear_statistics(results_all_df, feature, parameters)
         plot_title <- file_name
-        p <- linear_histogram(parameters, input, x_data, plot_title)
+        p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
       }
       
       
