@@ -18,64 +18,82 @@ transform_2_axial <- function(feature_2_axial) {
 
 #rose_plot_2_axial <- function(feature_2_axial)
 
-rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title) {
+rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
   
-  bin_size = 360/input$bins
+    bin_size = 360/input$bins
   
-  #feature <- parameters[input$feature_select][[1]][1]
-  #plot_title <- parameters[input$feature_select][[1]][3]
-  
-  p <- ggplot() +
-    geom_histogram(aes(x = feature_circular, y = ..ncount..),
+    #feature <- parameters[input$feature_select][[1]][1]
+    #plot_title <- parameters[input$feature_select][[1]][3]
+
+    polarity_index <- signif(statistics[1,"polarity_index"], digits=3)
+    p_value_ <- signif(statistics[1,"rayleigh_test"], digits=3)
+    if (statistics[1,"rayleigh_test"] < 0.001) 
+        p_value <- "p < 0.001"
+    else
+        p_value <- paste0("p = ", toString(p_value_))
+ 
+ 
+    p <- ggplot() +
+        geom_histogram(aes(x = feature_circular, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
                    colour = "black",
                    fill = "black",
                    alpha = 0.5) +
-    ggtitle(plot_title) +
-    theme(axis.text.x = element_text(size = 18)) +
-    coord_polar(start = -pi/2.0, direction = -1) +
-    scale_x_continuous(limits = c(0, 360),
+        #geom_density(aes(x = feature_circular)) +
+        ggtitle(plot_title) +
+        theme(axis.text.x = element_text(size = 18)) +
+        coord_polar(start = -pi/2.0, direction = -1) +
+        scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
-    theme_minimal(base_size = 14) +
-    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) +
-    ylab("polarity index") 
+        theme_minimal(base_size = text_size) +
+        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) +
+        ylab("polarity index") 
+  #theme(axis.text.y=element_blank()) +
+  
+    if (input$area_scaled) {
+            p <- p + scale_y_sqrt()
+    }
+
+ 
+    p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
+    
+    return(p)
+  
+}
+
+
+rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
+  
+    bin_size = 360/input$bins
+    #plot_title <- parameters[input$feature_select][[1]][3]
+  
+    polarity_index <- signif(statistics[1,"polarity_index"], digits=3)
+    p_value_ <- signif(statistics[1,"rayleigh_test"], digits=3)
+    if (statistics[1,"rayleigh_test"] < 0.001)
+        p_value <- "p < 0.001"
+    else
+        p_value <- paste0("p = ", toString(p_value_))
+ 
+    p <- ggplot() +
+        geom_histogram(aes(x = feature_circular, y = ..ncount..),
+                   breaks = seq(0, 360, bin_size),
+                   colour = "black",
+                   fill = "black",
+                   alpha = 0.5) +
+#        geom_density(aes(x = feature_circular)) +
+        ggtitle(plot_title) +
+        theme(axis.text.x = element_text(size = 18)) +
+        coord_polar(start = -pi/2.0, direction = -1) +
+        scale_x_continuous(limits = c(0, 360),
+                       breaks = (c(0, 90, 180, 270))) +
+        theme_minimal(base_size = text_size) +
+        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s" , length(feature_circular), polarity_index, p_value, input$exp_condition)) +
+        ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
     if (input$area_scaled) {
         p <- p + scale_y_sqrt()
     }
-
- 
-  p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = arrow()) + theme(legend.position = "none") 
-  return(p)
-  
-}
-
-
-rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title) {
-  
-  #bin_size = 360/input$bins
-  #plot_title <- parameters[input$feature_select][[1]][3]
-  
-  p <- ggplot() +
-    geom_histogram(aes(x = feature_circular, y = ..ncount..),
-                   breaks = seq(0, 360, bin_size),
-                   colour = "black",
-                   fill = "black",
-                   alpha = 0.5) +
-    ggtitle(plot_title) +
-    theme(axis.text.x = element_text(size = 18)) +
-    coord_polar(start = -pi/2.0, direction = -1) +
-    scale_x_continuous(limits = c(0, 360),
-                       breaks = (c(0, 90, 180, 270))) +
-    theme_minimal(base_size = 14) +
-    xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_circular), input$exp_condition)) #+
-    #ylab("polarity index") 
-  #theme(axis.text.y=element_blank()) +
-  
-  if (input$area_scaled) {
-    p <- p + scale_y_sqrt()
-  }
 
     if (input$left_axial) {
         print(statistics[1,"mean"]) 

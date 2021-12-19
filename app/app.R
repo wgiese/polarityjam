@@ -607,7 +607,7 @@ server <- function(input, output, session) {
       
       if (parameters[input$feature_select][[1]][2] == "axial") {
         
-        statistics <- compute_circular_statistics(results_all_df, feature, parameters)
+        statistics <- compute_circular_statistics(results_df, feature, parameters)
         #statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature])*180.0/pi
         plot_title <- file_name
@@ -618,7 +618,7 @@ server <- function(input, output, session) {
         
         x_data <- results_df[feature]        
         #print(x_data)
-        statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
+        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
         if (input$left_axial) {
           x_data <- unlist(transform_2_axial(x_data))*180.0/pi
         } else {
@@ -630,7 +630,7 @@ server <- function(input, output, session) {
       } else {
         
         x_data <- unlist(results_df[feature])
-        statistics <- compute_linear_statistics(results_all_df, feature, parameters)
+        statistics <- compute_linear_statistics(results_df, feature, parameters)
         plot_title <- file_name
         p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
       }
