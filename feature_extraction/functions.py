@@ -42,11 +42,15 @@ def read_parameters(parameter_file):
     
 def read_image(parameters, filename):
 
-    img = skimage.io.imread(filename)
+    img_ = skimage.io.imread(filename)
 
-    if img.shape[0] < min(img.shape[1],img.shape[2]):
+    if len(img_.shape) <= 2:
+        img_ = np.array([img_,img_]) 
+        
+
+    if img_.shape[0] < min(img_.shape[1],img_.shape[2]):
         print("Warning: channel is on the first dimension of the image.")
-        img = img.reshape(np.shape[1], np.shape[2], np.shape[0])
+        img = img_.reshape(img_.shape[1], img_.shape[2], img_.shape[0])
 
     return img
 

@@ -7,7 +7,7 @@
 #    http://shiny.rstudio.com/
 #
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# PolApp: Shiny app for plotting and comparing polarity data (beta 0.1)
+# Polarity JaM: Shiny app for plotting and comparing polarity data (beta 0.2)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # author:  Wolfgang Giese
 # e-mail address: wolfgang #dot# giese #at# mdc-berlin #dot# de
@@ -41,112 +41,126 @@ vals <- reactiveValues(count=0)
 
 ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta 0.2)",
                  
-                ### Panel A: Image stack histogram
+### Panel A: Image stack histogram
                  
-                tabPanel("Image stack histogram",
-                          sidebarLayout(
-                            sidebarPanel(
-                              shinyDirButton("dir", "Input directory", "Upload"),
-                              verbatimTextOutput("dir", placeholder = TRUE),
-                              actionButton("refreshStack", "Refresh"),
-                              sliderInput("bins",
-                                          "Number of bins:",
-                                          min = 1,
-                                          max = 30,
-                                          value = 12),
-                              sliderInput("min_eccentricity",
-                                          "Mininum eccentricity",
-                                          min = 0,
-                                          max = 1,
-                                          step = 0.1,
-                                          value = 0.0),
-                              sliderInput("min_nuclei_golgi_dist",
-                                          "Minimum nuclei golgi distance",
-                                          min = 0,
-                                          max = 10,
-                                          step = 1,
-                                          value = 0),
-                              selectInput("feature_select", "Choose a feature:",
-                                          choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio", "mean_expression","marker_polarity","area","perimeter")),
-                              textInput("exp_condition", "Exp. condition", "condition A"),
-                              checkboxInput("area_scaled", "area scaled histogram", TRUE),
-                              checkboxInput("left_axial", "2-axial hist on left", FALSE),
-                              selectInput("dataset", "Choose a dataset:",
-                                          choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
-                              selectInput("image_file_format", "Choose image file format:",
-                                          choices = c(".pdf",".eps",".png")),
-                              downloadButton("downloadData", "Download")
-                            ),
-                            # Show a plot of the generated distribution
-                            mainPanel(
-                              tabsetPanel(
-                                tabPanel("Table", tableOutput("merged_stack")),
-                                tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
-                                tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
-                                
-                                tabPanel("Statistics", tableOutput("merged_statistics"))
-                              )
-                            ))),
+    tabPanel("Image stack analysis",
+        sidebarLayout(
+            sidebarPanel(
+                shinyDirButton("dir", "Input directory", "Upload"),
+                verbatimTextOutput("dir", placeholder = TRUE),
+                actionButton("refreshStack", "Refresh"),
+                sliderInput("bins",
+                            "Number of bins:",
+                            min = 1,
+                            max = 30,
+                            value = 12),
+                sliderInput("min_eccentricity",
+                            "Mininum eccentricity",
+                            min = 0,
+                            max = 1,
+                            step = 0.1,
+                            value = 0.0),
+                sliderInput("min_nuclei_golgi_dist",
+                            "Minimum nuclei golgi distance",
+                            min = 0,
+                            max = 10,
+                            step = 1,
+                            value = 0),
+                selectInput("feature_select", "Choose a feature:",
+                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
+                            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
+                            "mean_expression","marker_polarity","area","perimeter")),
+                textInput("exp_condition", "Exp. condition", "condition A"),
+                checkboxInput("area_scaled", "area scaled histogram", TRUE),
+                checkboxInput("left_axial", "2-axial hist on left", FALSE),
+                selectInput("dataset", "Choose a dataset:",
+                            choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
+                selectInput("image_file_format", "Choose image file format:",
+                            choices = c(".pdf",".eps",".png")),
+                downloadButton("downloadData", "Download")
+            ),
+                
+            # Show a plot of the generated distribution
+            mainPanel(
+                tabsetPanel(
+                    tabPanel("Table", tableOutput("merged_stack")),
+                    tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
+                    tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
+                    tabPanel("Statistics", tableOutput("merged_statistics"))
+                )
+            )
+        )
+    ),
                  
 
             
-           ### Panel B: Correlation analysis
+### Panel B: Correlation analysis
 
-           tabPanel("Correlation analysis",
-                    sidebarLayout(
-                      sidebarPanel(
-                        fileInput("correlationData", "Upload data file",
-                                  accept = c( "text/csv",
-                                              "text/comma-separated-values,text/plain",
-                                              ".csv",".xlsx")
-                        ),
-                        tags$hr(),
-                        checkboxInput("header_correlation", "File upload", TRUE),
-                        selectInput("feature_select_1", "Choose a feature 1:",
-                                    choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
-                        selectInput("feature_select_2", "Choose a feature 2:",
-                                    choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
-                        selectInput("datasetSingleImage", "Download:",
-                                    choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
-                        tags$hr(),
-                        checkboxInput("header_image", "File upload", TRUE),
-                        downloadButton("downloadCorrelationData", "Download")
-                      ),
-                      mainPanel(
-                      tabsetPanel(
-                        tabPanel("Plot", plotOutput("correlation_plot", height = "1000px"))#,
-                        #tabPanel("Statistics", tableOutput("singleImageStatistics"))
-                      )
-                      ))),
+    tabPanel("Correlation analysis",
+        sidebarLayout(
+            sidebarPanel(
+                fileInput("correlationData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                checkboxInput("header_correlation", "File upload", TRUE),
+                selectInput("feature_select_1", "Choose a feature 1:",
+                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                selectInput("feature_select_2", "Choose a feature 2:",
+                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                selectInput("datasetSingleImage", "Download:",
+                            choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
+                            tags$hr(),
+                checkboxInput("header_image", "File upload", TRUE),
+                downloadButton("downloadCorrelationData", "Download")
+            ),
+            mainPanel(
+                tabsetPanel(
+                tabPanel("Plot", plotOutput("correlation_plot", height = "1000px"))#,
+                #tabPanel("Statistics", tableOutput("singleImageStatistics"))
+                )
+            )
+        )
+    ),
       
-           tabPanel("Compare",                    
-                    sidebarLayout(
-                      sidebarPanel(
-                        fileInput("condition_1", "Condition 1",
-                         accept = c( "text/csv",
-                                     "text/comma-separated-values,text/plain",
-                                     ".csv")
-                         ),    
-                         tags$hr(),
-                         checkboxInput("header_cond1", "File upload", TRUE),
-                         fileInput("condition_2", "Condition 2",
-                                   accept = c( "text/csv",
-                                               "text/comma-separated-values,text/plain",
-                                               ".csv")
-                         ), 
-                         tags$hr(),
-                         checkboxInput("header_cond2", "File upload", TRUE)
-                      ),
-                      mainPanel(
-                        #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                        
-                        tabsetPanel(
-                          tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                          tabPanel("CDF Plot", plotOutput("CDFPlot")), 
-                          tabPanel("Statistics", tableOutput("comparison_statistics"))
-                        )
-                      )
-                    ))
+    tabPanel("Compare",                    
+        sidebarLayout(
+            sidebarPanel(
+                fileInput("condition_1", "Condition 1",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv")),    
+                tags$hr(),
+                checkboxInput("header_cond1", "File upload", TRUE),
+                fileInput("condition_2", "Condition 2",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv")), 
+                tags$hr(),
+                checkboxInput("header_cond2", "File upload", TRUE),
+                sliderInput("bins_comparison",
+                            "Number of bins:",
+                            min = 1,
+                            max = 30,
+                            value = 12),
+                selectInput("feature_select", "Choose a feature:",
+                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
+                            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
+                            "mean_expression","marker_polarity","area","perimeter")),
+                checkboxInput("kde_comparison", "KDE plotarea scaled histogram", TRUE),
+                checkboxInput("histogram_comparison", "Histogram plot", TRUE),
+            ),
+            mainPanel(
+                #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+                tabsetPanel(
+                    tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+                    tabPanel("CDF Plot", plotOutput("CDFPlot")), 
+                    tabPanel("Statistics", tableOutput("comparison_statistics"))
+                )
+            )
+        )
+    )
 )
 
 
@@ -817,20 +831,28 @@ server <- function(input, output, session) {
     
     output$comparison_plot <- renderPlot({
       
-      inFileCondition_1 <- input$condition_1
-      inFileCondition_2 <- input$condition_2
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    
+        parameters <- fromJSON(file = "parameters/parameters.json")
+
+        inFileCondition_1 <- input$condition_1
+        inFileCondition_2 <- input$condition_2
       
-      if (is.null(inFileCondition_1))
-        return(NULL)
-      if (is.null(inFileCondition_2))
-        return(NULL)
+        if (is.null(inFileCondition_1))
+            return(NULL)
+        if (is.null(inFileCondition_2))
+            return(NULL)
       
-      print(inFileCondition_1$datapath)
-      print(inFileCondition_2$datapath)
-      cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
-      cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
+        print(inFileCondition_1$datapath)
+        print(inFileCondition_2$datapath)
+        cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
+        cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
       
-      bin_size = 16
+        feature <- parameters[input$feature_select][[1]][1]
+
+              bin_size <- 360.0/input$bins_comparison
+      #bin_size <- 20.0
       
       p <- ggplot() +
         geom_histogram(aes(cond1_data$angle_deg),
@@ -878,7 +900,16 @@ server <- function(input, output, session) {
       
       #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
       
-      p1
+        cond1_feature <- unlist(cond1_data[feature])*180.0/pi
+        cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+
+        statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+        plot_title <- parameters[input$feature_select][[1]][3]
+        p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+
+
+
+      p2
       #print(as.circular(cond1_data$angle_rad,type=radians))
       #circ.plot(cond1_data$angle_rad, cex =2.0)
     }) 
