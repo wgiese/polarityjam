@@ -71,6 +71,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 textInput("exp_condition", "Exp. condition", "condition A"),
+                checkboxInput("kde_plot", "KDE plot", FALSE),
+                checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 checkboxInput("left_axial", "2-axial hist on left", FALSE),
                 selectInput("dataset", "Choose a dataset:",
@@ -148,7 +150,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
-                checkboxInput("kde_comparison", "KDE plotarea scaled histogram", TRUE),
+                checkboxInput("kde_comparison", "KDE plot", TRUE),
                 checkboxInput("histogram_comparison", "Histogram plot", TRUE),
             ),
             mainPanel(

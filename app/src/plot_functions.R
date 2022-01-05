@@ -31,16 +31,27 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
         p_value <- "p < 0.001"
     else
         p_value <- paste0("p = ", toString(p_value_))
- 
- 
-    p <- ggplot() +
-        geom_histogram(aes(x = feature_circular, y = ..ncount..),
-                   breaks = seq(0, 360, bin_size),
-                   colour = "black",
-                   fill = "black",
-                   alpha = 0.5) +
-        #geom_density(aes(x = feature_circular)) +
-        ggtitle(plot_title) +
+    
+    p <- ggplot()
+    
+    if (input$kde_plot) {
+      p <-  p + 
+        geom_density(aes(x = feature_circular, y = ..count../max(..count..) ),
+                     colour = "black",
+                     fill = "black",
+                     alpha = 0.5)
+    }
+    
+    if (input$histogram_plot) {
+      p <- p + 
+          geom_histogram(aes(x = feature_circular, y = ..ncount..),
+                        breaks = seq(0, 360, bin_size),
+                        colour = "black",
+                        fill = "black",
+                        alpha = 0.5)
+    }    
+    
+    p <- p + ggtitle(plot_title) +
         theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
         scale_x_continuous(limits = c(0, 360),
@@ -48,7 +59,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
         theme_minimal(base_size = text_size) +
         xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) +
         ylab("polarity index") 
-  #theme(axis.text.y=element_blank()) +
+        #theme(axis.text.y=element_blank()) +
   
     if (input$area_scaled) {
             p <- p + scale_y_sqrt()
@@ -78,7 +89,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
     
     p <- ggplot() 
 
-    if (input$kde_comparison) {
+    if (input$histogram_comparison) {
     p <- p + geom_histogram(aes(x = feature_circular_1, y = ..density..),#, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
                    colour = "black",
@@ -91,7 +102,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
                    alpha = 0.5)
     }
     
-    if (input$histogram_comparison) {
+    if (input$kde_comparison) {
         p <- p + geom_density(aes(x = feature_circular_1, y = ..density.. ),
                     colour = "black",
                     fill = "red",

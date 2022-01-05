@@ -51,6 +51,21 @@ compute_circular_statistics <- function(data, feature, parameters) {
     return(values)
 }
 
+comparison_circular_statistics <- function(data_1, data_2, feature, parameters) {
+  
+  circular_data_1 <- unlist(data_1[feature])
+  circular_data_2 <- unlist(data_2[feature])
+  
+  values_1 <- compute_circular_statistics(data_1, feature, parameters)
+  values_2 <- compute_circular_statistics(data_2, feature, parameters)
+  
+  #values <- data.frame( "polarity_index" = polarity_index, 
+  #                      "mean" = angle_mean_deg,
+  #                      "rayleigh_test" = rayleigh_test,
+  #                      "rayleigh_test_mu" = rayleigh_test_mu)
+  
+  return(values_1)
+}
 
 
 compute_2_axial_statistics <- function(data, feature, parameters) {
