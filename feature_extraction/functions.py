@@ -51,6 +51,8 @@ def read_image(parameters, filename):
     if img_.shape[0] < min(img_.shape[1],img_.shape[2]):
         print("Warning: channel is on the first dimension of the image.")
         img = img_.reshape(img_.shape[1], img_.shape[2], img_.shape[0])
+    else:
+        img = img_
 
     return img
 
