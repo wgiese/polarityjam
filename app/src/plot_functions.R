@@ -182,8 +182,9 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
   
 }
 
-linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title) {
+linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, text_size = 24) {
   
+    
     bin_size = max(feature_linear)/input$bins
     #plot_title <- parameters[input$feature_select][[1]][3]
   
@@ -195,7 +196,7 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
                    alpha = 0.5) +
         ggtitle(plot_title) +
         theme(axis.text.x = element_text(size = 18)) +
-        theme_minimal(base_size = 14) +
+        theme_minimal(base_size = text_size) +
         xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
 
     p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
