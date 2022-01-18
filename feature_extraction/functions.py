@@ -135,7 +135,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
     counter = 0
 
     for label in np.unique(cell_mask):
-
+#initialize graph - no features assosciated with nodes
+        graph_nf = orientation_graph_nf(cell_mask)
         if label == 0:
             continue
         #in range(1,np.max(cell_mask)-1):
@@ -175,7 +176,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             area = props.area
             perimeter = props.perimeter     
 
-
+            neighbours = len(list(graph_nf.neighbors(label)))
         
         single_cell_props.at[counter, "filename"] = filename
         single_cell_props.at[counter, "label"] = label
@@ -189,6 +190,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         single_cell_props.at[counter, "major_to_minor_ratio"] = major_axis_length/minor_axis_length
         single_cell_props.at[counter, "area"] = area
         single_cell_props.at[counter, "perimeter"] = perimeter
+        single_cell_props.at[counter, "n_neighbors"] = neighbours
         
 
          
@@ -308,7 +310,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "angle_rad"] = angle_rad
             single_cell_props.at[counter, "flow_alignment"] = np.sin(angle_rad)
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
-        
+
+        rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
         counter += 1
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
@@ -328,10 +331,31 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         plot_fcts.plot_alignment(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
     if parameters["plot_ratio_method"]:
         plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
+######################    
+    weihgts = psy.lib.weights.W.from_networkx(rag)
 
+    moron_eye_feature_list = []
 
+    rag_labels = list(rag.nodes)
+    moran_keys = weihgts.neighbors.keys()
+
+    for nombritas in zip(rag_labels,moran_keys):
+        #print(nombritas)
+        #print(len(list(rag.neighbors(nombritas[0]))))
+        #print(len(weihgts.neighbors[nombritas[1]]))
+
+        feature2append = rag.nodes[nombritas[0]]
+        single_feature = (feature2append[feature_of_interest])
+
+        moron_eye_feature_list.append(single_feature)
+
+    mi = psy.explore.esda.Moran(moron_eye_feature_list, weihgts, two_tailed=False)
+    print("%.3f"%mi.I)
+    print(mi.EI)
+    print("%f"%mi.p_norm)
+        
     return single_cell_props
-
+######################
 def get_outline_from_mask(mask, width = 1):
  
     dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations = width)
@@ -339,4 +363,61 @@ def get_outline_from_mask(mask, width = 1):
     outline_mask = np.logical_xor(dilated_mask, eroded_mask)
     
     return outline_mask
+def orientation_graph_nf(img):
 
+    rag = RAG(img.astype("int"))
+    return(rag)
+def orientation_graph(img):
+
+    rag = RAG(img.astype("int"))
+    rag.remove_node(0)
+
+    regions = regionprops(img.astype("int"))
+    for region in regions:
+        rag.nodes[region['label']]['orientation'] = region['orientation']
+        rag.nodes[region['label']]['area'] = region['area']
+        rag.nodes[region['label']]['polarity'] = region['major_axis_length'] / region['minor_axis_length']
+        rag.nodes[region['label']]['aspect_ratio'] = (region["bbox"][2] - region["bbox"][0]) / (region["bbox"][3] - region["bbox"][1])
+    return(rag)
+def remove_edges(mask):
+    segments = mask.astype("int")
+    end_1,end_2 = mask.shape[0],mask.shape[1]
+
+    start_1, start_2 = 0,0
+
+    the_start = np.empty(mask.shape[0])
+    the_start.fill(int(start_1))
+    the_end = np.empty(mask.shape[0])
+    the_end.fill(int(end_1 - 1 ))
+    lower_right_arr = np.asarray(range(start_1,end_1))
+
+    #list of points with 0, 0 - max
+    roof = np.asarray([the_start,lower_right_arr])
+    #list of of points with max 0-max
+    floor = np.asarray([the_end,lower_right_arr])
+    #list of point 0-max, 0
+    left_wall = np.asarray([lower_right_arr,the_start])
+    #list of point 0-max, max
+    right_wall = np.asarray([lower_right_arr,the_end])
+
+    concat_arr = np.hstack([left_wall,right_wall,roof,floor]).astype("int")
+    x_indexed = segments[(concat_arr[1,:]),(concat_arr[0,:])]
+
+    for elemet in np.unique(x_indexed):
+        segments[segments == elemet] = 0
+    return(segments)
+def remove_islands(frame_graph, mask):
+    list_of_islands = []
+    #Get list of islands - nodes with no neighbkluors,
+    #remove nodes with neighbours
+    #frame_graph = orientation_graph(dat_no_edges[i,:,:])
+    for nodez in frame_graph.nodes:
+        if len(list(frame_graph.neighbors(nodez))) == 0:
+            list_of_islands.append(nodez)
+    
+    print(list_of_islands)
+    #remove islands from image and graph
+    for elemet in np.unique(list_of_islands):
+        frame_graph.remove_node(elemet)
+        mask[:,:][mask[:,:] == elemet] = 0
+    return(frame_graph,mask)
