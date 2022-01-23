@@ -31,7 +31,15 @@ compute_circular_statistics <- function(data, feature, parameters) {
     rayleigh_test <- rayleigh_test_res$p.value
     rayleigh_test_mu <- rayleigh_test_mu_res$p.value
 
+    ci_res <- vm.bootstrap.ci(circular_data)
+    print("Confidence interval:")
+    print(ci_res$mu.ci)
+    print(str(ci_res$mu.ci))
+    print(ci_res$mu.ci[[1]])
+    lower_limit <- 180.0*ci_res$mu.ci[[1]]/3.1415926
+    upper_limit <- 180.0*ci_res$mu.ci[[2]]/3.1415926
 
+    print(ci_res$mu.ci[[2]])
     #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
     #against_flow <- against_flow [(against_flow < 210*pi/180.0),]
     #with_flow <- polarity_data[((polarity_data > 330*pi/180.0) | (polarity_data < 30*pi/180.0)),]
@@ -46,7 +54,9 @@ compute_circular_statistics <- function(data, feature, parameters) {
     values <- data.frame( "polarity_index" = polarity_index, 
                           "mean" = angle_mean_deg,
                           "rayleigh_test" = rayleigh_test,
-                          "rayleigh_test_mu" = rayleigh_test_mu)
+                          "rayleigh_test_mu" = rayleigh_test_mu,
+                          "lower_limit" = lower_limit,
+                          "upper_limit" = upper_limit)
   
     return(values)
 }
@@ -100,7 +110,8 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     
     rayleigh_test <- rayleigh_test_res$p.value
     #rayleigh_test_mu <- rayleigh_test_mu_res$p.value
-
+    ci_res <- vm.bootstrap.ci(circular_data)
+    
 
     
   #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
