@@ -41,9 +41,13 @@ for ind, filepath in enumerate(file_list):
 
     
     output_path = parameters['output_path']
-    
-    print("processing", filepath.split("/")[-1].split(".")[0])
-    filename = filepath.split("/")[-1]  
+ 
+    if sys.platform.startswith("win"):
+        print("processing", filepath.split("\\")[-1].split(".")[0])
+        filename = filepath.split("\\")[-1]  
+    else:   
+        print("processing", filepath.split("/")[-1].split(".")[0])
+        filename = filepath.split("/")[-1]  
 
     filepath_, file_extension = os.path.splitext(filepath)
     print("filename_: %s" % filepath_)

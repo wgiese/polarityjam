@@ -311,8 +311,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "flow_alignment"] = np.sin(angle_rad)
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
 
-        rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
-        counter += 1
+        #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
+        #counter += 1
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
@@ -332,6 +332,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
     if parameters["plot_ratio_method"]:
         plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
 ######################    
+    '''
     weihgts = psy.lib.weights.W.from_networkx(rag)
 
     moron_eye_feature_list = []
@@ -353,7 +354,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
     print("%.3f"%mi.I)
     print(mi.EI)
     print("%f"%mi.p_norm)
-        
+    '''    
     return single_cell_props
 ######################
 def get_outline_from_mask(mask, width = 1):
