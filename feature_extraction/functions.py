@@ -123,6 +123,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
     rag = orientation_graph_nf(cell_mask)
     rag, cell_mask = remove_islands(rag, cell_mask)
+    print(list(rag.nodes))
     if parameters["channel_nucleus"] >= 0: 
         nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
     #nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
@@ -146,10 +147,12 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         if parameters["channel_nucleus"] >= 0:
             single_nucleus_mask = np.where(nuclei_mask==label, 1, 0)
             if len(single_nucleus_mask[single_nucleus_mask==1]) < parameters["min_nucleus_size"]:
+                rag.remove_node(label)
                 continue
             if parameters["channel_golgi"] >= 0:
                 single_golgi_mask = np.where(golgi_mask ==label, 1, 0)    
                 if len(single_golgi_mask[single_golgi_mask==1]) < parameters["min_golgi_size"]:
+                    rag.remove_node(label)
                     continue
 
         #area_golgi_px2 = len(single_golgi_mask[single_golgi_mask==1])
@@ -163,7 +166,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #print(len(single_golgi_mask[single_golgi_mask==1]))
         
         if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
-            
+            rag.remove_node(label)
             continue
   
         regions = skimage.measure.regionprops(single_cell_mask)
@@ -346,13 +349,14 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
 
     rag_labels = list(rag.nodes)
     moran_keys = weihgts.neighbors.keys()
-    print(rag_labels)
+    colorDict = nw.get_node_attributes(rag,foe)
+    print(colorDict)
     for nombritas in zip(rag_labels,moran_keys):
         #print(nombritas)
         #print(len(list(rag.neighbors(nombritas[0]))))
         #print(len(weihgts.neighbors[nombritas[1]]))
 
-        feature2append = rag.nodes[nombritas[0].astype('int')][foe]
+        feature2append = colorDict[nombritas[0]]
         print(nombritas[0])
         single_feature = feature2append#(feature2append[parameters["feature_of_interest"]])
 
