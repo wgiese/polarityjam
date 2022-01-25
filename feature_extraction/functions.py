@@ -18,8 +18,8 @@ import tifffile as tiff
 from skimage.measure import regionprops
 from skimage.future.graph import RAG
 import networkx as nw
+import pysal as psy
 import plot_fcts
-
 
 def read_parameters(parameter_file):
 
@@ -121,7 +121,9 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
-
+    rag = orientation_graph_nf(cell_mask)
+    rag, cell_mask = remove_islands(rag, cell_mask)
+    print(list(rag.nodes))
     if parameters["channel_nucleus"] >= 0: 
         nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
     #nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
@@ -145,10 +147,12 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         if parameters["channel_nucleus"] >= 0:
             single_nucleus_mask = np.where(nuclei_mask==label, 1, 0)
             if len(single_nucleus_mask[single_nucleus_mask==1]) < parameters["min_nucleus_size"]:
+                rag.remove_node(label)
                 continue
             if parameters["channel_golgi"] >= 0:
                 single_golgi_mask = np.where(golgi_mask ==label, 1, 0)    
                 if len(single_golgi_mask[single_golgi_mask==1]) < parameters["min_golgi_size"]:
+                    rag.remove_node(label)
                     continue
 
         #area_golgi_px2 = len(single_golgi_mask[single_golgi_mask==1])
@@ -162,6 +166,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #print(len(single_golgi_mask[single_golgi_mask==1]))
         
         if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
+            rag.remove_node(label)
             continue
   
         regions = skimage.measure.regionprops(single_cell_mask)
@@ -314,6 +319,14 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
         #counter += 1
 
+        f2a = single_cell_props.at[counter, parameters["feature_of_interest"]]
+        foe = str(parameters["feature_of_interest"])
+        rag.nodes[label.astype('int')][foe] = f2a
+        #nw.set_node_attributes(graph_nf, {label.astype('int'):f2a}, parameters["feature_of_interest"])
+        print(f2a,parameters["feature_of_interest"],label,rag.nodes[label.astype('int')][foe])
+        #print(nx.get_node_attributes(G,parameters["feature_of_interest"]))
+        counter += 1
+
     im_junction = img[:,:,int(parameters["channel_junction"])]
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
 
@@ -339,14 +352,16 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
 
     rag_labels = list(rag.nodes)
     moran_keys = weihgts.neighbors.keys()
-
+    colorDict = nw.get_node_attributes(rag,foe)
+    print(colorDict)
     for nombritas in zip(rag_labels,moran_keys):
         #print(nombritas)
         #print(len(list(rag.neighbors(nombritas[0]))))
         #print(len(weihgts.neighbors[nombritas[1]]))
 
-        feature2append = rag.nodes[nombritas[0]]
-        single_feature = (feature2append[feature_of_interest])
+        feature2append = colorDict[nombritas[0]]
+        print(nombritas[0])
+        single_feature = feature2append#(feature2append[parameters["feature_of_interest"]])
 
         moron_eye_feature_list.append(single_feature)
 
@@ -365,8 +380,8 @@ def get_outline_from_mask(mask, width = 1):
     
     return outline_mask
 def orientation_graph_nf(img):
-
     rag = RAG(img.astype("int"))
+    rag.remove_node(0)
     return(rag)
 def orientation_graph(img):
 
