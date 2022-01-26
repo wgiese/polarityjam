@@ -79,6 +79,8 @@ def get_cellpose_segmentation(parameters, im_seg):
 
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)  
 
+    # TODO: filter masks that are too small
+
     if parameters["clear_border"]:
         masks = skimage.segmentation.clear_border(masks)
 
@@ -95,6 +97,9 @@ def get_nuclei_mask(parameters, img, cellpose_mask):
     return nuclei_label
 
 def get_nuclei_cellpose(parameters, img, cellpose_mask):
+
+    if parameters["channel_nucleus"] < 0:
+        return 0 
 
     model = cellpose.models.Cellpose(gpu=parameters["use_gpu"], model_type='nuclei')
 
@@ -121,7 +126,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
-    rag = orientation_graph_nf(cell_mask)
+    rag = orientation_graph_nf(cell_mask) # initialize region adjacency matrix
     rag, cell_mask = remove_islands(rag, cell_mask)
     print(list(rag.nodes))
     if parameters["channel_nucleus"] >= 0: 
@@ -165,6 +170,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #print(len(single_nucleus_mask[single_nucleus_mask==1]))
         #print(len(single_golgi_mask[single_golgi_mask==1]))
         
+        # TODO: move to cellpose segmentation
         if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
             rag.remove_node(label)
             continue
@@ -381,7 +387,7 @@ def get_outline_from_mask(mask, width = 1):
     return outline_mask
 def orientation_graph_nf(img):
     rag = RAG(img.astype("int"))
-    rag.remove_node(0)
+    rag.remove_node(0) # node zero is connected to all other nodes
     return(rag)
 def orientation_graph(img):
 
