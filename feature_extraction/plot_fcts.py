@@ -20,7 +20,10 @@ import networkx as nw
 
 
 def get_outline_from_mask(mask, width = 1):
- 
+    '''
+    TODO: revise use built in function from cellpose
+    '''
+
     dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations = width)
     eroded_mask = ndi.morphology.binary_erosion(mask.astype(bool), iterations = width)
     outline_mask = np.logical_xor(dilated_mask, eroded_mask)
@@ -28,12 +31,20 @@ def get_outline_from_mask(mask, width = 1):
     return outline_mask
 
 def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, output_path):
-    
+    '''
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    masks       :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains cell masks
+    '''
+   
     #output_path = parameters['output_path']
     #output_filename = parameters["output_filename"]
     #output_filepath = output_path + output_filename
-
-    fig, ax = plt.subplots(figsize=(10,10))
+    width = parameters["graphics_width"]
+    fig, ax = plt.subplots(figsize=(width,width))
     
     cell_mask = masks[0] 
     nuclei_mask = masks[1].astype(bool)
@@ -57,15 +68,21 @@ def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, o
 
     ax.set_xlim(0,im_junction.shape[0])
     ax.set_ylim(0,im_junction.shape[1])
-    plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
-    plt.savefig(output_path + filename + "_nuclei_golgi_vector.svg")
-    plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
+
+    if "pdf" in parameters["graphics_output_format"]: 
+        plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
+    if "svg" in parameters["graphics_output_format"]: 
+        plt.savefig(output_path + filename + "_nuclei_golgi_vector.svg")
+    if "png" in parameters["graphics_output_format"]: 
+        plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
 
     return 0
 
 
 def plot_marker(parameters, im_marker, masks, single_cell_props, filename, output_path):
+    '''
     
+    '''
     sub_figs = len(masks) + 1
     fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
     

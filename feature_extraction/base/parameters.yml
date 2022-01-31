@@ -38,6 +38,10 @@ plot_ratio_method: False
 outline_width : 2
 show_polarity_angles: True
 
+graphics_output_format: ['png', 'pdf'] # 'png', 'pdf', 'svg'
+dpi: 300
+graphics_width: 7 # figure width in inches
+
 # segmentation parameters
 channel_junction: 0
 channel_nucleus : 1
