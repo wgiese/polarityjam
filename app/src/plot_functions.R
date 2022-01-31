@@ -115,6 +115,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
                     fill = "blue",
                     alpha = 0.5) 
     }
+
     p <- p + ggtitle(plot_title) +
         theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
@@ -191,17 +192,29 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
     bin_size = max(feature_linear)/input$bins
     #plot_title <- parameters[input$feature_select][[1]][3]
   
-    p <- ggplot() +
-        geom_histogram(aes(x = feature_linear, y = ..ncount..),
+    p <- ggplot()
+
+    if (input$histogram_plot) {
+        p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
                    breaks = seq(0, max(feature_linear), bin_size),
                    colour = "black",
                    fill = "black",
-                   alpha = 0.5) +
-        ggtitle(plot_title) +
+                   alpha = 0.5)
+    }
+
+    if (input$kde_plot) {
+        p <- p + geom_density(aes(x = feature_linear, y = ..density..),
+                   colour = "black",
+                   fill = "black",
+                   alpha = 0.5)
+
+    }
+
+    p <- p + ggtitle(plot_title) +
         theme(axis.text.x = element_text(size = 18)) +
         theme_minimal(base_size = text_size) +
         xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
-
+ 
     p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
     return(p)
   
