@@ -318,7 +318,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
 
         #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
-        #counter += 1
+        counter += 1
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]
