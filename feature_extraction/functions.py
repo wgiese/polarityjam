@@ -28,7 +28,7 @@ def read_parameters(parameter_file):
 
     if sys.platform.startswith("win"):
         if os.path.exists("..\\feature_extraction\\base\\parameters.yml"):
-            with open("../feature_extraction/base/parameters.yml") as file:
+            with open("..\\feature_extraction\\base\\parameters.yml") as file:
                 parameters = yaml.load(file, Loader=yaml.FullLoader)
     else:
         if os.path.exists("../feature_extraction/base/parameters.yml"):
