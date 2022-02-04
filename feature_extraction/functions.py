@@ -1,5 +1,7 @@
 import os
+import cm
 import yaml
+import cmocean # use the phase colormap it cyclical and perceptually uniform
 import skimage.io
 import numpy as np
 import cellpose.utils
@@ -16,9 +18,9 @@ import math
 import numpy as np
 import tifffile as tiff
 from skimage.measure import regionprops
-from skimage.future.graph import RAG
+from skimage.future.graph import RAG, graph
 import networkx as nw
-import pysal as psy
+#import pysal as psy
 import plot_fcts
 
 def read_parameters(parameter_file):
@@ -33,6 +35,7 @@ def read_parameters(parameter_file):
     #    parameters = yaml.load(file, Loader=yaml.FullLoader)
     with open(parameter_file) as file:
         parameters_local = yaml.load(file, Loader=yaml.FullLoader)
+from skimage.future import graph
 
     # overwrite global parameters with local setting
     for key in parameters_local:
@@ -79,8 +82,6 @@ def get_cellpose_segmentation(parameters, im_seg):
 
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)  
 
-    # TODO: filter masks that are too small
-
     if parameters["clear_border"]:
         masks = skimage.segmentation.clear_border(masks)
 
@@ -97,9 +98,6 @@ def get_nuclei_mask(parameters, img, cellpose_mask):
     return nuclei_label
 
 def get_nuclei_cellpose(parameters, img, cellpose_mask):
-
-    if parameters["channel_nucleus"] < 0:
-        return 0 
 
     model = cellpose.models.Cellpose(gpu=parameters["use_gpu"], model_type='nuclei')
 
@@ -126,7 +124,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
-    rag = orientation_graph_nf(cell_mask) # initialize region adjacency matrix
+    rag = orientation_graph_nf(cell_mask)
     rag, cell_mask = remove_islands(rag, cell_mask)
     print(list(rag.nodes))
     if parameters["channel_nucleus"] >= 0: 
@@ -170,7 +168,6 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #print(len(single_nucleus_mask[single_nucleus_mask==1]))
         #print(len(single_golgi_mask[single_golgi_mask==1]))
         
-        # TODO: move to cellpose segmentation
         if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
             rag.remove_node(label)
             continue
@@ -321,9 +318,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "angle_rad"] = angle_rad
             single_cell_props.at[counter, "flow_alignment"] = np.sin(angle_rad)
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
-
-        #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
-        #counter += 1
+###
 
         f2a = single_cell_props.at[counter, parameters["feature_of_interest"]]
         foe = str(parameters["feature_of_interest"])
@@ -351,31 +346,30 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
     if parameters["plot_ratio_method"]:
         plot_fcts.plot_ratio_method(parameters, im_junction, [cell_mask], single_cell_props, filename, output_path)
 ######################    
-    '''
-    weihgts = psy.lib.weights.W.from_networkx(rag)
+#    weihgts = psy.lib.weights.W.from_networkx(rag)
 
-    moron_eye_feature_list = []
+#    moron_eye_feature_list = []
 
-    rag_labels = list(rag.nodes)
-    moran_keys = weihgts.neighbors.keys()
-    colorDict = nw.get_node_attributes(rag,foe)
-    print(colorDict)
-    for nombritas in zip(rag_labels,moran_keys):
+#    rag_labels = list(rag.nodes)
+#    moran_keys = weihgts.neighbors.keys()
+#    colorDict = nw.get_node_attributes(rag,foe)
+#    print(colorDict)
+#    for nombritas in zip(rag_labels,moran_keys):
         #print(nombritas)
         #print(len(list(rag.neighbors(nombritas[0]))))
         #print(len(weihgts.neighbors[nombritas[1]]))
 
-        feature2append = colorDict[nombritas[0]]
-        print(nombritas[0])
-        single_feature = feature2append#(feature2append[parameters["feature_of_interest"]])
+#        feature2append = colorDict[nombritas[0]]
+#        print(nombritas[0])
+#        single_feature = feature2append#(feature2append[parameters["feature_of_interest"]])
 
-        moron_eye_feature_list.append(single_feature)
+#        moron_eye_feature_list.append(single_feature)
 
-    mi = psy.explore.esda.Moran(moron_eye_feature_list, weihgts, two_tailed=False)
-    print("%.3f"%mi.I)
-    print(mi.EI)
-    print("%f"%mi.p_norm)
-    '''    
+#    mi = psy.explore.esda.Moran(moron_eye_feature_list, weihgts, two_tailed=False)
+#    print("%.3f"%mi.I)
+#    print(mi.EI)
+#    print("%f"%mi.p_norm)
+        
     return single_cell_props
 ######################
 def get_outline_from_mask(mask, width = 1):
@@ -387,7 +381,7 @@ def get_outline_from_mask(mask, width = 1):
     return outline_mask
 def orientation_graph_nf(img):
     rag = RAG(img.astype("int"))
-    rag.remove_node(0) # node zero is connected to all other nodes
+    rag.remove_node(0)
     return(rag)
 def orientation_graph(img):
 
@@ -401,6 +395,13 @@ def orientation_graph(img):
         rag.nodes[region['label']]['polarity'] = region['major_axis_length'] / region['minor_axis_length']
         rag.nodes[region['label']]['aspect_ratio'] = (region["bbox"][2] - region["bbox"][0]) / (region["bbox"][3] - region["bbox"][1])
     return(rag)
+
+def plot_adjacency_matrix(label_image,intensity_image):
+    rag = orientation_graph_nf(label_image)
+    out = graph.draw_rag(label_image, rag, intensity_image, node_color="#ffde00")
+    return(out)
+
+
 def remove_edges(mask):
     segments = mask.astype("int")
     end_1,end_2 = mask.shape[0],mask.shape[1]
