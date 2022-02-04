@@ -25,8 +25,10 @@ import functions
 if len(sys.argv) > 1:
     parameter_file = sys.argv[1]
 else:
-    parameter_file = "../feature_extraction/local/parameters.yml"
-   
+    if sys.platform.startswith("win"):
+        parameter_file = "..\\feature_extraction\\local\\parameters.yml"
+    else: 
+        parameter_file = "../feature_extraction/local/parameters.yml"
 print("Read parameters from: %s" % parameter_file)
 
 parameters = functions.read_parameters(parameter_file)

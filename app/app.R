@@ -474,7 +474,7 @@ server <- function(input, output, session) {
     source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
     
     parameters <- fromJSON(file = "parameters/parameters.json")
-    text_size <- 32#parameters["text_size_merged_plot"]
+    text_size <- as.integer(parameters["text_size_merged_plot"])
     
     results_all_df <- mergedStack()
     
@@ -671,65 +671,69 @@ server <- function(input, output, session) {
   
   
     output$downloadData <- downloadHandler(
-      filename = function() {
-        filename <- "merged_file.csv"
-        if (input$dataset == "statistics_file"){
-          filename <- "statistics_file.csv"
-        }
-        if (input$dataset == "merged_plot_file"){
-          filename <- paste0("merge_plot", input$image_file_format)
-        }
-        if (input$dataset == "multi_plot_file"){
-          filename <- paste0("multi_plot", input$image_file_format)
+   
+        filename = function() {
+            filename <- "merged_file.csv"
+            if (input$dataset == "statistics_file"){
+                filename <- "statistics_file.csv"
+            }
+            if (input$dataset == "merged_plot_file"){
+                filename <- paste0("merge_plot", input$image_file_format)
+            }
+            if (input$dataset == "multi_plot_file"){
+                filename <- paste0("multi_plot", input$image_file_format)
+            }
+            return(filename)
+        },
+        content = function(file) {
+           
+            parameters <- fromJSON(file = "parameters/parameters.json")
+            width_ <- as.double(parameters["pdf_figure_size_inches"])
 
+            if (input$dataset == "statistics_file"){
+                return(write.csv(mergedStatistics(), file, row.names = FALSE))
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
+                pdf(file, width=14, height=14)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".png")) {
+                png(file, width=960, height=960)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".eps")) {
+                eps(file, width=14, height=14)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+                print("Saving merge pdf")
+                pdf(file, family = "ArialMT", width = width_, height =width_, pointsize = 18)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".png")){
+                png(file, width=960,height=960)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+                eps(file, width=width,height=width)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else (
+                return(write.csv(mergedStack(), file, row.names = FALSE))
+            )
         }
-        return(filename)
-      },
-      content = function(file) {
-        if (input$dataset == "statistics_file"){
-          return(write.csv(mergedStatistics(), file, row.names = FALSE))
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
-            pdf(file, width=14, height=14)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".png")) {
-            png(file, width=960, height=960)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".eps")) {
-            eps(file, width=14, height=14)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
-          pdf(file, width=7,height=7)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".png")){
-          png(file, width=960,height=960)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
-          eps(file, width=7,height=7)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else (
-          return(write.csv(mergedStack(), file, row.names = FALSE))
-        )
-        
-      }
     )
     
     output$downloadDataSingleImage <- downloadHandler(

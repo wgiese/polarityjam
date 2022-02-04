@@ -1,4 +1,5 @@
 import os
+import sys
 import cmocean as cm
 import yaml
 import cmocean # use the phase colormap it cyclical and perceptually uniform
@@ -29,9 +30,14 @@ def read_parameters(parameter_file):
 
     parameters = dict()
 
-    if os.path.exists("../feature_extraction/base/parameters.yml"):
-        with open("../feature_extraction/base/parameters.yml") as file:
-            parameters = yaml.load(file, Loader=yaml.FullLoader)
+    if sys.platform.startswith("win"):
+        if os.path.exists("..\\feature_extraction\\base\\parameters.yml"):
+            with open("..\\feature_extraction\\base\\parameters.yml") as file:
+                parameters = yaml.load(file, Loader=yaml.FullLoader)
+    else:
+        if os.path.exists("../feature_extraction/base/parameters.yml"):
+            with open("../feature_extraction/base/parameters.yml") as file:
+                parameters = yaml.load(file, Loader=yaml.FullLoader)
 
     #with open("base/parameters.yml") as file:
     #    parameters = yaml.load(file, Loader=yaml.FullLoader)
@@ -321,6 +327,7 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
 ###
 
+        #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
         f2a = single_cell_props.at[counter, parameters["feature_of_interest"]]
         foe = str(parameters["feature_of_interest"])
         rag.nodes[label.astype('int')][foe] = f2a
