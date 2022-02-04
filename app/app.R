@@ -146,7 +146,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             min = 1,
                             max = 30,
                             value = 12),
-                selectInput("feature_select", "Choose a feature:",
+                selectInput("feature_comparison", "Choose a feature:",
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
@@ -474,7 +474,7 @@ server <- function(input, output, session) {
     source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
     
     parameters <- fromJSON(file = "parameters/parameters.json")
-    text_size <- 32#parameters["text_size_merged_plot"]
+    text_size <- as.integer(parameters["text_size_merged_plot"])
     
     results_all_df <- mergedStack()
     
@@ -652,40 +652,13 @@ server <- function(input, output, session) {
       }
       
       
-      #p <- ggplot() +
-      #  geom_histogram(aes(angle_dist, y = ..ncount..),
-      #                 breaks = seq(0, 360, bin_size),
-      #                 colour = "black",
-      #                 fill = "black",
-      #                 alpha = 0.5) +
-      #  ggtitle(file_name) +
-      #  #theme(axis.text.x = element_text(size = 18)) +
-      #  coord_polar(start = -pi/2.0, direction = -1) +
-      #  scale_x_continuous(limits = c(0, 360),
-      #                     breaks = (c(0, 90, 180, 270))) +
-      #  #theme_minimal(base_size = 14) +
-      #  xlab(sprintf("number of cells = : %s \n polarity index: %.2f \n mean angle: %.2f", length(angle_dist), polarity_index, angle_mean_deg)) +
-      #  ylab("")
-      #  #theme(axis.text.y=element_blank()) +
-      
-      #if (input$area_scaled) {
-      #    p <- p + scale_y_sqrt()
-      #}
-      
-
-      #p <- p + geom_segment(aes(x=angle_mean_deg, y=0, xend=angle_mean_deg, yend=polarity_index, size = 0.05, color="red", lineend = "butt"), arrow = arrow())+
-      #  theme(legend.position = "none")
 
     }
     
-    #plotseries(2)
     
     myplots <- lapply(1:length(angle_dists), plotseries)
     
-    #plotOutput(outputId, height = "400px")
-    
-    print(myplots)
-    #myplots <- lapply(colnames(data2), plot_data_column, data = data2)
+    #print(myplots)
     grid.arrange(grobs = myplots, nrow = nCol) #, widths = list(10,10))
     
   })  
@@ -698,65 +671,69 @@ server <- function(input, output, session) {
   
   
     output$downloadData <- downloadHandler(
-      filename = function() {
-        filename <- "merged_file.csv"
-        if (input$dataset == "statistics_file"){
-          filename <- "statistics_file.csv"
-        }
-        if (input$dataset == "merged_plot_file"){
-          filename <- paste0("merge_plot", input$image_file_format)
-        }
-        if (input$dataset == "multi_plot_file"){
-          filename <- paste0("multi_plot", input$image_file_format)
+   
+        filename = function() {
+            filename <- "merged_file.csv"
+            if (input$dataset == "statistics_file"){
+                filename <- "statistics_file.csv"
+            }
+            if (input$dataset == "merged_plot_file"){
+                filename <- paste0("merge_plot", input$image_file_format)
+            }
+            if (input$dataset == "multi_plot_file"){
+                filename <- paste0("multi_plot", input$image_file_format)
+            }
+            return(filename)
+        },
+        content = function(file) {
+           
+            parameters <- fromJSON(file = "parameters/parameters.json")
+            width_ <- as.double(parameters["pdf_figure_size_inches"])
 
+            if (input$dataset == "statistics_file"){
+                return(write.csv(mergedStatistics(), file, row.names = FALSE))
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
+                pdf(file, width=14, height=14)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".png")) {
+                png(file, width=960, height=960)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".eps")) {
+                eps(file, width=14, height=14)
+                p <- multi_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+                print("Saving merge pdf")
+                pdf(file, family = "ArialMT", width = width_, height =width_, pointsize = 18)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".png")){
+                png(file, width=960,height=960)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
+                eps(file, width=width,height=width)
+                p <- merged_plot()
+                plot(p)
+                dev.off()
+            }
+            else (
+                return(write.csv(mergedStack(), file, row.names = FALSE))
+            )
         }
-        return(filename)
-      },
-      content = function(file) {
-        if (input$dataset == "statistics_file"){
-          return(write.csv(mergedStatistics(), file, row.names = FALSE))
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
-            pdf(file, width=14, height=14)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".png")) {
-            png(file, width=960, height=960)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".eps")) {
-            eps(file, width=14, height=14)
-            p <- multi_plot()
-            plot(p)
-            dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
-          pdf(file, width=7,height=7)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".png")){
-          png(file, width=960,height=960)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
-          eps(file, width=7,height=7)
-          p <- merged_plot()
-          plot(p)
-          dev.off()
-        }
-        else (
-          return(write.csv(mergedStack(), file, row.names = FALSE))
-        )
-        
-      }
     )
     
     output$downloadDataSingleImage <- downloadHandler(
@@ -901,13 +878,29 @@ server <- function(input, output, session) {
         scale_y_sqrt()
       
       #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
-      
-        cond1_feature <- unlist(cond1_data[feature])*180.0/pi
-        cond2_feature <- unlist(cond2_data[feature])*180.0/pi
 
-        statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-        plot_title <- parameters[input$feature_select][[1]][3]
-        p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+        feature <- parameters[input$feature_comparison][[1]][1]
+
+        if (parameters[input$feature_comparison][[1]][2] == "axial") {
+      
+            cond1_feature <- unlist(cond1_data[feature])*180.0/pi
+            cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+
+            statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+            plot_title <- parameters[input$feature_select][[1]][3]
+            p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+
+        }
+        else if (parameters[input$feature_comparison][[1]][2] == "linear") {
+      
+            cond1_feature <- unlist(cond1_data[feature])
+            cond2_feature <- unlist(cond2_data[feature])
+
+            statistics <- compute_linear_statistics(cond1_data, feature, parameters)
+            plot_title <- parameters[input$feature_select][[1]][3]
+            p2 <- compare_plot_linear(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+
+        }
 
 
 

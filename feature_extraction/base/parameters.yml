@@ -24,6 +24,9 @@ min_cell_size: 50
 min_nucleus_size: 10
 min_golgi_size: 10
 
+## spatial statistics
+
+feature_of_interest: "area"
 
 ## plot options
 
@@ -34,6 +37,10 @@ plot_ratio_method: False
 
 outline_width : 2
 show_polarity_angles: True
+
+graphics_output_format: ['png', 'pdf'] # 'png', 'pdf', 'svg'
+dpi: 300
+graphics_width: 7 # figure width in inches
 
 # segmentation parameters
 channel_junction: 0
