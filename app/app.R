@@ -875,16 +875,29 @@ server <- function(input, output, session) {
       
       #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
 
-    if (parameters[input$feature_comparison][[1]][2] == "axial") {
+        feature <- parameters[input$feature_comparison][[1]][1]
+
+        if (parameters[input$feature_comparison][[1]][2] == "axial") {
       
-        cond1_feature <- unlist(cond1_data[feature])*180.0/pi
-        cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+            cond1_feature <- unlist(cond1_data[feature])*180.0/pi
+            cond2_feature <- unlist(cond2_data[feature])*180.0/pi
 
-        statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-        plot_title <- parameters[input$feature_select][[1]][3]
-        p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+            statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+            plot_title <- parameters[input$feature_select][[1]][3]
+            p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
 
-    }
+        }
+        else if (parameters[input$feature_comparison][[1]][2] == "linear") {
+      
+            cond1_feature <- unlist(cond1_data[feature])
+            cond2_feature <- unlist(cond2_data[feature])
+
+            statistics <- compute_linear_statistics(cond1_data, feature, parameters)
+            plot_title <- parameters[input$feature_select][[1]][3]
+            p2 <- compare_plot_linear(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+
+        }
+
 
 
       p2
