@@ -1,5 +1,5 @@
 import os
-import cm
+import cmocean as cm
 import yaml
 import cmocean # use the phase colormap it cyclical and perceptually uniform
 import skimage.io
@@ -18,10 +18,12 @@ import math
 import numpy as np
 import tifffile as tiff
 from skimage.measure import regionprops
-from skimage.future.graph import RAG, graph
+from skimage.future.graph import RAG
+from skimage.future import graph
 import networkx as nw
 #import pysal as psy
 import plot_fcts
+
 
 def read_parameters(parameter_file):
 
@@ -35,7 +37,6 @@ def read_parameters(parameter_file):
     #    parameters = yaml.load(file, Loader=yaml.FullLoader)
     with open(parameter_file) as file:
         parameters_local = yaml.load(file, Loader=yaml.FullLoader)
-from skimage.future import graph
 
     # overwrite global parameters with local setting
     for key in parameters_local:
