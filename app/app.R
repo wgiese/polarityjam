@@ -150,8 +150,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
-                checkboxInput("kde_comparison", "KDE plot", TRUE),
+                checkboxInput("kde_comparison", "KDE plot", FALSE),
                 checkboxInput("histogram_comparison", "Histogram plot", TRUE),
+                checkboxInput("split_view_comparison", "Split view", TRUE),
             ),
             mainPanel(
                 #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
@@ -880,15 +881,34 @@ server <- function(input, output, session) {
       #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
 
         feature <- parameters[input$feature_comparison][[1]][1]
-
+        
         if (parameters[input$feature_comparison][[1]][2] == "axial") {
       
             cond1_feature <- unlist(cond1_data[feature])*180.0/pi
             cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+            x_data <- list(cond1_feature, cond2_feature)            
 
-            statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-            plot_title <- parameters[input$feature_select][[1]][3]
-            p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+            if (input$split_view_comparison) 
+            { 
+                
+                plotseries <- function(i){
+                   
+                    print(x_data)
+                    print(x_data[[i]]) 
+                    #x_data <- unlist(cond1_data[feature])*180.0/pi
+                    statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                    plot_title <- parameters[input$feature_select][[1]][3]
+                    p <- rose_plot_circular(parameters, input, statistics, x_data[[i]], plot_title, text_size)
+                }
+                myplots <- lapply(1:2, plotseries)
+                p2 <- grid.arrange(grobs = myplots, nrow = nCol) #, widths = list(10,10))
+            }
+            else {
+                statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                plot_title <- parameters[input$feature_select][[1]][3]
+                p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+            }
+            
 
         }
         else if (parameters[input$feature_comparison][[1]][2] == "linear") {
