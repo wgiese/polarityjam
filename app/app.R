@@ -815,7 +815,8 @@ server <- function(input, output, session) {
         source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
     
         parameters <- fromJSON(file = "parameters/parameters.json")
-
+        text_size <- as.integer(parameters["text_size_merged_plot"])
+        
         inFileCondition_1 <- input$condition_1
         inFileCondition_2 <- input$condition_2
       
@@ -901,7 +902,7 @@ server <- function(input, output, session) {
                     p <- rose_plot_circular(parameters, input, statistics, x_data[[i]], plot_title, text_size)
                 }
                 myplots <- lapply(1:2, plotseries)
-                p2 <- grid.arrange(grobs = myplots, nrow = nCol) #, widths = list(10,10))
+                p2 <- grid.arrange(grobs = myplots, nrow = 2) #, widths = list(10,10))
             }
             else {
                 statistics <- compute_circular_statistics(cond1_data, feature, parameters)
