@@ -18,7 +18,7 @@ import matplotlib as mpl
 import math
 import numpy as np
 import tifffile as tiff
-from skimage.measure import regionprops
+from skimage.measure import regionprops,label
 from skimage.future.graph import RAG
 from skimage.future import graph
 import networkx as nw
@@ -437,6 +437,7 @@ def remove_edges(mask):
     for elemet in np.unique(x_indexed):
         segments[segments == elemet] = 0
     return(segments)
+
 def remove_islands(frame_graph, mask):
     list_of_islands = []
     #Get list of islands - nodes with no neighbkluors,
@@ -452,3 +453,28 @@ def remove_islands(frame_graph, mask):
         frame_graph.remove_node(elemet)
         mask[:,:][mask[:,:] == elemet] = 0
     return(frame_graph,mask)
+
+def plot_cyclical(input_image):
+	lab_image = label(input_image)
+	regions = regionprops(lab_image)
+	orient_list = []
+	for region in regions:
+	    cell_masks_approx[lab_image == region.label] = region.orientation * (180/np.pi) + 90 
+	    orient_list.append(np.round(math.degrees(region.orientation)))
+
+	    
+	cell_masks_approx[cell_masks_approx == 0] = np.nan
+
+
+	masked_data = (lab_image != 0)
+	t_f = (masked_data * 1)
+	masked_data[np.where(t_f == 0),np.where(t_f == 0)] = np.nan
+
+
+	import matplotlib.cm as cmp
+	plt.figure(figsize=(20,20))
+	cm_phase = plt.imshow(cell_masks_approx,cmap=cm.cm.phase)
+	plt.imshow(np.where(masked_data == 0, 1, np.nan),cmap='binary', vmin=0, vmax=1)
+	plt.colorbar(cm_phase)
+	#plt.savefig('/home/lepstei/Desktop/orientation_out.png')
+	return(cm_phase)
