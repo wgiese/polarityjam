@@ -1,16 +1,33 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Polarity JaM: Shiny app for plotting and comparing polarity data (beta 0.2)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# author:  Wolfgang Giese
-# e-mail address: wolfgang #dot# giese #at# mdc-berlin #dot# de
+# Takes spreadsheet type data as input with circular and non-circular features
+# Visualization of circular and non-circular distributions
+# Comparative circular statistics 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# MIT License
+#
+# Copyright (c) 2021 Wolfgang Giese
+# electronic mail address: wolfgang #dot# giese #at# mdc #minus# berlin #dot# de
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 options(shiny.maxRequestSize = 30*1024^2)
@@ -29,7 +46,6 @@ library(FNN)
 library(tidyverse)
 library(CircStats)
 library(readxl)
-#library(ggimage) 
 library(fs)
 library(rjson)
 
@@ -40,6 +56,33 @@ vals <- reactiveValues(count=0)
 ###### UI: User interface #########
 
 ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta 0.2)",
+
+### Panel 0: Data preparation
+
+    tabPanel("Data preparation",
+        sidebarLayout(
+            sidebarPanel(
+                shinyDirButton("dir", "Input directory", "Upload"),
+                verbatimTextOutput("dir", placeholder = TRUE),
+                actionButton("refreshStack", "Refresh"),
+#                selectInput("dataset", "Choose a dataset:",
+#                            choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
+#                selectInput("image_file_format", "Choose image file format:",
+#                            choices = c(".pdf",".eps",".png")),
+                selectInput("dataset", "Choose a dataset:",
+                            choices = c("merged_file")),
+                downloadButton("downloadData", "Download")
+            ),
+                
+            # Show a plot of the generated distribution
+            mainPanel(
+                tabsetPanel(
+                    tabPanel("Table", tableOutput("merged_stack"))
+                )
+            )
+        )
+    ),
+ 
                  
 ### Panel A: Image stack histogram
                  
@@ -310,8 +353,6 @@ server <- function(input, output, session) {
     mergedStack()
   })
   
-  #observeEvent(input$refreshStack, { mergedStack()
-  #})
   
   mergedStatistics <- reactive({
     "
@@ -902,7 +943,7 @@ server <- function(input, output, session) {
                     p <- rose_plot_circular(parameters, input, statistics, x_data[[i]], plot_title, text_size)
                 }
                 myplots <- lapply(1:2, plotseries)
-                p2 <- grid.arrange(grobs = myplots, nrow = 2) #, widths = list(10,10))
+                p2 <- grid.arrange(grobs = myplots, ncol = 2) #, widths = list(10,10))
             }
             else {
                 statistics <- compute_circular_statistics(cond1_data, feature, parameters)
