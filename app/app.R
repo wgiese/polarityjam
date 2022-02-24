@@ -65,10 +65,6 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 shinyDirButton("dir", "Input directory", "Upload"),
                 verbatimTextOutput("dir", placeholder = TRUE),
                 actionButton("refreshStack", "Refresh"),
-#                selectInput("dataset", "Choose a dataset:",
-#                            choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
-#                selectInput("image_file_format", "Choose image file format:",
-#                            choices = c(".pdf",".eps",".png")),
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("merged_file")),
                 downloadButton("downloadData", "Download")
@@ -89,9 +85,15 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Image stack analysis",
         sidebarLayout(
             sidebarPanel(
-                shinyDirButton("dir", "Input directory", "Upload"),
-                verbatimTextOutput("dir", placeholder = TRUE),
-                actionButton("refreshStack", "Refresh"),
+                fileInput("stackData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                checkboxInput("header_correlation", "File upload", TRUE),
+#                shinyDirButton("dir", "Input directory", "Upload"),
+#                verbatimTextOutput("dir", placeholder = TRUE),
+#                actionButton("refreshStack", "Refresh"),
                 sliderInput("bins",
                             "Number of bins:",
                             min = 1,
@@ -122,13 +124,13 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
                 selectInput("image_file_format", "Choose image file format:",
                             choices = c(".pdf",".eps",".png")),
-                downloadButton("downloadData", "Download")
+#                downloadButton("downloadData", "Download")
             ),
                 
             # Show a plot of the generated distribution
             mainPanel(
                 tabsetPanel(
-                    tabPanel("Table", tableOutput("merged_stack")),
+#                    tabPanel("Table", tableOutput("merged_stack")),
                     tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
                     tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
                     tabPanel("Statistics", tableOutput("merged_statistics"))
@@ -169,6 +171,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
         )
     ),
       
+### Panel C: Comparison statistics
+
     tabPanel("Compare",                    
         sidebarLayout(
             sidebarPanel(
