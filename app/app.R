@@ -69,7 +69,16 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             choices = c("merged_file")),
                 downloadButton("downloadData", "Download")
             ),
-                
+ 
+            #conditionalPanel(condition = "input.tidyInput==true",
+            #    selectInput("x_var", "Select variable for x-axis", choices = ""),
+            #    selectInput("y_var", "Select variable for y-axis", choices = ""),
+            #    selectInput("g_var", "Identifier of samples", choices = ""),
+            #    selectInput("c_var", "Identifier of conditions", choices = ""),
+            #    selectInput("filter_column", "Filter based on this parameter:", choices = ""),
+            #    selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE)
+            #),
+               
             # Show a plot of the generated distribution
             mainPanel(
                 tabsetPanel(
@@ -943,6 +952,7 @@ server <- function(input, output, session) {
       
       #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
 
+        p2 <- ggplot()
         feature <- parameters[input$feature_comparison][[1]][1]
         
         if (parameters[input$feature_comparison][[1]][2] == "axial") {
@@ -950,18 +960,29 @@ server <- function(input, output, session) {
             cond1_feature <- unlist(cond1_data[feature])*180.0/pi
             cond2_feature <- unlist(cond2_data[feature])*180.0/pi
             x_data <- list(cond1_feature, cond2_feature)            
+            condition_data <- list()
+            condition_data[[1]] <- cond1_data
+            condition_data[[2]] <- cond2_data
+            #condition_data <- list(cond1_data, cond2_data)            
 
             if (input$split_view_comparison) 
             { 
                 
                 plotseries <- function(i){
                    
-                    print(x_data)
-                    print(x_data[[i]]) 
-                    #x_data <- unlist(cond1_data[feature])*180.0/pi
+                    #print(x_data)
+                    #print(x_data[[i]]) 
+                    
                     statistics <- compute_circular_statistics(cond1_data, feature, parameters)
                     plot_title <- parameters[input$feature_select][[1]][3]
                     p <- rose_plot_circular(parameters, input, statistics, x_data[[i]], plot_title, text_size)
+                    
+                    #cond_data <- condition_data[[i]]
+                    #x_data <- cond_data[feature]
+                    #statistics <- compute_circular_statistics(cond_data, feature, parameters)
+                    #plot_title <- parameters[input$feature_select][[1]][3]
+                    #p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+
                 }
                 myplots <- lapply(1:2, plotseries)
                 p2 <- grid.arrange(grobs = myplots, ncol = 2) #, widths = list(10,10))
@@ -971,7 +992,33 @@ server <- function(input, output, session) {
                 plot_title <- parameters[input$feature_select][[1]][3]
                 p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
             }
+        }
+        else if (parameters[input$feature_comparison][[1]][2] == "2-axial") {
             
+            cond1_feature <- unlist(cond1_data[feature])
+            cond2_feature <- unlist(cond2_data[feature])
+            
+            if (input$left_axial) {
+                cond1_feature <- unlist(transform_2_axial(cond1_feature))*180.0/pi
+                cond2_feature <- unlist(transform_2_axial(cond2_feature))*180.0/pi
+            } else {
+                cond1_feature <- unlist(cond1_data[feature])*180.0/pi
+                cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+            }
+
+            x_data <- list(cond1_feature, cond2_feature)            
+            
+            plotseries <- function(i) {
+                
+                print(x_data)
+                print(x_data[[i]]) 
+                #x_data <- unlist(cond1_data[feature])*180.0/pi
+                statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                plot_title <- parameters[input$feature_select][[1]][3]
+                p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
+            }
+            myplots <- lapply(1:2, plotseries)
+            p2 <- grid.arrange(grobs = myplots, ncol = 2) 
 
         }
         else if (parameters[input$feature_comparison][[1]][2] == "linear") {

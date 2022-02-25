@@ -83,7 +83,8 @@ for index, row in key_file.iterrows():
         #golgi_mask = functions.get_golgi_mask(parameters, img, cellpose_mask)
         properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, filename, output_path)
         
-        
+        properties_df["condition"] = row["short_name"]
+
         print(properties_df.head())
         #properties_df.to_csv("image_%s.csv" % ind)
         properties_df.to_csv(output_path + filename.split(".")[0] + ".csv")
