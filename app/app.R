@@ -318,30 +318,36 @@ server <- function(input, output, session) {
     and combines them into one data frame
     "
    
-    datapath <- stack_data_info$datapath 
-    
-    # get list of files in the datapath
-    file_list <- list.files(datapath)
-    print("File_list")
-    print(file_list)
+    inFileStackData <- input$stackData
 
-    counter <- 1
-    plist <- list()
-    results_all_df <-data.frame()
-    tag <- FALSE
-    
-    for (file_name in file_list[1:length(file_list)]){
+    if (is.null(inFileStackData)) {
+        datapath <- stack_data_info$datapath 
+        
+        # get list of files in the datapath
+        file_list <- list.files(datapath)
+        print("File_list")
+        print(file_list)
 
-      if (file_ext(file_name) == "csv") {
-        results_df <- read.csv(paste0(datapath,"/",file_name))
-        results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
-        results_all_df  <- rbind(results_all_df, results_df )
-      }
-    }
-    
-    if (length(results_all_df) > 1) {
-      results_all_df$datapath <- datapath
-      results_all_df$experimental_condition <- input$exp_condition
+        counter <- 1
+        plist <- list()
+        results_all_df <-data.frame()
+        tag <- FALSE
+        
+        for (file_name in file_list[1:length(file_list)]){
+
+          if (file_ext(file_name) == "csv") {
+            results_df <- read.csv(paste0(datapath,"/",file_name))
+            results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
+            results_all_df  <- rbind(results_all_df, results_df )
+          }
+        }
+        
+        if (length(results_all_df) > 1) {
+          results_all_df$datapath <- datapath
+          results_all_df$experimental_condition <- input$exp_condition
+        }
+    } else {    
+        results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     }
     
     
@@ -367,6 +373,11 @@ server <- function(input, output, session) {
     
     results_df <- mergedStack()
     
+    #inFileStackData <- input$stackData
+
+    #if (!is.null(inFileStackData))
+    #   results_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+
     print("Data Frame:")
     print(head(results_df))
     
@@ -523,7 +534,13 @@ server <- function(input, output, session) {
     text_size <- as.integer(parameters["text_size_merged_plot"])
     
     results_all_df <- mergedStack()
-    
+ 
+    #inFileStackData <- input$stackData
+
+    #if (!is.null(inFileStackData))
+    #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+
+   
     for(i in 1:nrow(results_all_df)) {
       row <- results_all_df[i,]
       a <- row$major_axis_length
