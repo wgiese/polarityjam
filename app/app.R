@@ -1006,16 +1006,31 @@ server <- function(input, output, session) {
                 cond2_feature <- unlist(cond2_data[feature])*180.0/pi
             }
 
-            x_data <- list(cond1_feature, cond2_feature)            
+            # x_data <- list(cond1_feature, cond2_feature)            
             
             plotseries <- function(i) {
                 
-                print(x_data)
-                print(x_data[[i]]) 
-                #x_data <- unlist(cond1_data[feature])*180.0/pi
-                statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                ## print(x_data)
+                # print(x_data[[i]]) 
+                # x_data <- unlist(cond1_data[feature])*180.0/pi
+                # statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                # plot_title <- parameters[input$feature_select][[1]][3]
+                # p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
+              
                 plot_title <- parameters[input$feature_select][[1]][3]
-                p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
+                
+                if (i==1) {
+                    statistics <- compute_2_axial_statistics(cond1_data, feature, parameters)
+                    p <- rose_plot_2_axial(parameters, input, statistics, cond1_feature, plot_title, text_size)
+                } else {
+                    statistics <- compute_2_axial_statistics(cond2_data, feature, parameters)
+                    p <- rose_plot_2_axial(parameters, input, statistics, cond2_feature, plot_title, text_size)
+
+                }  
+                # x_data <- unlist(cond1_data[feature])*180.0/pi
+                # statistics <- compute_circular_statistics(cond1_data, feature, parameters)
+                # plot_title <- parameters[input$feature_select][[1]][3]
+                # p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
             }
             myplots <- lapply(1:2, plotseries)
             p2 <- grid.arrange(grobs = myplots, ncol = 2) 

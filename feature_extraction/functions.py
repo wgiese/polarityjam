@@ -60,7 +60,7 @@ def read_image(parameters, filename):
 
     if img_.shape[0] < min(img_.shape[1],img_.shape[2]):
         print("Warning: channel is on the first dimension of the image.")
-        img = img_.reshape(img_.shape[1], img_.shape[2], img_.shape[0])
+        img = np.swapaxes(np.swapaxes(img_,0,2),0,1)
     else:
         img = img_
 
@@ -77,6 +77,9 @@ def get_image_for_segmentation(parameters, img):
     else:
     	return im_junction
 
+    print(im_seg.shape)
+    im_seg.reshape(img.shape)
+    print(im_seg.shape)
     return im_seg
 
 def get_cellpose_segmentation(parameters, im_seg):
@@ -131,9 +134,12 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 
 def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_path):
-    rag = orientation_graph_nf(cell_mask)
-    rag, cell_mask = remove_islands(rag, cell_mask)
-    print(list(rag.nodes))
+    
+    if parameters["compute_spatial_statistics"]:
+        rag = orientation_graph_nf(cell_mask)
+        rag, cell_mask = remove_islands(rag, cell_mask)
+        print(list(rag.nodes))
+
     if parameters["channel_nucleus"] >= 0: 
         nuclei_mask = get_nuclei_mask(parameters, img, cell_mask)
     #nuclei_mask = get_nuclei_cellpose(parameters, img, cell_mask)
@@ -157,12 +163,14 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         if parameters["channel_nucleus"] >= 0:
             single_nucleus_mask = np.where(nuclei_mask==label, 1, 0)
             if len(single_nucleus_mask[single_nucleus_mask==1]) < parameters["min_nucleus_size"]:
-                rag.remove_node(label)
+                if parameters["compute_spatial_statistics"]:
+                    rag.remove_node(label)
                 continue
             if parameters["channel_golgi"] >= 0:
                 single_golgi_mask = np.where(golgi_mask ==label, 1, 0)    
                 if len(single_golgi_mask[single_golgi_mask==1]) < parameters["min_golgi_size"]:
-                    rag.remove_node(label)
+                    if parameters["compute_spatial_statistics"]:
+                        rag.remove_node(label)
                     continue
 
         #area_golgi_px2 = len(single_golgi_mask[single_golgi_mask==1])
@@ -176,7 +184,8 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
         #print(len(single_golgi_mask[single_golgi_mask==1]))
         
         if len(single_cell_mask[single_cell_mask==1]) < parameters["min_cell_size"]:
-            rag.remove_node(label)
+            if parameters["compute_spatial_statistics"]:
+                rag.remove_node(label)
             continue
   
         regions = skimage.measure.regionprops(single_cell_mask)
@@ -325,16 +334,21 @@ def get_features_from_cellpose_seg(parameters, img, cell_mask, filename, output_
             single_cell_props.at[counter, "angle_rad"] = angle_rad
             single_cell_props.at[counter, "flow_alignment"] = np.sin(angle_rad)
             single_cell_props.at[counter, "angle_deg"] = 180.0*angle_rad/np.pi   
+        
+
 ###
 
-        #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
-        f2a = single_cell_props.at[counter, parameters["feature_of_interest"]]
-        foe = str(parameters["feature_of_interest"])
-        rag.nodes[label.astype('int')][foe] = f2a
-        #nw.set_node_attributes(graph_nf, {label.astype('int'):f2a}, parameters["feature_of_interest"])
-        print(f2a,parameters["feature_of_interest"],label,rag.nodes[label.astype('int')][foe])
-        #print(nx.get_node_attributes(G,parameters["feature_of_interest"]))
+        if parameters["compute_spatial_statistics"]:
+            #rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
+            f2a = single_cell_props.at[counter, parameters["feature_of_interest"]]
+            foe = str(parameters["feature_of_interest"])
+            rag.nodes[label.astype('int')][foe] = f2a
+            #nw.set_node_attributes(graph_nf, {label.astype('int'):f2a}, parameters["feature_of_interest"])
+            print(f2a,parameters["feature_of_interest"],label,rag.nodes[label.astype('int')][foe])
+            #print(nx.get_node_attributes(G,parameters["feature_of_interest"]))
+        
         counter += 1
+
 
     im_junction = img[:,:,int(parameters["channel_junction"])]
     im_marker = img[:,:,int(parameters["channel_expression_marker"])]

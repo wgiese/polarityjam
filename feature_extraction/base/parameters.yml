@@ -26,6 +26,7 @@ min_golgi_size: 10
 
 ## spatial statistics
 
+compute_spatial_statistics: False
 feature_of_interest: "area"
 
 ## plot options
