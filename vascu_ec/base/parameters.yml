@@ -1,0 +1,57 @@
+# I/O settings
+
+output_path : "/path/to/output/"
+
+##  source data/ output folders for run.py
+
+image_filename : "/path/to/imagefile.tif"
+output_filename : "image001"
+
+
+##  source data/ output folders for run_stack.py
+
+input_path : "/path/to/image/folder/"
+
+## cellpose/segmentation parameters
+
+#in case a manually annotated cellpose mask exists
+manually_annotated_mask: "" 
+use_given_mask: False
+
+use_gpu:  False
+clear_border: True
+min_cell_size: 50
+min_nucleus_size: 10
+min_golgi_size: 10
+
+## spatial statistics
+
+feature_of_interest: "area"
+
+## plot options
+
+plot_polarity: True
+plot_marker: True
+plot_alignment: True
+plot_ratio_method: False
+
+outline_width : 2
+show_polarity_angles: True
+
+graphics_output_format: ['png', 'pdf'] # 'png', 'pdf', 'svg'
+dpi: 300
+graphics_width: 7 # figure width in inches
+
+# segmentation parameters
+channel_junction: 0
+channel_nucleus : 1
+channel_golgi : 2
+channel_expression_marker : -1
+channel_focal_adhesions: -1
+mask_focal_adhesion: -1
+mask_junction: -1
+
+estimated_cell_diameter : 100
+
+membrane_thickness : 5
+
