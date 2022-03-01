@@ -5,6 +5,8 @@ import vascu_ec
 from vascu_ec.commandline import run, run_stack, run_key
 from vascu_ec.logging import configure_logger, get_logger
 
+# todo: nice help messages
+
 
 def startup():
     """Entry points of `album`."""
@@ -12,7 +14,7 @@ def startup():
     configure_logger('INFO')
 
     parser = create_parser()
-    args = parser.parse_known_args()
+    args = parser.parse_args()
 
     __run_subcommand(args, parser)
 
@@ -25,25 +27,34 @@ def __run_subcommand(args, parser):
     except IndexError:
         parser.error("Please provide a valid action!")
     get_logger().debug("Running %s subcommand..." % command)
-    sys.argv = [sys.argv[0]] + args[1]  # TODO: remove as no unknown arguments should be allowed
 
     get_logger().info("VascuShare Version %s | contact via %s " %
                       (vascu_ec.__version__, vascu_ec.__email__))
 
-    args[0].func(args[0])  # execute entry point function
+    args.func(args)  # execute entry point function
 
 
 def create_parser():
     parser = VascuParser()
-    parser.create_file_command_parser('run', run, 'help')
-    parser.create_file_command_parser('run-stack', run_stack, 'help')
-    parser.create_file_command_parser('run-key', run_key, 'help')
 
-    return parser
+    # run action
+    p = parser.create_file_command_parser('run', run, 'help')
+    p.add_argument('in_file', type=str, help='path to the input tif file.')
+    p.add_argument('--filename_prefix', type=str, help='prefix for the output file.', required=False, default=None)
+
+    # stack action
+    p = parser.create_file_command_parser('run-stack', run_stack, 'help')
+    p.add_argument('in_path', type=str, help='name for the input folder containing tifs.')
+
+    # key action
+    p = parser.create_file_command_parser('run-key', run_key, 'help')
+    p.add_argument('in_key', type=str, help='path to the key file.')
+
+    return parser.parser
 
 
 class ArgumentParser(argparse.ArgumentParser):
-    """Override default error method of all parsers to show help of subcommand"""
+    """Override default error method of all parsers to show help of sub-command."""
 
     def error(self, message):
         self.print_help()
@@ -91,5 +102,6 @@ class VascuParser(ArgumentParser):
         Parser is specified by a name, a function and a help description.
         """
         parser = self.create_command_parser(command_name, command_function, command_help)
-        parser.add_argument('param', type=str, help='path to the parameter file')
+        parser.add_argument('param', type=str, help='path to the parameter file.')
+        parser.add_argument('out_path', type=str, help='output path.')
         return parser

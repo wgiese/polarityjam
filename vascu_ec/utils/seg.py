@@ -1,5 +1,10 @@
+from pathlib import Path
+
 import cellpose.models
+import numpy as np
 import skimage.segmentation
+
+from vascu_ec.logging import get_logger
 
 
 def get_cellpose_model(use_gpu):
@@ -21,3 +26,20 @@ def get_cellpose_segmentation(parameters, im_seg):
         masks = skimage.segmentation.clear_border(masks)
 
     return masks
+
+
+def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
+    stem = Path(filepath).stem
+    segmentation = Path(filepath).parent.joinpath(stem + "_seg.npy")
+    if segmentation.exists():
+        # in case an annotated mask is available
+        cellpose_seg = np.load(str(segmentation), allow_pickle=True)
+        cellpose_mask = cellpose_seg.item()['masks']
+        if parameters["clear_border"]:
+            cellpose_mask = skimage.segmentation.clear_border(cellpose_mask)
+    else:
+        cellpose_mask = get_cellpose_segmentation(parameters, img_seg)
+
+    get_logger().info("Number of cell labels: %s" % np.max(cellpose_mask))
+
+    return cellpose_mask

@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import cmocean as cm
 import numpy as np
@@ -7,13 +8,13 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 from skimage.measure import label, regionprops
 
-from vascu_ec.feature_extraction import orientation_graph_nf
+from vascu_ec.logging import get_logger
+from vascu_ec.utils.rag import orientation_graph_nf
 
 
 def get_outline_from_mask(mask, width=1):
-    '''
-    TODO: revise use built in function from cellpose
-    '''
+    """"""
+    # TODO: revise use built in function from cellpose
 
     dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations=width)
     eroded_mask = ndi.morphology.binary_erosion(mask.astype(bool), iterations=width)
@@ -22,15 +23,31 @@ def get_outline_from_mask(mask, width=1):
     return outline_mask
 
 
+def plot_seg_channels(seg_img, output_path, filename):
+    """"""
+    output_path = Path(output_path)
+
+    if len(seg_img) > 1:
+        fig, ax = plt.subplots(1, 2)
+        ax[0].imshow(seg_img[0, :, :])
+        ax[1].imshow(seg_img[1, :, :])
+        plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
+    else:
+        fig, ax = plt.subplots()
+        ax.imshow(seg_img[:, :])
+        plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
+
+
 def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, output_path):
-    '''
+    """
     parameters  :   dict
                     user defined parameters
     im_junction :   numpy.array (2-dim), float
                     channel containing the junction staining (used for segmentation)
     masks       :   numpy.array (2-dim), int
                     same dimension as im_junction, contains cell masks
-    '''
+    """
+    # todo: comments can be deleted?
 
     # output_path = parameters['output_path']
     # output_filename = parameters["output_filename"]
@@ -71,10 +88,8 @@ def plot_polarity(parameters, im_junction, masks, single_cell_props, filename, o
     return 0
 
 
-def plot_marker(parameters, im_marker, masks, single_cell_props, filename, output_path):
-    '''
-    
-    '''
+def plot_marker(parameters, im_marker, masks, single_cell_dataset, filename, output_path):
+    # todo: comments can be deleted?
     sub_figs = len(masks) + 1
     fig, ax = plt.subplots(1, sub_figs, figsize=(10 * sub_figs, 10))
 
@@ -94,7 +109,7 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename, outpu
     # outline_nuc_ = np.where(outline_nuc == True, 30, 0)
     # ax[0].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
 
-    if sub_figs > 2:
+    if sub_figs > 2:  # todo: unify this branch and the above one
         outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
         outline_nuc_ = np.where(outline_nuc == True, 30, 0)
         ax[sub_figs - 1].imshow(np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100,
@@ -140,7 +155,7 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename, outpu
         #ax[2].imshow(np.ma.masked_where(outline_mem_ == 0, outline_mem_),  plt.cm.Wistia, vmin=0, vmax=100, alpha = 0.75)
     '''
 
-    for index, row in single_cell_props.iterrows():
+    for index, row in single_cell_dataset.iterrows():
 
         ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"], 1)), color="w", fontsize=6)
         ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=6)
@@ -167,6 +182,7 @@ def plot_marker(parameters, im_marker, masks, single_cell_props, filename, outpu
 
 
 def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filename, output_path):
+    # todo: comments can be deleted?
     # sub_figs = len(masks) + 1
     # fig, ax = plt.subplots(1, sub_figs, figsize=(10*sub_figs,10))
     fig, ax = plt.subplots(1, figsize=(10, 10))
@@ -209,6 +225,7 @@ def plot_marker_polarity(parameters, im_marker, masks, single_cell_props, filena
 
 
 def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, output_path):
+    # todo: comments can be deleted?
     sub_figs = len(masks)
     fig, ax = plt.subplots(1, sub_figs, figsize=(sub_figs * 5, 5))
 
@@ -252,6 +269,7 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, 
         ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
         # ax[1].imshow(nuclei_mask,  cmap = plt.cm.Set3, alpha = 0.5)
 
+        get_logger().info("Calculating nuclei eccentricity...")
         nuclei_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
         for index, row in single_cell_props.iterrows():
             label = int(row['label'])
@@ -263,11 +281,10 @@ def plot_alignment(parameters, im_junction, masks, single_cell_props, filename, 
             single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
             nuclei_eccentricity += single_nuclei_mask
 
-        print(nuclei_eccentricity)
-        print(np.max(nuclei_eccentricity))
-        print(np.min(nuclei_eccentricity))
+        get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
+        get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
 
-        nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
+        nuclei_mask_ = np.where(nuclei_mask is True, 70, 0)
         ##nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)
         # ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_),  plt.cm.gist_rainbow, vmin=0, vmax=1.0, alpha = 0.5)
         cax_1 = ax[1].imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_eccentricity), plt.cm.bwr, vmin=0, vmax=1.0,
@@ -435,7 +452,7 @@ def plot_ratio_method(parameters, im_junction, masks, single_cell_props, filenam
     return 0
 
 
-def plot_cyclical(input_image):
+def plot_cyclical(input_image):  # todo: needed?
     lab_image = label(input_image)
     regions = regionprops(lab_image)
     orient_list = []
@@ -458,6 +475,67 @@ def plot_cyclical(input_image):
 
 
 def plot_adjacency_matrix(label_image, intensity_image):
+    # todo: needed?
     rag = orientation_graph_nf(label_image)
     out = graph.draw_rag(label_image, rag, intensity_image, node_color="#ffde00")
     return (out)
+
+
+def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
+                 golgi_mask, im_marker):
+    """Plots the properties dataset"""
+    get_logger().info("Plotting data...")
+    im_junction = img[:, :, int(parameters["channel_junction"])]
+    # im_marker = img[:, :, int(parameters["channel_expression_marker"])]  TODO: this is not working in many cases!
+
+    if parameters["plot_polarity"] and golgi_mask is not None:
+        plot_polarity(
+            parameters,
+            im_junction,
+            [cell_mask_rem_island, nuclei_mask, golgi_mask],
+            properties_dataset,
+            filename, output_path
+        )
+    if parameters["plot_marker"] and nuclei_mask is not None and im_marker is not None:
+        plot_marker(
+            parameters, im_marker, [cell_mask_rem_island, nuclei_mask], properties_dataset, filename, output_path
+        )
+        plot_marker_polarity(
+            parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename,
+            output_path
+        )
+    # todo: explain this condition
+    if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
+        plot_marker(parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename, output_path)
+        plot_marker_polarity(
+            parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename, output_path
+        )
+
+    if parameters["plot_alignment"] and nuclei_mask is not None:
+        plot_alignment(
+            parameters,
+            im_junction,
+            [cell_mask_rem_island, nuclei_mask],
+            properties_dataset,
+            filename,
+            output_path
+        )
+    # todo: explain this condition
+    if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
+        plot_alignment(
+            parameters,
+            im_junction,
+            [cell_mask_rem_island],
+            properties_dataset,
+            filename,
+            output_path
+        )
+    if parameters["plot_ratio_method"]:
+        plot_ratio_method(
+            parameters,
+            im_junction,
+            [cell_mask_rem_island],
+            properties_dataset,
+            filename,
+            output_path
+        )

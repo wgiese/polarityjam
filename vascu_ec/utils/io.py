@@ -1,3 +1,4 @@
+import glob
 import os
 from pathlib import Path
 
@@ -39,3 +40,29 @@ def read_image(filename):
         img = img_
 
     return img
+
+
+def write_dict_to_yml(yml_file, d):
+    """Writes a dictionary to a file in yml format."""
+    yml_file = Path(yml_file)
+    p = Path(yml_file.parent)
+    p.mkdir(parents=True, exist_ok=True)
+
+    with open(yml_file, 'w+') as yml_f:
+        yml_f.write(yaml.dump(d, Dumper=yaml.Dumper))
+
+    return True
+
+
+def create_path_recursively(path):
+    """Creates a path. Creates missing parent folders."""
+    p = Path(path)
+    p.mkdir(parents=True, exist_ok=True)
+
+    return True
+
+
+def get_tif_list(path):
+    path = str(path)
+
+    return glob.glob(path + "*.tif")

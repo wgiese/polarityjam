@@ -10,6 +10,7 @@ def get_logger():
 
 def configure_logger(loglevel=None, stream_handler=None, formatter_string=None):
     logger = logging.getLogger(LOGGER_NAME)
+    logger.setLevel(loglevel)
 
     # create formatter
     if not formatter_string:

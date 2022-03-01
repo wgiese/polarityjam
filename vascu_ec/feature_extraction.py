@@ -8,11 +8,10 @@ import skimage.filters
 import skimage.io
 import skimage.measure
 import skimage.segmentation
-from skimage.future.graph import RAG
-from skimage.measure import regionprops
 
 from vascu_ec.logging import get_logger
-from vascu_ec.utils import plot
+from vascu_ec.utils.plot import plot_dataset
+from vascu_ec.utils.rag import orientation_graph_nf
 
 
 def get_image_for_segmentation(parameters, img):
@@ -21,8 +20,8 @@ def get_image_for_segmentation(parameters, img):
     ch_junction = int(parameters["channel_junction"])
     ch_nucleus = int(parameters["channel_nucleus"])
 
-    print(str(ch_junction))
-    print(img.shape)
+    get_logger().info("Image shape: %s" % str(img.shape))
+    get_logger().info("Junction channel at position: %s" % str(ch_junction))
 
     im_junction = img[:, :, ch_junction]
     if ch_nucleus >= 0:
@@ -83,11 +82,11 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_gol
     if len(single_cell_mask[single_cell_mask == 1]) < parameters["min_cell_size"]:
         return True
 
-    if single_nucleus_mask:
+    if single_nucleus_mask is not None:
         if len(single_nucleus_mask[single_nucleus_mask == 1]) < parameters["min_nucleus_size"]:
             return True
 
-    if single_golgi_mask:
+    if single_golgi_mask is not None:
         if len(single_golgi_mask[single_golgi_mask == 1]) < parameters["min_golgi_size"]:
             return True
 
@@ -96,7 +95,7 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_gol
 
 def get_single_cell_nucleus_mask(connected_component_label, nuclei_mask):
     """Gets the single cell nucleus mask."""
-    if nuclei_mask:
+    if nuclei_mask is not None:
         return np.where(nuclei_mask == connected_component_label, 1, 0)
     else:
         return None
@@ -104,7 +103,7 @@ def get_single_cell_nucleus_mask(connected_component_label, nuclei_mask):
 
 def get_single_cell_golgi_mask(connected_component_label, golgi_mask):
     """Gets the single cell golgi mask."""
-    if golgi_mask:
+    if golgi_mask is not None:
         return np.where(golgi_mask == connected_component_label, 1, 0)
     else:
         return None
@@ -112,7 +111,7 @@ def get_single_cell_golgi_mask(connected_component_label, golgi_mask):
 
 def get_single_cell_mask(connected_component_label, cell_mask_rem_island):
     """Gets the single cell mask."""
-    if cell_mask_rem_island:
+    if cell_mask_rem_island is not None:
         return np.where(cell_mask_rem_island == connected_component_label, 1, 0)
     else:
         return None
@@ -120,7 +119,7 @@ def get_single_cell_mask(connected_component_label, cell_mask_rem_island):
 
 def get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask):
     """Gets the single cellmembrane mask."""
-    if im_marker:
+    if im_marker is not None:
         return get_outline_from_mask(single_cell_mask.astype(bool), parameters["membrane_thickness"])
     else:
         return None
@@ -128,7 +127,7 @@ def get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask):
 
 def get_single_cell_cytosol_mask(single_cell_mask, im_marker, single_nucleus_mask):
     """Gets the cytosol mask."""
-    if single_nucleus_mask and im_marker:
+    if single_nucleus_mask is not None and im_marker is not None:
         return np.logical_xor(single_cell_mask.astype(bool), single_nucleus_mask.astype(bool))
     else:
         return None
@@ -140,6 +139,64 @@ def get_image_marker(parameters, img):
         return img[:, :, parameters["channel_expression_marker"]]
 
 
+def set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, graph_nf):
+    single_cell_props = get_single_cell_prop(single_cell_mask)
+    neighbours = len(list(graph_nf.neighbors(connected_component_label)))
+    fill_single_cell_general_data_frame(
+        properties_dataset, index, filename, connected_component_label, single_cell_props, neighbours
+    )
+
+    return single_cell_props
+
+
+def set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask):
+    regions = skimage.measure.regionprops(single_nucleus_mask)
+    nucleus_props = regions[-1]
+    fill_single_nucleus_data_frame(properties_dataset, index, nucleus_props)
+
+    return nucleus_props
+
+
+def set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props):
+    regions = skimage.measure.regionprops(single_golgi_mask)
+    golgi_props = regions[-1]
+    fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
+
+    return golgi_props
+
+
+def set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker):
+    regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
+    marker_props = regions[-1]
+    fill_single_cell_marker_polarity(properties_dataset, index, marker_props)
+
+    return marker_props
+
+
+def set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker):
+    regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
+    marker_nuc_props = regions[-1]
+    fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props)
+
+    return marker_nuc_props
+
+
+def set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker):
+    regions = skimage.measure.regionprops(single_cytosol_mask.astype(int), intensity_image=im_marker)
+    marker_nuc_cyt_props = regions[-1]
+    fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props)
+
+    return marker_nuc_cyt_props
+
+
+def set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker):
+    regions = skimage.measure.regionprops(single_membrane_mask.astype(int), intensity_image=im_marker)
+    marker_membrane_props = regions[-1]
+    fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props)
+
+    return marker_membrane_props
+
+
 def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, filename, output_path):
     """Extracts features from a cellpose segmentation based on parameters given."""
     rag = orientation_graph_nf(cell_mask)
@@ -147,7 +204,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     # initialize graph - no features associated with nodes
     graph_nf = orientation_graph_nf(cell_mask_rem_island)
-    get_logger().info(list(rag.nodes))
+    get_logger().info("RAG nodes: %s " % str(list(rag.nodes)))
 
     # get masks
     nuclei_mask = get_nuclei_mask(parameters, img, cell_mask_rem_island)
@@ -162,12 +219,13 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         if connected_component_label == 0:
             continue
 
-        # get masks
+        # get single cell masks
         single_cell_mask = get_single_cell_mask(connected_component_label, cell_mask_rem_island)
         single_nucleus_mask = get_single_cell_nucleus_mask(connected_component_label, nuclei_mask)  # can be None
         single_golgi_mask = get_single_cell_golgi_mask(connected_component_label, golgi_mask)  # can be None
         single_membrane_mask = get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask)  # can be None
-        single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker, single_nucleus_mask)  # can be None
+        single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker,
+                                                           single_nucleus_mask)  # can be None
 
         # threshold
         if threshold(parameters, single_nucleus_mask, single_golgi_mask, single_cell_mask):
@@ -175,114 +233,43 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             continue
 
         # properties for single cell
-        single_cell_props = get_single_cell_prop(single_cell_mask)
-        neighbours = len(list(graph_nf.neighbors(connected_component_label)))
-        fill_single_cell_general_data_frame(
-            properties_dataset, index, filename, connected_component_label, single_cell_props, neighbours
-        )
+        set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask,
+                              graph_nf)
 
         # properties for nucleus:
-        if single_nucleus_mask:
-            regions = skimage.measure.regionprops(single_nucleus_mask)
-            nucleus_props = regions[-1]
-            fill_single_nucleus_data_frame(single_nucleus_mask, index, nucleus_props)
+        if single_nucleus_mask is not None:
+            nucleus_props = set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask)
+
+            # properties for golgi
+            if single_golgi_mask is not None:
+                set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props)
 
         # properties for marker
-        if im_marker:
-            regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
-            marker_props = regions[-1]
-            fill_single_cell_marker_polarity(properties_dataset, index, marker_props)
-
+        if im_marker is not None:
+            set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker)
+            set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker)
             # marker nuclei properties
-            if nuclei_mask:
-                regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
-                marker_nuc_props = regions[-1]
-                fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props)
+            if nuclei_mask is not None:
+                set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
+                set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
 
-                regions = skimage.measure.regionprops(single_cytosol_mask.astype(int), intensity_image=im_marker)
-                marker_nuc_cyt_props = regions[-1]
-                fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props)
-
-            regions = skimage.measure.regionprops(single_membrane_mask.astype(int), intensity_image=im_marker)
-            marker_membrane_props = regions[-1]
-            fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props)
-
-        # properties for golgi
-        if single_nucleus_mask and single_golgi_mask:
-            regions = skimage.measure.regionprops(single_golgi_mask)
-            golgi_props = regions[-1]
-            fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
-
-        # rag.nodes["label"][feature_of_interest] = single_cell_props.at[counter, feature_of_interest]
         f2a = properties_dataset.at[index, parameters["feature_of_interest"]]
-        foe = str(parameters["feature_of_interest"])
-        rag.nodes[connected_component_label.astype('int')][foe] = f2a
-        # nw.set_node_attributes(graph_nf, {label.astype('int'):f2a}, parameters["feature_of_interest"])
-        get_logger().info(f2a, parameters["feature_of_interest"], connected_component_label,
-                          rag.nodes[connected_component_label.astype('int')][foe])
-        # print(nx.get_node_attributes(G,parameters["feature_of_interest"]))
+        foe = str(parameters["feature_of_interest"])  # todo: will these change?
+        rag.nodes[connected_component_label.astype('int')][foe] = f2a  # todo: why put it in the rag?
+
+        get_logger().info(
+            " ".join(
+                str(x) for x in ["%s: " % str(index), f2a, parameters["feature_of_interest"], connected_component_label,
+                                 rag.nodes[connected_component_label.astype('int')][foe]]
+            )
+        )  # todo: f2a == rag.nodes[connected_component_label.astype('int')][foe]! necessary to print both?
 
     plot_dataset(
-        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask
+        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
+        im_marker
     )
 
     return properties_dataset
-
-
-def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
-                 golgi_mask):
-    """Plots the properties dataset"""
-    im_junction = img[:, :, int(parameters["channel_junction"])]
-    im_marker = img[:, :, int(parameters["channel_expression_marker"])]
-
-    if parameters["plot_polarity"] and (parameters["channel_golgi"] >= 0):
-        plot.plot_polarity(
-            parameters,
-            im_junction,
-            [cell_mask_rem_island, nuclei_mask, golgi_mask],
-            properties_dataset,
-            filename, output_path
-        )
-    if parameters["plot_marker"] and (parameters["channel_nucleus"] >= 0):
-        plot.plot_marker(
-            parameters, im_marker, [cell_mask_rem_island, nuclei_mask], properties_dataset, filename, output_path
-        )
-        plot.plot_marker_polarity(
-            parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename,
-            output_path
-        )
-    if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
-        plot.plot_marker(parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename, output_path)
-        plot.plot_marker_polarity(
-            parameters, im_marker, [cell_mask_rem_island], properties_dataset, filename, output_path
-        )
-    if parameters["plot_alignment"] and (parameters["channel_nucleus"] >= 0):
-        plot.plot_alignment(
-            parameters,
-            im_junction,
-            [cell_mask_rem_island, nuclei_mask],
-            properties_dataset,
-            filename,
-            output_path
-        )
-    if parameters["plot_marker"] and (parameters["channel_nucleus"] < 0):
-        plot.plot_alignment(
-            parameters,
-            im_junction,
-            [cell_mask_rem_island],
-            properties_dataset,
-            filename,
-            output_path
-        )
-    if parameters["plot_ratio_method"]:
-        plot.plot_ratio_method(
-            parameters,
-            im_junction,
-            [cell_mask_rem_island],
-            properties_dataset,
-            filename,
-            output_path
-        )
 
 
 def get_single_cell_prop(single_cell_mask):
@@ -416,28 +403,6 @@ def get_outline_from_mask(mask, width=1):
     return outline_mask
 
 
-def orientation_graph_nf(img):
-    """Gets the RegionAdjecencyGraph for an Image """
-    rag = RAG(img.astype("int"))
-    rag.remove_node(0)
-    return (rag)
-
-
-def orientation_graph(img):
-    """DescribeMe"""
-    rag = RAG(img.astype("int"))
-    rag.remove_node(0)
-
-    regions = regionprops(img.astype("int"))
-    for region in regions:
-        rag.nodes[region['label']]['orientation'] = region['orientation']
-        rag.nodes[region['label']]['area'] = region['area']
-        rag.nodes[region['label']]['polarity'] = region['major_axis_length'] / region['minor_axis_length']
-        rag.nodes[region['label']]['aspect_ratio'] = (region["bbox"][2] - region["bbox"][0]) / (
-                region["bbox"][3] - region["bbox"][1])
-    return (rag)
-
-
 def remove_edges(mask):
     """DescribeMe"""
     segments = mask.astype("int")
@@ -470,17 +435,17 @@ def remove_edges(mask):
 
 def remove_islands(frame_graph, mask):
     """Remove unconnected masks"""
+    # Get list of islands - nodes with no neighbours and remove them
     list_of_islands = []
-    # Get list of islands - nodes with no neighbours,
-    # remove nodes with neighbours
-    # frame_graph = orientation_graph(dat_no_edges[i,:,:])
     for nodes in frame_graph.nodes:
         if len(list(frame_graph.neighbors(nodes))) == 0:
             list_of_islands.append(nodes)
 
-    print(list_of_islands)
+    get_logger().info("detected islands: %s" % list_of_islands)
+
     # remove islands from image and graph
     for elemet in np.unique(list_of_islands):
         frame_graph.remove_node(elemet)
         mask[:, :][mask[:, :] == elemet] = 0
+
     return frame_graph, mask
