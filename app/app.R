@@ -903,7 +903,7 @@ server <- function(input, output, session) {
       
         feature <- parameters[input$feature_select][[1]][1]
 
-              bin_size <- 360.0/input$bins_comparison
+        bin_size <- 360.0/input$bins_comparison
       #bin_size <- 20.0
       
       p <- ggplot() +
@@ -1040,10 +1040,31 @@ server <- function(input, output, session) {
       
             cond1_feature <- unlist(cond1_data[feature])
             cond2_feature <- unlist(cond2_data[feature])
+            
+            if (input$split_view_comparison) 
+            {
+                
+                plot_title <- parameters[input$feature_select][[1]][3]
+                plotseries <- function(i) {
+                
+                    if (i==1) {
+                        statistics <- compute_linear_statistics(cond1_data, feature, parameters)
+                        p <- linear_histogram(parameters, input, statistics, cond1_feature, plot_title, text_size)
+                    } else {
+                        statistics <- compute_linear_statistics(cond2_data, feature, parameters)
+                        p <- linear_histogram(parameters, input, statistics, cond2_feature, plot_title, text_size)
+                    }  
+            }
+            myplots <- lapply(1:2, plotseries)
+            p2 <- grid.arrange(grobs = myplots, ncol = 2) 
+ 
+            
+            } else {   
 
-            statistics <- compute_linear_statistics(cond1_data, feature, parameters)
-            plot_title <- parameters[input$feature_select][[1]][3]
-            p2 <- compare_plot_linear(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+                statistics <- compute_linear_statistics(cond1_data, feature, parameters)
+                plot_title <- parameters[input$feature_select][[1]][3]
+                p2 <- compare_plot_linear(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
+            }
 
         }
 

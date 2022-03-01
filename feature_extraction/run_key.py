@@ -63,31 +63,36 @@ for index, row in key_file.iterrows():
         
         print("processing", filepath.split("/")[-1].split(".")[0])
         filename = filepath.split("/")[-1]
-      
+        root_filename = os.path.splitext(filename)[0] + "-" + str(summary_ind)
+
+        #if "root_filename" in summary_df.columns:    
+        #    while (root_filename in summary_df["root_filename"].unique()):
+        #        root_filename = root_filename + "-1"
+
         img = functions.read_image(parameters,filepath)
         img_seg = functions.get_image_for_segmentation(parameters,img)
         if parameters["channel_nucleus"] >= 0:
             fig, ax = plt.subplots(1,2)
             ax[0].imshow(img_seg[0,:,:])
             ax[1].imshow(img_seg[1,:,:])
-            plt.savefig(output_path + filename + "-seg.png")
+            plt.savefig(output_path + root_filename + "-seg.png")
         else:
             fig, ax = plt.subplots()
             ax.imshow(img_seg[:,:])
-            plt.savefig(output_path + filename + "-seg.png")
+            plt.savefig(output_path + root_filename + "-seg.png")
 
         cellpose_mask = functions.get_cellpose_segmentation(parameters, img_seg)
         print("Number of cell labels: ")
         print(len(np.unique(cellpose_mask)))
         #nuclei_mask = functions.get_nuclei_mask(parameters, img, cellpose_mask)
         #golgi_mask = functions.get_golgi_mask(parameters, img, cellpose_mask)
-        properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, filename, output_path)
+        properties_df = functions.get_features_from_cellpose_seg(parameters, img, cellpose_mask, root_filename, output_path)
         
         properties_df["condition"] = row["short_name"]
 
         print(properties_df.head())
         #properties_df.to_csv("image_%s.csv" % ind)
-        properties_df.to_csv(output_path + filename.split(".")[0] + ".csv")
+        properties_df.to_csv(output_path + root_filename + ".csv")
         
         if len(merged_properties_df.index) < 10:
             merged_properties_df = properties_df.copy()
@@ -97,6 +102,7 @@ for index, row in key_file.iterrows():
         summary_df.at[summary_ind, "folder_name"] = row["folder_name"] 
         summary_df.at[summary_ind, "short_name"] = row["short_name"] 
         summary_df.at[summary_ind, "filepath"] = filepath 
+        summary_df.at[summary_ind, "root_filename"] = root_filename 
         summary_df.at[summary_ind, "cell_number"] = len(np.unique(cellpose_mask))
 
         summary_df.to_csv(output_path_base + "summary_table" + ".csv")

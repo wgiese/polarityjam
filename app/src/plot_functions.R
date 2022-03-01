@@ -178,11 +178,21 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
         if( statistics[1,"mean"] < 90.0) {
       	    statistics[1,"mean"] = statistics[1,"mean"] + 180.0
     	}
+        if( statistics[1,"lower_limit"] < 90.0) {
+      	    statistics[1,"lower_limit"] = statistics[1,"lower_limit"] + 180.0
+    	}
+        if( statistics[1,"upper_limit"] < 90.0) {
+      	    statistics[1,"upper_limit"] = statistics[1,"upper_limit"] + 180.0
+    	}
+    
     }
  
  
     p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red", lineend = "butt"), arrow = NULL) + theme(legend.position = "none") 
-  return(p)
+    p <- p + geom_segment(data = statistics, aes(x=lower_limit, y=0, xend=lower_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+    p <- p + geom_segment(data = statistics, aes(x=upper_limit, y=0, xend=upper_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+ 
+    return(p)
   
 }
 
