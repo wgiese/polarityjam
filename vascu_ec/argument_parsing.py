@@ -9,8 +9,7 @@ from vascu_ec.logging import configure_logger, get_logger
 
 
 def startup():
-    """Entry points of `album`."""
-
+    """Entry points of `vascu-ec`."""
     configure_logger('INFO')
 
     parser = create_parser()
@@ -48,6 +47,7 @@ def create_parser():
 
     # key action
     p = parser.create_file_command_parser('run-key', run_key, 'help')
+    p.add_argument('in_path', type=str, help='name for the input folder containing tifs.')
     p.add_argument('in_key', type=str, help='path to the key file.')
 
     return parser.parser

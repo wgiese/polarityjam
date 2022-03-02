@@ -76,7 +76,7 @@ class TestFunctions(TestCommon):
 
     def test_get_features_from_cellpose_seg(self):
         img = read_image(self.get_test_image_path("multichannel.tif"))
-        mask = np.load('/home/jpa/PycharmProjects/vascu_ec-app/vascu_ec/test/resources/multichannel_seg.npy',
+        mask = np.load('/home/jpa/PycharmProjects/vascu_ec-app/vascu_ec/test/resources/multichannell_seg.npy',
                        allow_pickle=True)
 
         get_features_from_cellpose_seg_multi_channel(

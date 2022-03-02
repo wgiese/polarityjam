@@ -1,7 +1,7 @@
 import glob
 import os
 from pathlib import Path
-
+import pandas as pd
 import numpy as np
 import skimage.io
 import yaml
@@ -66,3 +66,7 @@ def get_tif_list(path):
     path = str(path)
 
     return glob.glob(path + "*.tif")
+
+
+def read_key_file(path):
+    return pd.read_csv(path)

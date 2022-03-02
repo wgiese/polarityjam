@@ -26,3 +26,9 @@ class TestIntegration(TestCommon):
 
         # call
         startup()
+
+    def test_run_stack(self):
+        pass
+
+    def test_run_key(self):
+        pass

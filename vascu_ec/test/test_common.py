@@ -7,7 +7,7 @@ import yaml
 
 
 class TestCommon(unittest.TestCase):
-
+    """Base class all tests inherit from. Responsible for temporary directory, cleanup, parameters."""
     def setUp(self) -> None:
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.current_path = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -19,6 +19,7 @@ class TestCommon(unittest.TestCase):
     def get_test_image_path(self, image_name):
         test_image_path = self.current_path.joinpath("resources", image_name)
 
+        # Test image channel information:
         # 0 golgi
         # 1 not needed
         # 2 nuclei

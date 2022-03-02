@@ -4,12 +4,17 @@ from pathlib import Path
 import cmocean as cm
 import numpy as np
 import scipy.ndimage as ndi
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 from skimage.future import graph
 from skimage.measure import label, regionprops
 
 from vascu_ec.logging import get_logger
 from vascu_ec.utils.rag import orientation_graph_nf
+
+
+def set_figure_dpi():
+    mpl.rcParams['figure.dpi'] = 300
 
 
 def get_outline_from_mask(mask, width=1):
