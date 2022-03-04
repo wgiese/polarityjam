@@ -199,11 +199,11 @@ def set_single_cell_marker_membrane_props(properties_dataset, index, single_memb
 
 def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, filename, output_path):
     """Extracts features from a cellpose segmentation based on parameters given."""
+
+    # initialize graph - no features associated with nodes
     rag = orientation_graph_nf(cell_mask)
     rag, cell_mask_rem_island = remove_islands(rag, cell_mask)
 
-    # initialize graph - no features associated with nodes
-    graph_nf = orientation_graph_nf(cell_mask_rem_island)
     get_logger().info("RAG nodes: %s " % str(list(rag.nodes)))
 
     # get masks
@@ -233,8 +233,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             continue
 
         # properties for single cell
-        set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask,
-                              graph_nf)
+        set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, rag)
 
         # properties for nucleus:
         if single_nucleus_mask is not None:
@@ -253,16 +252,18 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
 
-        f2a = properties_dataset.at[index, parameters["feature_of_interest"]]
-        foe = str(parameters["feature_of_interest"])  # todo: will these change?
-        rag.nodes[connected_component_label.astype('int')][foe] = f2a  # todo: why put it in the rag?
+        # append feature of interest to the RAG node for MAYBE being able to do further analysis
+        foi = properties_dataset.at[index, parameters["feature_of_interest"]]
+        foi_name = str(parameters["feature_of_interest"])
+        rag.nodes[connected_component_label.astype('int')][foi_name] = foi
 
         get_logger().info(
             " ".join(
-                str(x) for x in ["%s: " % str(index), f2a, parameters["feature_of_interest"], connected_component_label,
-                                 rag.nodes[connected_component_label.astype('int')][foe]]
+                str(x) for x in [
+                    "Index %s - feature of interest \"%s\" - value \"%s\" - semantic segmentation label \"%s\"" % (
+                        index, foi_name, foi, connected_component_label)]
             )
-        )  # todo: f2a == rag.nodes[connected_component_label.astype('int')][foe]! necessary to print both?
+        )
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
@@ -393,7 +394,6 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
     return angle_rad, vec_x, vec_y
 
 
-######################
 def get_outline_from_mask(mask, width=1):
     """DescribeMe"""
     dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations=width)

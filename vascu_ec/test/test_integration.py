@@ -27,6 +27,8 @@ class TestIntegration(TestCommon):
         # call
         startup()
 
+        # todo: compare results
+
     def test_run_stack(self):
         pass
 

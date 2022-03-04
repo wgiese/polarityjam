@@ -148,7 +148,7 @@ def run_key(args):
             # single run
             properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename)
 
-            if len(merged_properties_df.index) < 10:  # todo: what is that for a threshold?
+            if merged_properties_df.empty:
                 merged_properties_df = properties_df.copy()
             else:
                 merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)

@@ -34,4 +34,4 @@ def configure_logger(loglevel=None, stream_handler=None, formatter_string=None):
 
 
 def get_default_formatter():
-    return logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    return logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
