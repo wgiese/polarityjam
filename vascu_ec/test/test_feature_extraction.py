@@ -12,7 +12,7 @@ from vascu_ec.utils.io import read_parameters, read_image
 
 
 class TestFunctions(TestCommon):
-
+    """Small tests to ensure basic IO functionality of the tool."""
     def setUp(self) -> None:
         super().setUp()
 
@@ -40,7 +40,7 @@ class TestFunctions(TestCommon):
 
     def test_read_img(self):
         # prepare
-        test_image_path = self.get_test_image_path("multichannel.tif")
+        test_image_path = self.get_test_image_path("060721_EGM2_18dyn_01.tif")
 
         # call
         r = read_image(test_image_path)
@@ -56,7 +56,7 @@ class TestFunctions(TestCommon):
 
     def test_get_image_for_segmentation_case_junctions(self):
         # prepare
-        img = read_image(self.get_test_image_path("multichannel.tif"))
+        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
 
         # call
         r = get_image_for_segmentation(self.parameters, img)
@@ -66,26 +66,13 @@ class TestFunctions(TestCommon):
 
     def test_get_image_for_segmentation_case_segmentation(self):
         self.parameters["channel_nucleus"] = -1
-        img = read_image(self.get_test_image_path("multichannel.tif"))
+        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
 
         # call
         r = get_image_for_segmentation(self.parameters, img)
 
         # expect junctions channel only
         self.assertEqual((1024, 1024), r.shape)
-
-    def test_get_features_from_cellpose_seg(self):
-        img = read_image(self.get_test_image_path("multichannel.tif"))
-        mask = np.load('/home/jpa/PycharmProjects/vascu_ec-app/vascu_ec/test/resources/multichannell_seg.npy',
-                       allow_pickle=True)
-
-        get_features_from_cellpose_seg_multi_channel(
-            self.parameters,
-            img,
-            mask,
-            "bla",
-            '/home/jpa/PycharmProjects/vascu_ec-app/vascu_ec/test/resources/'
-        )
 
 
 class EmptyTestClass:

@@ -64,9 +64,33 @@ def create_path_recursively(path):
 
 def get_tif_list(path):
     path = str(path)
+    if not path.endswith(os.path.sep):
+        path = path + os.path.sep
 
     return glob.glob(path + "*.tif")
 
 
 def read_key_file(path):
     return pd.read_csv(path)
+
+
+def list_files_recursively(path, root=None, relative=False) -> list:
+    """Lists all files in a repository recursively"""
+    path = Path(path)
+    if not root:
+        root = path
+    files_list = []
+
+    for cur_root, dirs, files in os.walk(path):
+        cur_root = Path(cur_root)
+
+        for d in dirs:
+            files_list += list_files_recursively(cur_root.joinpath(d), root, relative)
+        for fi in files:
+            if relative:
+                files_list.append(cur_root.joinpath(fi).relative_to(root))
+            else:
+                files_list.append(cur_root.joinpath(fi))
+        break
+
+    return files_list

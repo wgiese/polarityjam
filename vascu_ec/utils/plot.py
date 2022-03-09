@@ -4,35 +4,24 @@ from pathlib import Path
 import cmocean as cm
 import matplotlib as mpl
 import numpy as np
-import scipy.ndimage as ndi
 from matplotlib import pyplot as plt
 from skimage.future import graph
 from skimage.measure import label, regionprops
 
 from vascu_ec.logging import get_logger
 from vascu_ec.utils.rag import orientation_graph_nf
+from vascu_ec.utils.seg import get_outline_from_mask
 
 
 def set_figure_dpi():
     mpl.rcParams['figure.dpi'] = 300
 
 
-def get_outline_from_mask(mask, width=1):
-    """"""
-    # TODO: revise use built in function from cellpose
-
-    dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations=width)
-    eroded_mask = ndi.morphology.binary_erosion(mask.astype(bool), iterations=width)
-    outline_mask = np.logical_xor(dilated_mask, eroded_mask)
-
-    return outline_mask
-
-
 def plot_seg_channels(seg_img, output_path, filename):
     """"""
     output_path = Path(output_path)
 
-    if len(seg_img) > 1:
+    if len(seg_img.shape) > 2:
         fig, ax = plt.subplots(1, 2)
         ax[0].imshow(seg_img[0, :, :])
         ax[1].imshow(seg_img[1, :, :])
@@ -80,11 +69,11 @@ def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, s
     ax.set_ylim(0, im_junction.shape[1])
 
     if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(output_path + filename + "_nuclei_golgi_vector.pdf")
+        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.pdf")))
     if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(output_path + filename + "_nuclei_golgi_vector.svg")
+        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.svg")))
     if "png" in parameters["graphics_output_format"]:
-        plt.savefig(output_path + filename + "_nuclei_golgi_vector.png")
+        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.png")))
 
 
 def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset, filename, output_path,
@@ -143,8 +132,8 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
         ax[number_sub_figs - 1].set_title("mean intensity nucleus")
 
     # save output
-    plt.savefig(output_path + filename + "_marker_expression.pdf")
-    plt.savefig(output_path + filename + "_marker_expression.png")
+    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
 
 
 def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, filename, output_path):
@@ -174,8 +163,8 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
     ax.set_title("marker polarity")
 
-    plt.savefig(output_path + filename + "_marker_polarity.pdf")
-    plt.savefig(output_path + filename + "_marker_polarity.png")
+    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.pdf")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.png")))
 
 
 def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_mask, nuclei_mask=None):
@@ -302,9 +291,9 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
 
     # save to disk
     plt.tight_layout()
-    plt.savefig(output_path + filename + "_alignment.pdf")
-    plt.savefig(output_path + filename + "_alignment.svg")
-    plt.savefig(output_path + filename + "_alignment.png")
+    plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.pdf")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.svg")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.png")))
 
 
 def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, filename, output_path):
@@ -356,8 +345,8 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
         ax.set_ylim(0, im_junction.shape[1])
 
     plt.tight_layout()
-    plt.savefig(output_path + filename + "_ratio_method.pdf")
-    plt.savefig(output_path + filename + "_ratio_method.png")
+    plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.png")))
 
     return 0
 
@@ -394,6 +383,7 @@ def plot_adjacency_matrix(label_image, intensity_image):
 def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
                  golgi_mask, im_marker):
     """Plots the properties dataset"""
+    # todo: close figures
     get_logger().info("Plotting data...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
@@ -415,7 +405,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
         )
-    if parameters["plot_marker"] and nuclei_mask is None and im_marker is not None:
+    if parameters["plot_marker"] and nuclei_mask is not None and im_marker is not None:
         plot_marker_expression(parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path)
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path

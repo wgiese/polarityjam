@@ -151,48 +151,60 @@ def set_single_cell_props(properties_dataset, index, filename, connected_compone
 
 def set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask):
     regions = skimage.measure.regionprops(single_nucleus_mask)
-    nucleus_props = regions[-1]
-    fill_single_nucleus_data_frame(properties_dataset, index, nucleus_props)
+    nucleus_props = None
+    if regions:
+        nucleus_props = regions[-1]
+        fill_single_nucleus_data_frame(properties_dataset, index, nucleus_props)
 
     return nucleus_props
 
 
 def set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props):
     regions = skimage.measure.regionprops(single_golgi_mask)
-    golgi_props = regions[-1]
-    fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
+    golgi_props = None
+    if regions:
+        golgi_props = regions[-1]
+        fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
 
     return golgi_props
 
 
 def set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker):
     regions = skimage.measure.regionprops(single_cell_mask, intensity_image=im_marker)
-    marker_props = regions[-1]
-    fill_single_cell_marker_polarity(properties_dataset, index, marker_props)
+    marker_props = None
+    if regions:
+        marker_props = regions[-1]
+        fill_single_cell_marker_polarity(properties_dataset, index, marker_props)
 
     return marker_props
 
 
 def set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker):
     regions = skimage.measure.regionprops(single_nucleus_mask, intensity_image=im_marker)
-    marker_nuc_props = regions[-1]
-    fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props)
+    marker_nuc_props = None
+    if regions:
+        marker_nuc_props = regions[-1]
+        fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props)
 
     return marker_nuc_props
 
 
 def set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker):
     regions = skimage.measure.regionprops(single_cytosol_mask.astype(int), intensity_image=im_marker)
-    marker_nuc_cyt_props = regions[-1]
-    fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props)
+    marker_nuc_cyt_props = None
+    if regions:
+        marker_nuc_cyt_props = regions[-1]
+        fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props)
 
     return marker_nuc_cyt_props
 
 
 def set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker):
     regions = skimage.measure.regionprops(single_membrane_mask.astype(int), intensity_image=im_marker)
-    marker_membrane_props = regions[-1]
-    fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props)
+    marker_membrane_props = None
+    if regions:
+        marker_membrane_props = regions[-1]
+        fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props)
 
     return marker_membrane_props
 
@@ -240,7 +252,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             nucleus_props = set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask)
 
             # properties for golgi
-            if single_golgi_mask is not None:
+            if nucleus_props and single_golgi_mask is not None:
                 set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props)
 
         # properties for marker
@@ -396,8 +408,9 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
 
 def get_outline_from_mask(mask, width=1):
     """DescribeMe"""
-    dilated_mask = ndi.morphology.binary_dilation(mask.astype(bool), iterations=width)
-    eroded_mask = ndi.morphology.binary_erosion(mask.astype(bool), iterations=width)
+    mask = mask.astype(bool)
+    dilated_mask = ndi.binary_dilation(mask, iterations=width)
+    eroded_mask = ndi.binary_erosion(mask, iterations=width)
     outline_mask = np.logical_xor(dilated_mask, eroded_mask)
 
     return outline_mask
@@ -430,7 +443,7 @@ def remove_edges(mask):
 
     for elemet in np.unique(x_indexed):
         segments[segments == elemet] = 0
-    return (segments)
+    return segments
 
 
 def remove_islands(frame_graph, mask):

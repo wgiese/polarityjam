@@ -87,13 +87,15 @@ def run_stack(args):
     file_list = get_tif_list(inpath)
 
     for filepath in file_list:
-        filename = Path(filepath).parts[-1]
-        stem, file_extension = os.path.splitext(filepath)
+        filepath = Path(filepath)
+        filename = filepath.stem + filepath.suffix
 
-        if not ((file_extension != ".tif") or (file_extension != ".tiff")):
+        if not ((filepath.suffix != ".tif") or (filepath.suffix != ".tiff")):
             continue
 
-        get_logger().info("Processing fil with: file stem  %s and file extension: %s" % (stem, file_extension))
+        get_logger().info(
+            "Processing file with: file stem  \"%s\" and file extension: \"%s\"" % (filepath.stem, filepath.suffix)
+        )
 
         # start routine
         _run(filepath, parameters, output_path, filename)
@@ -129,21 +131,30 @@ def run_key(args):
     summary_df = pd.DataFrame()
 
     for index, row in key_file.iterrows():
-        input_path = in_path.joinpath(str(row['folder_name']))  # todo: what is the structure of such a key file?
+        # current stack input sub folder
+        cur_sub_path = str(row['folder_name'])
+        if cur_sub_path.startswith(os.path.sep):
+            cur_sub_path = cur_sub_path[1:-1]
+        input_path = in_path.joinpath(cur_sub_path)
 
-        subfolder = str(row["short_name"])  # todo: is that relative to the input_path?
-        output_path = output_path_base.joinpath(subfolder)
+        # current stack output sub-folder
+        cur_sub_out_path = str(row["short_name"])
+        output_path = output_path_base.joinpath(cur_sub_out_path)
+
+        # empty results dataset
+        merged_properties_df = pd.DataFrame()
 
         file_list = get_tif_list(input_path)
-        merged_properties_df = pd.DataFrame()
         for filepath in file_list:
-            filename = Path(filepath).parts[-1]
-            stem, file_extension = os.path.splitext(filepath)
+            filepath = Path(filepath)
+            filename = filepath.stem + filepath.suffix
 
-            if not ((file_extension != ".tif") or (file_extension != ".tiff")):
+            if not ((filepath.suffix != ".tif") or (filepath.suffix != ".tiff")):
                 continue
 
-            get_logger().info("Processing fil with: file stem  %s and file extension: %s" % (stem, file_extension))
+            get_logger().info(
+                "Processing fil with: file stem  %s and file extension: %s" % (filepath.stem, filepath.suffix)
+            )
 
             # single run
             properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename)
@@ -151,7 +162,7 @@ def run_key(args):
             if merged_properties_df.empty:
                 merged_properties_df = properties_df.copy()
             else:
-                merged_properties_df = merged_properties_df.append(properties_df, ignore_index=True)
+                merged_properties_df = merged_properties_df.concat(properties_df, ignore_index=True)
 
             summary_df.at[index, "folder_name"] = row["folder_name"]
             summary_df.at[index, "short_name"] = row["short_name"]

@@ -3,6 +3,7 @@ from pathlib import Path
 import cellpose.models
 import numpy as np
 import skimage.segmentation
+from scipy import ndimage as ndi
 
 from vascu_ec.logging import get_logger
 
@@ -43,3 +44,14 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     get_logger().info("Number of cell labels: %s" % np.max(cellpose_mask))
 
     return cellpose_mask
+
+
+def get_outline_from_mask(mask, width=1):
+    """"""
+    # TODO: revise use built in function from cellpose
+
+    dilated_mask = ndi.binary_dilation(mask.astype(bool), iterations=width)
+    eroded_mask = ndi.binary_erosion(mask.astype(bool), iterations=width)
+    outline_mask = np.logical_xor(dilated_mask, eroded_mask)
+
+    return outline_mask
