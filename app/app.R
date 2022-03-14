@@ -65,9 +65,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 shinyDirButton("dir", "Input directory", "Upload"),
                 verbatimTextOutput("dir", placeholder = TRUE),
                 actionButton("refreshStack", "Refresh"),
-                selectInput("dataset", "Choose a dataset:",
-                            choices = c("merged_file")),
-                downloadButton("downloadData", "Download")
+#                selectInput("dataset", "Choose a dataset:",
+#                            choices = c("merged_file")),
+#                downloadButton("downloadData", "Download")
             ),
  
             #conditionalPanel(condition = "input.tidyInput==true",
@@ -125,15 +125,16 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 textInput("exp_condition", "Exp. condition", "condition A"),
+                checkboxInput("ci_plot", "Confidence interval 95%", TRUE),
                 checkboxInput("kde_plot", "KDE plot", FALSE),
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 checkboxInput("left_axial", "2-axial hist on left", FALSE),
                 selectInput("dataset", "Choose a dataset:",
-                            choices = c("merged_file","statistics_file","merged_plot_file","multi_plot_file")),
+                            choices = c("statistics_file","merged_plot_file","multi_plot_file")),
                 selectInput("image_file_format", "Choose image file format:",
                             choices = c(".pdf",".eps",".png")),
-#                downloadButton("downloadData", "Download")
+                downloadButton("downloadData", "Download")
             ),
                 
             # Show a plot of the generated distribution
