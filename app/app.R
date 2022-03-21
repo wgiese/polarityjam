@@ -105,8 +105,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 #                actionButton("refreshStack", "Refresh"),
                 sliderInput("bins",
                             "Number of bins:",
-                            min = 1,
-                            max = 30,
+                            min = 4,
+                            max = 36,
                             value = 12),
                 sliderInput("min_eccentricity",
                             "Mininum eccentricity",
@@ -675,7 +675,9 @@ server <- function(input, output, session) {
       
       x <- unlist(results_df[feature])
       angle_dists[[i]] <- x
+
       file_names[[i]] <- file_name
+         
       #polarity_indices[[i]] <- polarity_index
       #angle_mean_degs[[i]] <- angle_mean_deg
       i <- i+1
@@ -690,21 +692,29 @@ server <- function(input, output, session) {
     bin_size = 360/input$bins
     
     plotseries <- function(i){
-      angle_dist <- angle_dists[[i]]
-      file_name <- file_names[[i]]
-      #polarity_index <- polarity_indices[[i]]
-      #angle_mean_deg <- angle_mean_degs[[i]]
+        
+        angle_dist <- angle_dists[[i]]
+        file_name <- file_names[[i]]
+        #polarity_index <- polarity_indices[[i]]
+        #angle_mean_deg <- angle_mean_degs[[i]]
       
-      results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        results_df <- subset(results_all_df, results_all_df$filename == file_name)
       
-      
+        plot_title <- file_name
+        if (nchar(file_name) > 15) {
+            plot_title <- paste0("image #",toString(i))
+            print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
+        }        
+
+
       if (parameters[input$feature_select][[1]][2] == "axial") {
         
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         #statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature])*180.0/pi
-        plot_title <- file_name
-        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+        print(paste0("Length of filename", toString(i)))
+        
+                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
         
       }
       else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -717,14 +727,14 @@ server <- function(input, output, session) {
         #} else {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         #}
-        plot_title <- file_name
+        #plot_title <- file_name
         p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
         
       } else {
         
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
-        plot_title <- file_name
+        #plot_title <- file_name
         p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
       }
       
@@ -771,7 +781,8 @@ server <- function(input, output, session) {
                 return(write.csv(mergedStatistics(), file, row.names = FALSE))
             }
             else if ((input$dataset == "multi_plot_file") && (input$image_file_format == ".pdf")) {
-                pdf(file, width=14, height=14)
+                #pdf(file, width=14, height=14)
+                pdf(file, family = "ArialMT", width = width_, height =width_, pointsize = 18)
                 p <- multi_plot()
                 plot(p)
                 dev.off()
@@ -801,8 +812,8 @@ server <- function(input, output, session) {
                 plot(p)
                 dev.off()
             }
-            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".pdf")){
-                eps(file, width=width,height=width)
+            else if ((input$dataset == "merged_plot_file") && (input$image_file_format == ".eps")){
+                eps(file, width=width_,height=width_)
                 p <- merged_plot()
                 plot(p)
                 dev.off()

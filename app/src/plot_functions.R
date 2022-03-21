@@ -56,6 +56,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     }    
     
     p <- p + ggtitle(plot_title) +
+        theme(plot.title = element_text(size = 18, face = "bold")) +
         theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
         scale_x_continuous(limits = c(0, 360),
@@ -181,6 +182,7 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
                    alpha = 0.5) +
 #        geom_density(aes(x = feature_circular)) +
         ggtitle(plot_title) +
+        theme(plot.title = element_text(size = 10, face = "bold")) +
         theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
         scale_x_continuous(limits = c(0, 360),
@@ -365,7 +367,9 @@ compare_plot_linear <- function(parameters, input, statistics, feature_linear_1,
     p <- ggplot()
     max_1 <- max(feature_linear_1)
     max_2 <- max(feature_linear_2)
-    
+ 
+    #df_1 <- as.data
+   
     bin_size = max(max_1,max_2)/input$bins
 
     if (input$histogram_plot) {
