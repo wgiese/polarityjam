@@ -30,8 +30,6 @@ def read_image(filename):
     """Reads an image and reshapes to channel last."""
     img_ = skimage.io.imread(filename)
 
-    print("Loading image of shape:", img_.shape)
-
     if len(img_.shape) <= 2:
         img_ = np.array([img_, img_])
 

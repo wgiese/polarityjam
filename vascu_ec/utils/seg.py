@@ -21,7 +21,8 @@ def get_cellpose_segmentation(parameters, im_seg):
     else:
         channels = [0, 0]
 
-    masks, flows, styles, diams = model.eval(im_seg, channels=channels)
+    #masks, flows, styles, diams = model.eval(im_seg, channels=channels)
+    masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
 
     if parameters["clear_border"]:
         masks = skimage.segmentation.clear_border(masks)

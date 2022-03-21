@@ -7,7 +7,7 @@ import pandas as pd
 from vascu_ec.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
 from vascu_ec.logging import get_logger
 from vascu_ec.utils.io import read_parameters, read_image, create_path_recursively, get_tif_list, read_key_file
-from vascu_ec.utils.plot import plot_seg_channels, set_figure_dpi
+from vascu_ec.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
 from vascu_ec.utils.seg import load_or_get_cellpose_segmentation
 
 
@@ -51,6 +51,9 @@ def _run(infile, parameters, output_path, fileout_name):
 
     # basic segmentation
     cellpose_mask = load_or_get_cellpose_segmentation(parameters, img_seg, infile)
+
+    # plot cellpose mask
+    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
     properties_df = get_features_from_cellpose_seg_multi_channel(parameters, img, cellpose_mask, fileout_name, output_path)

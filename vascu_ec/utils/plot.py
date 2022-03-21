@@ -24,12 +24,35 @@ def plot_seg_channels(seg_img, output_path, filename):
     if len(seg_img.shape) > 2:
         fig, ax = plt.subplots(1, 2)
         ax[0].imshow(seg_img[0, :, :])
+        ax[0].set_title("junction channel")
         ax[1].imshow(seg_img[1, :, :])
+        ax[1].set_title("nuclei channel")
         plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
     else:
         fig, ax = plt.subplots()
         ax.imshow(seg_img[:, :])
         plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
+
+def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
+    """"""
+    output_path = Path(output_path)
+
+    if len(seg_img.shape) > 2:
+        fig, ax = plt.subplots(1, 3)
+        ax[0].imshow(seg_img[0, :, :])
+        ax[0].set_title("junction channel")
+        ax[1].imshow(seg_img[1, :, :])
+        ax[1].set_title("nuclei channel")
+        ax[2].imshow(seg_img[0, :, :])
+        ax[2].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
+        ax[2].set_title("cellpose segmentation")
+        plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
+    else:
+        fig, ax = plt.subplots(1,2)
+        ax[0].imshow(seg_img[:, :])
+        ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
+        plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
+
 
 
 def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
