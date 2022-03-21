@@ -23,6 +23,7 @@ def get_image_for_segmentation(parameters, img):
     get_logger().info("Image shape: %s" % str(img.shape))
     get_logger().info("Junction channel at position: %s" % str(ch_junction))
 
+    #add debug out output here
     im_junction = img[:, :, ch_junction]
     if ch_nucleus >= 0:
         im_nucleus = img[:, :, ch_nucleus]

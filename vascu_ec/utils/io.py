@@ -30,12 +30,14 @@ def read_image(filename):
     """Reads an image and reshapes to channel last."""
     img_ = skimage.io.imread(filename)
 
+    print("Loading image of shape:", img_.shape)
+
     if len(img_.shape) <= 2:
         img_ = np.array([img_, img_])
 
     if img_.shape[0] < min(img_.shape[1], img_.shape[2]):
         print("Warning: channel is on the first dimension of the image.")
-        img = img_.reshape(img_.shape[1], img_.shape[2], img_.shape[0])
+        img = np.swapaxes(np.swapaxes(img_,0,2),0,1)
     else:
         img = img_
 

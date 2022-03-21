@@ -17,7 +17,7 @@ def get_cellpose_segmentation(parameters, im_seg):
     """Gets the cellpose segmentation"""
     model = get_cellpose_model(parameters["use_gpu"])
     if parameters["channel_nucleus"] >= 0:
-        channels = [0, 1]
+        channels = [1, 2]
     else:
         channels = [0, 0]
 
