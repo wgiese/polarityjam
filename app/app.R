@@ -129,7 +129,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 checkboxInput("kde_plot", "KDE plot", FALSE),
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
-                checkboxInput("left_axial", "2-axial hist on left", FALSE),
+                #checkboxInput("left_axial", "hemirose on left", FALSE),
+                selectInput("hemi_rose_options", "Hemirose plot options:",
+                            choices = c("up","down","left","right","all")),
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
                 selectInput("image_file_format", "Choose image file format:",
@@ -589,11 +591,13 @@ server <- function(input, output, session) {
       
       x_data <- results_all_df[feature]        
       statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
-      if (input$left_axial) {
-        x_data <- unlist(transform_2_axial(x_data))*180.0/pi
-      } else {
-        x_data <- unlist(results_all_df[feature])*180.0/pi
-      }
+      #if (input$left_axial) {
+      #  x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+      #} else {
+      #  x_data <- unlist(results_all_df[feature])*180.0/pi
+      #}
+        x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+
         plot_title <- parameters[input$feature_select][[1]][3]
         p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
       
@@ -708,11 +712,11 @@ server <- function(input, output, session) {
         x_data <- results_df[feature]        
         #print(x_data)
         statistics <- compute_2_axial_statistics(results_df, feature, parameters)
-        if (input$left_axial) {
-          x_data <- unlist(transform_2_axial(x_data))*180.0/pi
-        } else {
-          x_data <- unlist(results_df[feature])*180.0/pi
-        }
+        #if (input$left_axial) {
+        x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+        #} else {
+        #  x_data <- unlist(results_df[feature])*180.0/pi
+        #}
         plot_title <- file_name
         p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
         
@@ -999,13 +1003,13 @@ server <- function(input, output, session) {
             cond1_feature <- unlist(cond1_data[feature])
             cond2_feature <- unlist(cond2_data[feature])
             
-            if (input$left_axial) {
-                cond1_feature <- unlist(transform_2_axial(cond1_feature))*180.0/pi
-                cond2_feature <- unlist(transform_2_axial(cond2_feature))*180.0/pi
-            } else {
-                cond1_feature <- unlist(cond1_data[feature])*180.0/pi
-                cond2_feature <- unlist(cond2_data[feature])*180.0/pi
-            }
+            #if (input$left_axial) {
+            cond1_feature <- unlist(transform_2_axial(input, cond1_feature))*180.0/pi
+            cond2_feature <- unlist(transform_2_axial(input, cond2_feature))*180.0/pi
+            #} else {
+            #    cond1_feature <- unlist(cond1_data[feature])*180.0/pi
+            #    cond2_feature <- unlist(cond2_data[feature])*180.0/pi
+            #}
 
             # x_data <- list(cond1_feature, cond2_feature)            
             
