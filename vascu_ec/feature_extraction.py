@@ -344,7 +344,7 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     dataset.at[index, "X_cell"] = props.centroid[0]
     dataset.at[index, "Y_cell"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation"] = np.sin(np.pi / 2.0 - props.orientation)
+    dataset.at[index, "shape_orientation"] = np.pi / 2.0 - props.orientation
     # assumes flow from left to right anlong x-axis
     dataset.at[index, "flow_shape_alignment"] = np.sin(props.orientation)
     dataset.at[index, "major_axis_length"] = props.major_axis_length
