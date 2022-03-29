@@ -5,7 +5,7 @@ import numpy as np
 import skimage.segmentation
 from scipy import ndimage as ndi
 
-from vascu_ec.logging import get_logger
+from vascu_ec.vascu_ec_logging import get_logger
 
 
 def get_cellpose_model(use_gpu):
@@ -15,13 +15,15 @@ def get_cellpose_model(use_gpu):
 
 def get_cellpose_segmentation(parameters, im_seg):
     """Gets the cellpose segmentation"""
+    get_logger().info("Get cellpose segmentation. This might take some time.")
+
     model = get_cellpose_model(parameters["use_gpu"])
     if parameters["channel_nucleus"] >= 0:
         channels = [1, 2]
     else:
         channels = [0, 0]
 
-    #masks, flows, styles, diams = model.eval(im_seg, channels=channels)
+    # masks, flows, styles, diams = model.eval(im_seg, channels=channels)
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
 
     if parameters["clear_border"]:
@@ -51,8 +53,9 @@ def get_outline_from_mask(mask, width=1):
     """"""
     # TODO: revise use built in function from cellpose
 
-    dilated_mask = ndi.binary_dilation(mask.astype(bool), iterations=width)
-    eroded_mask = ndi.binary_erosion(mask.astype(bool), iterations=width)
+    mask = mask.astype(bool)
+    dilated_mask = ndi.binary_dilation(mask, iterations=width)
+    eroded_mask = ndi.binary_erosion(mask, iterations=width)
     outline_mask = np.logical_xor(dilated_mask, eroded_mask)
 
     return outline_mask

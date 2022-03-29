@@ -8,13 +8,16 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 from skimage.measure import label, regionprops
 
-from vascu_ec.logging import get_logger
 from vascu_ec.utils.rag import orientation_graph_nf
 from vascu_ec.utils.seg import get_outline_from_mask
+from vascu_ec.vascu_ec_logging import get_logger
+
+# for figure plot resolution
+FIGURE_DPI = 300
 
 
 def set_figure_dpi():
-    mpl.rcParams['figure.dpi'] = 300
+    mpl.rcParams['figure.dpi'] = FIGURE_DPI
 
 
 def plot_seg_channels(seg_img, output_path, filename):
@@ -28,10 +31,13 @@ def plot_seg_channels(seg_img, output_path, filename):
         ax[1].imshow(seg_img[1, :, :])
         ax[1].set_title("nuclei channel")
         plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
+        plt.close(fig)
     else:
         fig, ax = plt.subplots()
         ax.imshow(seg_img[:, :])
         plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
+        plt.close(fig)
+
 
 def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
     """"""
@@ -47,12 +53,13 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         ax[2].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
         ax[2].set_title("cellpose segmentation")
         plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
+        plt.close(fig)
     else:
-        fig, ax = plt.subplots(1,2)
+        fig, ax = plt.subplots(1, 2)
         ax[0].imshow(seg_img[:, :])
         ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
         plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
-
+        plt.close(fig)
 
 
 def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
@@ -97,6 +104,7 @@ def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, s
         plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.svg")))
     if "png" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.png")))
+    plt.close(fig)
 
 
 def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset, filename, output_path,
@@ -110,7 +118,7 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
     if nuclei_mask is not None:
         outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
-        outline_nuc_ = np.where(outline_nuc == True, 30, 0)
+        outline_nuc_ = np.where(outline_nuc == True, 30, 0)  # todo: 30 ?
         ax[number_sub_figs - 1].imshow(
             np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.75
         )
@@ -157,6 +165,7 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
     # save output
     plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
     plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
+    plt.close(fig)
 
 
 def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, filename, output_path):
@@ -188,6 +197,7 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
     plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.pdf")))
     plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.png")))
+    plt.close(fig)
 
 
 def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_mask, nuclei_mask=None):
@@ -317,6 +327,7 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
     plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.pdf")))
     plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.svg")))
     plt.savefig(str(Path(output_path).joinpath(filename + "_alignment.png")))
+    plt.close(fig)
 
 
 def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, filename, output_path):
@@ -370,8 +381,7 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
     plt.tight_layout()
     plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
     plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.png")))
-
-    return 0
+    plt.close(fig)
 
 
 def plot_cyclical(input_image, cell_masks_approx):
@@ -388,10 +398,11 @@ def plot_cyclical(input_image, cell_masks_approx):
     t_f = (masked_data * 1)
     masked_data[np.where(t_f == 0), np.where(t_f == 0)] = np.nan
 
-    plt.figure(figsize=(20, 20))
-    cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)
+    fig = plt.figure(figsize=(20, 20))
+    cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)  # todo: color scale OK? Put on top of file.
     plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
     plt.colorbar(cm_phase)
+    plt.close(fig)
 
     return cm_phase
 
@@ -428,7 +439,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
         )
-    if parameters["plot_marker"] and nuclei_mask is not None and im_marker is not None:
+    if parameters["plot_marker"] and nuclei_mask is None and im_marker is not None:
         plot_marker_expression(parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path)
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path

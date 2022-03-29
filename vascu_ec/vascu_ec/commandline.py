@@ -4,12 +4,19 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from vascu_ec.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
-from vascu_ec.logging import get_logger
 from vascu_ec.utils.io import read_parameters, read_image, create_path_recursively, get_tif_list, read_key_file
 from vascu_ec.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
 from vascu_ec.utils.seg import load_or_get_cellpose_segmentation
+from vascu_ec.vascu_ec_logging import get_logger
 
+
+# todo: copy parameter file to output folder.
+# todo: add a logger handler to log into the file in the output folder.
+
+# todo: Rename. Postponed for now due to missing junction-features.
+# todo: run the app on a server? Ask for resources! Missing features?
 
 def run(args):
     set_figure_dpi()
@@ -168,7 +175,7 @@ def run_key(args):
             if merged_properties_df.empty:
                 merged_properties_df = properties_df.copy()
             else:
-                merged_properties_df = merged_properties_df.concat(properties_df, ignore_index=True)
+                merged_properties_df = pd.concat([merged_properties_df, properties_df], ignore_index=True)
 
             summary_df.at[index, "folder_name"] = row["folder_name"]
             summary_df.at[index, "short_name"] = row["short_name"]

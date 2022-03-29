@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from vascu_ec.logging import get_logger
+from vascu_ec.vascu_ec_logging import get_logger
 from vascu_ec.test import test_integration, test_feature_extraction
 
 

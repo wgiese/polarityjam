@@ -1,18 +1,16 @@
-import os
-import tempfile
-import unittest
 from pathlib import Path
 
 import numpy as np
 import yaml
 
-from vascu_ec.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
+from vascu_ec.feature_extraction import get_image_for_segmentation
 from vascu_ec.test.test_common import TestCommon
 from vascu_ec.utils.io import read_parameters, read_image
 
 
 class TestFunctions(TestCommon):
     """Small tests to ensure basic IO functionality of the tool."""
+
     def setUp(self) -> None:
         super().setUp()
 
@@ -50,9 +48,6 @@ class TestFunctions(TestCommon):
 
         # assert correct type
         self.assertEqual(type(np.array(0)), type(r))
-
-        # assert shape is correct
-        # todo
 
     def test_get_image_for_segmentation_case_junctions(self):
         # prepare
