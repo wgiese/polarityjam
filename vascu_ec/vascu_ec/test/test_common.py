@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from vascu_ec.logging import LOGGER_NAME
+from vascu_ec.vascu_ec_logging import LOGGER_NAME
 from vascu_ec.utils.io import list_files_recursively
 
 

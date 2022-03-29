@@ -3,9 +3,7 @@ import sys
 
 import vascu_ec
 from vascu_ec.commandline import run, run_stack, run_key
-from vascu_ec.logging import configure_logger, get_logger
-
-# todo: nice help messages
+from vascu_ec.vascu_ec_logging import configure_logger, get_logger
 
 
 def startup():
@@ -27,8 +25,8 @@ def __run_subcommand(args, parser):
         parser.error("Please provide a valid action!")
     get_logger().debug("Running %s subcommand..." % command)
 
-    get_logger().info("VascuShare Version %s | contact via %s " %
-                      (vascu_ec.__version__, vascu_ec.__email__))
+    get_logger().info("VascuShare Version %s" %
+                      (vascu_ec.__version__))
 
     args.func(args)  # execute entry point function
 
@@ -37,18 +35,27 @@ def create_parser():
     parser = VascuParser()
 
     # run action
-    p = parser.create_file_command_parser('run', run, 'help')
-    p.add_argument('in_file', type=str, help='path to the input tif file.')
+    p = parser.create_file_command_parser('run', run, 'Feature extraction from a single tiff image.')
+    p.add_argument('in_file', type=str, help='Path to the input tif file.')
     p.add_argument('--filename_prefix', type=str, help='prefix for the output file.', required=False, default=None)
 
     # stack action
-    p = parser.create_file_command_parser('run-stack', run_stack, 'help')
-    p.add_argument('in_path', type=str, help='name for the input folder containing tifs.')
+    p = parser.create_file_command_parser(
+        'run-stack', run_stack, 'Feature extraction from an input folder containing several tiff files.'
+    )
+    p.add_argument('in_path', type=str, help='Name for the input folder containing tif images.')
 
     # key action
-    p = parser.create_file_command_parser('run-key', run_key, 'help')
-    p.add_argument('in_path', type=str, help='name for the input folder containing tifs.')
-    p.add_argument('in_key', type=str, help='path to the key file.')
+    p = parser.create_file_command_parser(
+        'run-key',
+        run_key,
+        'Feature extraction from a given list of folders provided within a csv file.'
+    )
+    p.add_argument('in_path', type=str, help='Path prefix. Note: Base path for all folders listed in the key file.')
+    p.add_argument(
+        'in_key', type=str, help='Path to the input key file. File must contain column '
+                                 '"folder_name" and "condition_name". Note: Folder name relative to the path prefix.'
+    )
 
     return parser.parser
 
@@ -102,6 +109,6 @@ class VascuParser(ArgumentParser):
         Parser is specified by a name, a function and a help description.
         """
         parser = self.create_command_parser(command_name, command_function, command_help)
-        parser.add_argument('param', type=str, help='path to the parameter file.')
-        parser.add_argument('out_path', type=str, help='output path.')
+        parser.add_argument('param', type=str, help='Path to the parameter file.')
+        parser.add_argument('out_path', type=str, help='Path to the output folder.')
         return parser

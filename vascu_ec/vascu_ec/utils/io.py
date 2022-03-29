@@ -1,8 +1,9 @@
 import glob
 import os
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import skimage.io
 import yaml
 
@@ -35,7 +36,7 @@ def read_image(filename):
 
     if img_.shape[0] < min(img_.shape[1], img_.shape[2]):
         print("Warning: channel is on the first dimension of the image.")
-        img = np.swapaxes(np.swapaxes(img_,0,2),0,1)
+        img = np.swapaxes(np.swapaxes(img_, 0, 2), 0, 1)
     else:
         img = img_
 

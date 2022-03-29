@@ -23,7 +23,10 @@ class TestIntegration(TestCommon):
         # call
         startup()
 
-        # todo: compare results!
+        # todo: compare results:
+        # version of cellpose is different, maybe labels change. Probably not deterministic.
+        # check number of segmented cells with error range max +- 10%
+        # check columns of output dataframe
 
     def test_run_stack(self):
         in_path = str(self.get_test_image_folder("gn").joinpath("set_2"))

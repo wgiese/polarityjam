@@ -1,15 +1,3 @@
-# I/O settings
-
-#output_path : "/path/to/output/"
-
-##  source data/ output folders for run.py
-
-#image_filename : "/path/to/imagefile.tif"
-#output_filename : "image001"
-
-
-##  source data/ output folders for run_stack.py
-
 #input_path : "/path/to/image/folder/"
 
 ## cellpose/segmentation parameters

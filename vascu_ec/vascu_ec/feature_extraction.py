@@ -9,9 +9,10 @@ import skimage.io
 import skimage.measure
 import skimage.segmentation
 
-from vascu_ec.logging import get_logger
 from vascu_ec.utils.plot import plot_dataset
 from vascu_ec.utils.rag import orientation_graph_nf
+from vascu_ec.utils.seg import get_outline_from_mask
+from vascu_ec.vascu_ec_logging import get_logger
 
 
 def get_image_for_segmentation(parameters, img):
@@ -23,7 +24,7 @@ def get_image_for_segmentation(parameters, img):
     get_logger().info("Image shape: %s" % str(img.shape))
     get_logger().info("Junction channel at position: %s" % str(ch_junction))
 
-    #add debug out output here
+    # add debug out output here
     im_junction = img[:, :, ch_junction]
     if ch_nucleus >= 0:
         im_nucleus = img[:, :, ch_nucleus]
@@ -46,22 +47,6 @@ def get_nuclei_mask(parameters, img, cellpose_mask):
         return nuclei_label
     else:
         return None
-
-
-def get_nuclei_cellpose(parameters, img, cellpose_mask):
-    """Gets the nuclei cellpose mask."""
-    model = cellpose.models.Cellpose(gpu=parameters["use_gpu"], model_type='nuclei')
-
-    channels = [0, 0]
-
-    masks, flows, styles, diams = model.eval(img, diameter=parameters["estimated_cell_diameter"], channels=channels)
-    # masks, flows, styles, diams = model.eval(img, channels=channels)
-
-    nuclei_mask = np.where(masks > 0, True, False)
-
-    nuclei_label = nuclei_mask * cellpose_mask
-
-    return nuclei_label
 
 
 def get_golgi_mask(parameters, img, cellpose_mask):
@@ -405,16 +390,6 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
         angle_rad = 2.0 * np.pi + angle_rad_
 
     return angle_rad, vec_x, vec_y
-
-
-def get_outline_from_mask(mask, width=1):
-    """DescribeMe"""
-    mask = mask.astype(bool)
-    dilated_mask = ndi.binary_dilation(mask, iterations=width)
-    eroded_mask = ndi.binary_erosion(mask, iterations=width)
-    outline_mask = np.logical_xor(dilated_mask, eroded_mask)
-
-    return outline_mask
 
 
 def remove_edges(mask):
