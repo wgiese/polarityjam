@@ -124,6 +124,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
+                selectInput("stats_method", "Choose a stats test", 
+                            choices = c("rayleigh_uniform", "rayleigh_cond_mean_180")),
                 textInput("exp_condition", "Exp. condition", "condition A"),
                 checkboxInput("ci_plot", "Confidence interval 95%", TRUE),
                 checkboxInput("kde_plot", "KDE plot", FALSE),

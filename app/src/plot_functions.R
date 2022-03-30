@@ -30,7 +30,13 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     #plot_title <- parameters[input$feature_select][[1]][3]
 
     polarity_index <- signif(statistics[1,"polarity_index"], digits=3)
+    
+    
     p_value_ <- signif(statistics[1,"rayleigh_test"], digits=3)
+    if(input$stats_method == "rayleigh_cond_mean_180")
+        p_value_ <- signif(statistics[1,"rayleigh_test_mu"], digits=3)
+    
+
     if (statistics[1,"rayleigh_test"] < 0.001) 
         p_value <- "p < 0.001"
     else
