@@ -7,7 +7,9 @@ compute_circular_statistics <- function(data, feature, parameters) {
     sin_sum <- 0.0
     cos_sum <- 0.0
     polarity_index <- 0.0
-    
+    std_circular <- 0.0    
+    std_angular <- 0.0    
+
     for (i in 1:length(circular_data)) {
         angle <- circular_data[i]
         sin_sum <- sin_sum + sin(angle)
@@ -16,6 +18,14 @@ compute_circular_statistics <- function(data, feature, parameters) {
     sin_mean <- sin_sum/length(circular_data)
     cos_mean <- cos_sum/length(circular_data)
     polarity_index <- sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
+    std_angular <- sqrt(2.0*(1.0-polarity_index)) 
+    std_circular <- sqrt(-2.0*log(polarity_index))
+    print("Polarity index")
+    print(polarity_index)    
+    print("STD from circular")
+    print(std_angular)
+    print(std_circular)
+
     angle_mean_rad <- atan2(sin_mean, cos_mean)
     angle_mean_deg <- angle_mean_rad*180.0/3.1415926
     if (angle_mean_rad < 0.0) {
@@ -53,6 +63,8 @@ compute_circular_statistics <- function(data, feature, parameters) {
   
     values <- data.frame( "polarity_index" = polarity_index, 
                           "mean" = angle_mean_deg,
+                          "std_angular" = std_angular,
+                          "std_circular" = std_circular,
                           "rayleigh_test" = rayleigh_test,
                           "rayleigh_test_mu" = rayleigh_test_mu,
                           "ci_lower_limit" = ci_lower_limit,

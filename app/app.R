@@ -408,14 +408,14 @@ server <- function(input, output, session) {
       results_df <- subset(results_df, results_df$distance > threshold)
     }
 
-    statistics_df <- as.data.frame(matrix(nrow=5,ncol=2))
-    colnames(statistics_df) <- c("entity", "value")
+    statistics_df <- as.data.frame(matrix(nrow=5,ncol=3))
+    colnames(statistics_df) <- c("entity", "value") #, "comment")
 
     if (parameters[input$feature_select][[1]][2] == "axial") {
       
         x_data <- unlist(results_df[feature])*180.0/pi
         statistics <- compute_circular_statistics(results_df, feature, parameters)
-        
+        print("Statistics")
         print(statistics)
 
         p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
@@ -427,7 +427,7 @@ server <- function(input, output, session) {
      
 
         ind <-1
-        statistics_df[ind,1] <- "cells"
+        statistics_df[ind,1] <- "number of cells"
         statistics_df[ind,2] <- nrow(results_df)
         
         ind <- ind + 1
@@ -438,6 +438,16 @@ server <- function(input, output, session) {
         statistics_df[ind,1] <- "polarity index"
         statistics_df[ind,2] <- signif(statistics[1,"polarity_index"], digits = 3)
         
+        ind <- ind + 1
+        statistics_df[ind,1] <- "angular standard deviation"
+        statistics_df[ind,2] <- signif(statistics[1,"std_angular"])
+        statistics_df[ind,3] <- "angular standard deviation, takes values in [0,sqrt(2)], see https://doi.org/10.18637/jss.v031.i10 for more info."
+
+        ind <- ind + 1
+        statistics_df[ind,1] <- "circular standard deviation"
+        statistics_df[ind,2] <- signif(statistics[1,"std_circular"], digits = 3)
+        statistics_df[ind,3] <- "circular standard deviation, takes values in [0,inf], see https://doi.org/10.18637/jss.v031.i10 for more info."
+
         ind <- ind + 1
         statistics_df[ind,1] <- "95% confidence interval of the mean, lower limit: "
         statistics_df[ind,2] <- signif(statistics[1,"ci_lower_limit"], digits = 3)
