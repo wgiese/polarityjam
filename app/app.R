@@ -398,7 +398,7 @@ server <- function(input, output, session) {
     #  results_df <- subset(results_df, results_df$distance < threshold)
     #}
     
-    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     parameters <- fromJSON(file = "parameters/parameters.json")
 
     feature <- parameters[input$feature_select][[1]][1]
@@ -426,17 +426,34 @@ server <- function(input, output, session) {
         #    p_value_mu <- "p < 0.001"
      
 
+        ind <-1
+        statistics_df[ind,1] <- "cells"
+        statistics_df[ind,2] <- nrow(results_df)
+        
+        ind <- ind + 1
+        statistics_df[ind,1] <- "mean (degree)"
+        statistics_df[ind,2] <- signif(statistics[1,"mean"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind,1] <- "polarity index"
+        statistics_df[ind,2] <- signif(statistics[1,"polarity_index"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind,1] <- "95% confidence interval of the mean, lower limit: "
+        statistics_df[ind,2] <- signif(statistics[1,"ci_lower_limit"], digits = 3)
 
-        statistics_df[1,1] <- "cells"
-        statistics_df[1,2] <- nrow(results_df)
-        statistics_df[2,1] <- "mean (degree)"
-        statistics_df[2,2] <- signif(statistics[1,"mean"], digits = 3)
-        statistics_df[3,1] <- "polarity index"
-        statistics_df[3,2] <- signif(statistics[1,"polarity_index"], digits = 3)
-        statistics_df[4,1] <- "Rayleigh test, p-value:"
-        statistics_df[4,2] <- p_value
-        statistics_df[5,1] <- "Rayleigh test, p-value (cond. mean = 180): "
-        statistics_df[5,2] <- p_value_mu
+        ind <- ind + 1
+        statistics_df[ind,1] <- "95% confidence interval of the mean, upper limit: "
+        statistics_df[ind,2] <- signif(statistics[1,"ci_upper_limit"], digits = 3)
+
+        ind <- ind + 1
+        statistics_df[ind,1] <- "Rayleigh test, p-value:"
+        statistics_df[ind,2] <- p_value
+        
+        ind <- ind + 1
+        statistics_df[ind,1] <- "Rayleigh test, p-value (cond. mean = 180): "
+        statistics_df[ind,2] <- p_value_mu
+
 
 
 
@@ -540,7 +557,7 @@ server <- function(input, output, session) {
   merged_plot <- reactive({
     
     source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
-    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     
     parameters <- fromJSON(file = "parameters/parameters.json")
     text_size <- as.integer(parameters["text_size_merged_plot"])
@@ -622,7 +639,7 @@ server <- function(input, output, session) {
   multi_plot <- reactive({
     
     source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
-    source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+    source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     
     parameters <- fromJSON(file = "parameters/parameters.json")
     text_size <- 12
@@ -899,7 +916,7 @@ server <- function(input, output, session) {
     output$comparison_plot <- renderPlot({
       
         source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
-        source(file = paste0(getwd(),"/src/ciruclar_statistics.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     
         parameters <- fromJSON(file = "parameters/parameters.json")
         text_size <- as.integer(parameters["text_size_merged_plot"])

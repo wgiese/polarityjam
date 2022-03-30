@@ -36,8 +36,8 @@ compute_circular_statistics <- function(data, feature, parameters) {
     print(ci_res$mu.ci)
     print(str(ci_res$mu.ci))
     print(ci_res$mu.ci[[1]])
-    lower_limit <- 180.0*ci_res$mu.ci[[1]]/3.1415926
-    upper_limit <- 180.0*ci_res$mu.ci[[2]]/3.1415926
+    ci_lower_limit <- 180.0*ci_res$mu.ci[[1]]/3.1415926
+    ci_upper_limit <- 180.0*ci_res$mu.ci[[2]]/3.1415926
 
     print(ci_res$mu.ci[[2]])
     #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
@@ -55,8 +55,8 @@ compute_circular_statistics <- function(data, feature, parameters) {
                           "mean" = angle_mean_deg,
                           "rayleigh_test" = rayleigh_test,
                           "rayleigh_test_mu" = rayleigh_test_mu,
-                          "lower_limit" = lower_limit,
-                          "upper_limit" = upper_limit)
+                          "ci_lower_limit" = ci_lower_limit,
+                          "ci_upper_limit" = ci_upper_limit)
   
     return(values)
 }
@@ -116,15 +116,15 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     print("Confidence interval:")
     print(ci_res$mu.ci)
     print(str(ci_res$mu.ci))
-    lower_limit <- 90.0*ci_res$mu.ci[[1]]/3.1415926
-    upper_limit <- 90.0*ci_res$mu.ci[[2]]/3.1415926
+    ci_lower_limit <- 90.0*ci_res$mu.ci[[1]]/3.1415926
+    ci_upper_limit <- 90.0*ci_res$mu.ci[[2]]/3.1415926
 
     if (ci_res$mu.ci[[1]] < 0.0) {
-        lower_limit <- 180.0 + 90.0*ci_res$mu.ci[[1]]/3.1415926
+        ci_lower_limit <- 180.0 + 90.0*ci_res$mu.ci[[1]]/3.1415926
     }
 
     if (ci_res$mu.ci[[2]] < 0.0) {
-        upper_limit <- 180.0 + 90.0*ci_res$mu.ci[[2]]/3.1415926
+        ci_upper_limit <- 180.0 + 90.0*ci_res$mu.ci[[2]]/3.1415926
     }
 
  
@@ -139,8 +139,8 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
   values <- data.frame( "polarity_index" = polarity_index, 
                         "rayleigh_test" = rayleigh_test,
                         "mean" = angle_mean_deg,
-                        "lower_limit" = lower_limit,
-                        "upper_limit" = upper_limit)
+                        "ci_lower_limit" = ci_lower_limit,
+                        "ci_upper_limit" = ci_upper_limit)
  
   return(values)
 }
