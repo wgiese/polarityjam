@@ -103,6 +103,8 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
         angle_mean_deg <- 180.0 + angle_mean_rad*180.0/3.1415926
     }
 
+    print("mean")
+    print(angle_mean_deg)
     rayleigh_test_res <- r.test(circular_data)
     #rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
     #rayleigh_test_mu_res <- v0.test(circular_data, mu0 = pi)
@@ -111,21 +113,21 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     rayleigh_test <- rayleigh_test_res$p.value
     #rayleigh_test_mu <- rayleigh_test_mu_res$p.value
     ci_res <- vm.bootstrap.ci(circular_data)
-    
+    print("Confidence interval:")
+    print(ci_res$mu.ci)
+    print(str(ci_res$mu.ci))
+    lower_limit <- 90.0*ci_res$mu.ci[[1]]/3.1415926
+    upper_limit <- 90.0*ci_res$mu.ci[[2]]/3.1415926
 
-    
-  #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
-  #against_flow <- against_flow [(against_flow < 210*pi/180.0),]
-  #with_flow <- polarity_data[((polarity_data > 330*pi/180.0) | (polarity_data < 30*pi/180.0)),]
-  
-  #print("Delme!")
-  #print(against_flow)
-  #print(with_flow)
-  #print("number of rows:")
-  #print(nrow(polarity_data))
-  #print(nrow(against_flow))
-  #print(nrow(with_flow))
-  
+    if (ci_res$mu.ci[[1]] < 0.0) {
+        lower_limit <- 180.0 + 90.0*ci_res$mu.ci[[1]]/3.1415926
+    }
+
+    if (ci_res$mu.ci[[2]] < 0.0) {
+        upper_limit <- 180.0 + 90.0*ci_res$mu.ci[[2]]/3.1415926
+    }
+
+ 
   #signed_polarity_index <- (nrow(against_flow) - nrow(with_flow))/(nrow(against_flow) + nrow(with_flow))
 
   #values <- c(polarity_index, sin_mean, cos_mean, angle_mean_deg)
@@ -136,8 +138,10 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
   
   values <- data.frame( "polarity_index" = polarity_index, 
                         "rayleigh_test" = rayleigh_test,
-                        "mean" = angle_mean_deg )
-
+                        "mean" = angle_mean_deg,
+                        "lower_limit" = lower_limit,
+                        "upper_limit" = upper_limit)
+ 
   return(values)
 }
 
