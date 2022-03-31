@@ -3,13 +3,12 @@ import sys
 
 import vascu_ec
 from vascu_ec.commandline import run, run_stack, run_key
-from vascu_ec.vascu_ec_logging import configure_logger, get_logger
+from vascu_ec.utils.io import create_path_recursively
+from vascu_ec.vascu_ec_logging import configure_logger, get_logger, get_log_file, close_logger
 
 
 def startup():
     """Entry points of `vascu-ec`."""
-    configure_logger('INFO')
-
     parser = create_parser()
     args = parser.parse_args()
 
@@ -23,12 +22,19 @@ def __run_subcommand(args, parser):
         command = sys.argv[1]  # command always expected at second position
     except IndexError:
         parser.error("Please provide a valid action!")
+
+    create_path_recursively(args.out_path)
+
+    log_file = get_log_file(args.out_path)
+    configure_logger('INFO', logfile_name=log_file)
+
     get_logger().debug("Running %s subcommand..." % command)
 
-    get_logger().info("VascuShare Version %s" %
-                      (vascu_ec.__version__))
+    get_logger().info("VascuShare Version %s" % vascu_ec.__version__)
 
     args.func(args)  # execute entry point function
+
+    close_logger()
 
 
 def create_parser():
@@ -37,6 +43,7 @@ def create_parser():
     # run action
     p = parser.create_file_command_parser('run', run, 'Feature extraction from a single tiff image.')
     p.add_argument('in_file', type=str, help='Path to the input tif file.')
+    p.add_argument('out_path', type=str, help='Path to the output folder.')
     p.add_argument('--filename_prefix', type=str, help='prefix for the output file.', required=False, default=None)
 
     # stack action
@@ -44,6 +51,7 @@ def create_parser():
         'run-stack', run_stack, 'Feature extraction from an input folder containing several tiff files.'
     )
     p.add_argument('in_path', type=str, help='Name for the input folder containing tif images.')
+    p.add_argument('out_path', type=str, help='Path to the output folder.')
 
     # key action
     p = parser.create_file_command_parser(
@@ -56,6 +64,7 @@ def create_parser():
         'in_key', type=str, help='Path to the input key file. File must contain column '
                                  '"folder_name" and "condition_name". Note: Folder name relative to the path prefix.'
     )
+    p.add_argument('out_path', type=str, help='Path to the output folder.')
 
     return parser.parser
 
@@ -79,6 +88,7 @@ class VascuParser(ArgumentParser):
     def create_parent_parser():
         """Parent parser for all subparsers to have the same set of arguments."""
         parent_parser = ArgumentParser(add_help=False)
+        parent_parser.add_argument('--version', '-V', action='version', version="%s " % vascu_ec.__version__)
         # parse logging
         parent_parser.add_argument(
             '--log',
@@ -110,5 +120,4 @@ class VascuParser(ArgumentParser):
         """
         parser = self.create_command_parser(command_name, command_function, command_help)
         parser.add_argument('param', type=str, help='Path to the parameter file.')
-        parser.add_argument('out_path', type=str, help='Path to the output folder.')
         return parser

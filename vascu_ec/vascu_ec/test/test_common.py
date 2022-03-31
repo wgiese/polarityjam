@@ -1,26 +1,26 @@
-import logging
 import os
 import tempfile
 import unittest
-from pyunpack import Archive
 from pathlib import Path
 
 import yaml
+from pyunpack import Archive
 
-from vascu_ec.vascu_ec_logging import LOGGER_NAME
 from vascu_ec.utils.io import list_files_recursively
+from vascu_ec.vascu_ec_logging import close_logger
 
 
 class TestCommon(unittest.TestCase):
     """Base class all tests inherit from. Responsible for temporary directory, cleanup, parameters."""
+
     def setUp(self) -> None:
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.current_path = Path(os.path.dirname(os.path.realpath(__file__)))
         self.parameters, self.param_base_file = self.load_parameters()
 
     def tearDown(self) -> None:
+        close_logger()
         self.tmp_dir.cleanup()
-        logging.getLogger(LOGGER_NAME).handlers.clear()
 
     def extract_test_data(self):
         Archive(str(self.current_path.joinpath("resources", "data.zip"))).extractall(str(self.tmp_dir.name))

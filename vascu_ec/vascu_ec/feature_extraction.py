@@ -1,6 +1,3 @@
-import cellpose.io
-import cellpose.models
-import cellpose.utils
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndi
@@ -202,7 +199,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     rag = orientation_graph_nf(cell_mask)
     rag, cell_mask_rem_island = remove_islands(rag, cell_mask)
 
-    get_logger().info("RAG nodes: %s " % str(list(rag.nodes)))
+    get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
     # get masks
     nuclei_mask = get_nuclei_mask(parameters, img, cell_mask_rem_island)
@@ -211,7 +208,8 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     properties_dataset = pd.DataFrame()
 
-    # iterate through each unique segmented cell pixel,
+    excluded = 0
+    # iterate through each unique segmented cell
     for index, connected_component_label in enumerate(np.unique(cell_mask_rem_island)):
         # ignore background
         if connected_component_label == 0:
@@ -226,7 +224,15 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                                                            single_nucleus_mask)  # can be None
 
         # threshold
-        if threshold(parameters, single_nucleus_mask, single_golgi_mask, single_cell_mask):
+        if threshold(
+                parameters,
+                single_cell_mask,
+                single_nucleus_mask=single_nucleus_mask,
+                single_golgi_mask=single_golgi_mask
+        ):
+            get_logger().info("Cell \"%s\" falls under threshold! Removed from RAG..." % connected_component_label)
+            excluded += 1
+            # remove a cell from the RAG
             rag.remove_node(connected_component_label)
             continue
 
@@ -245,6 +251,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         if im_marker is not None:
             set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker)
             set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker)
+
             # marker nuclei properties
             if nuclei_mask is not None:
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
@@ -257,11 +264,12 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
         get_logger().info(
             " ".join(
-                str(x) for x in [
-                    "Index %s - feature of interest \"%s\" - value \"%s\" - semantic segmentation label \"%s\"" % (
-                        index, foi_name, foi, connected_component_label)]
+                str(x) for x in ["Cell %s - feature \"%s\": %s" % (connected_component_label, foi_name, foi)]
             )
         )
+
+    get_logger().info("Excluded cells: %s" % str(excluded))
+    get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
@@ -417,20 +425,24 @@ def remove_edges(mask):
     concat_arr = np.hstack([left_wall, right_wall, roof, floor]).astype("int")
     x_indexed = segments[(concat_arr[1, :]), (concat_arr[0, :])]
 
-    for elemet in np.unique(x_indexed):
-        segments[segments == elemet] = 0
+    for element in np.unique(x_indexed):
+        segments[segments == element] = 0
+        get_logger().info("Removed edge s: %s" % str(element))
+
+    get_logger().info("Number of removed edges: %s" % len(np.unique(x_indexed)))
+
     return segments
 
 
 def remove_islands(frame_graph, mask):
-    """Remove unconnected masks"""
+    """Remove unconnected cells (Cells without neighbours."""
     # Get list of islands - nodes with no neighbours and remove them
     list_of_islands = []
     for nodes in frame_graph.nodes:
         if len(list(frame_graph.neighbors(nodes))) == 0:
             list_of_islands.append(nodes)
 
-    get_logger().info("detected islands: %s" % list_of_islands)
+    get_logger().info("Removed number of islands: %s" % len(list_of_islands))
 
     # remove islands from image and graph
     for elemet in np.unique(list_of_islands):

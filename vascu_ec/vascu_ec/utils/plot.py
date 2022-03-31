@@ -107,25 +107,7 @@ def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, s
     plt.close(fig)
 
 
-def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset, filename, output_path,
-                           nuclei_mask=None):
-    number_sub_figs = 1
-    if nuclei_mask is not None:
-        nuclei_mask = nuclei_mask.astype(bool)
-        number_sub_figs = 2
-
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(10 * number_sub_figs, 10))
-
-    if nuclei_mask is not None:
-        outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
-        outline_nuc_ = np.where(outline_nuc == True, 30, 0)  # todo: 30 ?
-        ax[number_sub_figs - 1].imshow(
-            np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.75
-        )
-
-    for i in range(number_sub_figs):
-        ax[i].imshow(im_marker, cmap=plt.cm.gray, alpha=1.0)
-
+def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
     outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
 
@@ -136,31 +118,60 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
         single_cell_mask = np.where(cell_mask == cell_label, 1, 0)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
-        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        outline_cell_ = np.where(outline_cell == True, 30, 0)  # todo: magic number 30?
         outlines_cell += outline_cell_
 
         outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
-        outline_mem_ = np.where(outline_mem == True, 30, 0)
+        outline_mem_ = np.where(outline_mem == True, 30, 0)  # todo: magic number 30?
         outlines_mem += outline_mem_
 
+    return [outlines_cell, outlines_mem]
+
+
+def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset, filename, output_path,
+                           nuclei_mask=None):
+    number_sub_figs = 2  # mean intensity cell, mean intensity membrane
+    if nuclei_mask is not None:
+        nuclei_mask = nuclei_mask.astype(bool)
+        number_sub_figs = 3  # (optional) mean intensity nucleus
+
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(10 * number_sub_figs, 10))
+
+    # plot marker intensity for all subplots
+    for i in range(number_sub_figs):
+        ax[i].imshow(im_marker, cmap=plt.cm.gray, alpha=1.0)
+
+    outlines_cell, outlines_mem = _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters)
+
+    # cell and membrane outline
     outlines_cell_ = np.where(outlines_cell > 0, 30, 0)  # todo: what is that threshold?
     ax[0].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
     outlines_mem_ = np.where(outlines_mem > 0, 30, 0)  # todo: what is that threshold?
     ax[1].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
-    for index, row in single_cell_dataset.iterrows():
-        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"], 1)), color="w", fontsize=6)
-        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=6)
-        if nuclei_mask is not None:
-            ax[number_sub_figs - 1].text(row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"], 1)),
-                                         color="w",
-                                         fontsize=6)
+    # nuclei marker intensity
+    if nuclei_mask is not None:
+        outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
+        outline_nuc_ = np.where(outline_nuc == True, 30, 0)  # todo: 30 ?
+        ax[2].imshow(
+            np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.75
+        )  # always last axis
 
+    # plot mean expression value of cell and membrane as text
+    for index, row in single_cell_dataset.iterrows():
+        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"], 1)), color="w", fontsize=7)
+        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=7)
+        if nuclei_mask is not None:
+            ax[2].text(
+                row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"], 1)), color="w", fontsize=7
+            )
+
+    # set title
     ax[0].set_title("mean intensity cell")
     ax[1].set_title("mean intensity membrane")
     if nuclei_mask is not None:
-        ax[number_sub_figs - 1].set_title("mean intensity nucleus")
+        ax[2].set_title("mean intensity nucleus")
 
     # save output
     plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
@@ -417,7 +428,6 @@ def plot_adjacency_matrix(label_image, intensity_image):
 def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
                  golgi_mask, im_marker):
     """Plots the properties dataset"""
-    # todo: close figures
     get_logger().info("Plotting data...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
@@ -431,7 +441,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
             properties_dataset,
             filename, output_path,
         )
-    if parameters["plot_marker"] and nuclei_mask is not None and im_marker is not None:
+    if parameters["plot_marker"] and im_marker is not None:
         plot_marker_expression(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path,
             nuclei_mask=nuclei_mask
@@ -439,13 +449,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
         )
-    if parameters["plot_marker"] and nuclei_mask is None and im_marker is not None:
-        plot_marker_expression(parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path)
-        plot_marker_polarity(
-            parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
-        )
-
-    if parameters["plot_alignment"] and nuclei_mask is not None:
+    if parameters["plot_alignment"]:
         plot_alignment(
             im_junction,
             properties_dataset,
@@ -453,14 +457,6 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
             output_path,
             cell_mask_rem_island,
             nuclei_mask=nuclei_mask,
-        )
-    if parameters["plot_marker"] and nuclei_mask is None:
-        plot_alignment(
-            im_junction,
-            properties_dataset,
-            filename,
-            output_path,
-            cell_mask_rem_island,
         )
     if parameters["plot_ratio_method"]:
         plot_ratio_method(
