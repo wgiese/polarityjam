@@ -12,7 +12,7 @@ channel_junction: 3
 channel_nucleus : -1
 channel_golgi : -1
 channel_expression_marker : 2
-estimated_cell_diameter : 100
+estimated_cell_diameter : 200
 
 membrane_thickness : 4
 
