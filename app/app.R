@@ -67,7 +67,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 actionButton("refreshStack", "Refresh"),
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("merged_file")),
-                downloadButton("downloadFormatedData", "Download")
+                downloadButton("downloadProcessedData", "Download")
             ),
  
             #conditionalPanel(condition = "input.tidyInput==true",
@@ -793,10 +793,14 @@ server <- function(input, output, session) {
     
   })  
   
-    output$downloadFormattedData <- downloadHandler(
-        #content = function(file) {
-        #   
-        #}
+    output$downloadProcessedData <- downloadHandler(
+        filename = function() {
+            filename <- "merged_file.csv"
+            return(filename)
+        },
+        content = function(file) {
+            return(write.csv(mergedStack(), file, row.names = FALSE))
+        }
     )
   
     output$downloadData <- downloadHandler(
