@@ -65,9 +65,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 shinyDirButton("dir", "Input directory", "Upload"),
                 verbatimTextOutput("dir", placeholder = TRUE),
                 actionButton("refreshStack", "Refresh"),
-#                selectInput("dataset", "Choose a dataset:",
-#                            choices = c("merged_file")),
-#                downloadButton("downloadData", "Download")
+                selectInput("dataset", "Choose a dataset:",
+                            choices = c("merged_file")),
+                downloadButton("downloadFormatedData", "Download")
             ),
  
             #conditionalPanel(condition = "input.tidyInput==true",
@@ -127,7 +127,15 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 selectInput("stats_method", "Choose a stats test", 
                             choices = c("rayleigh_uniform", "rayleigh_cond_mean_180")),
                 textInput("exp_condition", "Exp. condition", "condition A"),
-                checkboxInput("ci_plot", "Confidence interval 95%", TRUE),
+ 
+                checkboxInput("ci_plot", "Confidence interval (CI)", TRUE),
+                conditionalPanel(
+                    condition = "input.ci_plot == true",
+                    selectInput("ci_method", "CI method", 
+                                choices = c("95% CI of the mean","90% CI of the mean","50% CI of the mean", 
+                                "circular standard deviation", "angular standard deviation"))
+                ),
+
                 checkboxInput("kde_plot", "KDE plot", FALSE),
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
@@ -785,6 +793,11 @@ server <- function(input, output, session) {
     
   })  
   
+    output$downloadFormattedData <- downloadHandler(
+        #content = function(file) {
+        #   
+        #}
+    )
   
     output$downloadData <- downloadHandler(
    

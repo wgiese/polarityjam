@@ -80,8 +80,26 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     p <- p + geom_segment(data = statistics, aes(x=mean, y=0, xend=mean, yend=polarity_index, size = 1.5, color="red"), arrow = arrow()) + theme(legend.position = "none") 
     
     if (input$ci_plot) {
-        p <- p + geom_segment(data = statistics, aes(x=ci_lower_limit, y=0, xend=ci_lower_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
-        p <- p + geom_segment(data = statistics, aes(x=ci_upper_limit, y=0, xend=ci_upper_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        if (input$ci_method == "95% CI of the mean") {
+            p <- p + geom_segment(data = statistics, aes(x=ci_95_lower_limit, y=0, xend=ci_95_lower_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+            p <- p + geom_segment(data = statistics, aes(x=ci_95_upper_limit, y=0, xend=ci_95_upper_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        }
+        if (input$ci_method == "90% CI of the mean") {
+            p <- p + geom_segment(data = statistics, aes(x=ci_90_lower_limit, y=0, xend=ci_90_lower_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+            p <- p + geom_segment(data = statistics, aes(x=ci_90_upper_limit, y=0, xend=ci_90_upper_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        }
+        if (input$ci_method == "50% CI of the mean") {
+            p <- p + geom_segment(data = statistics, aes(x=ci_50_lower_limit, y=0, xend=ci_50_lower_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+            p <- p + geom_segment(data = statistics, aes(x=ci_50_upper_limit, y=0, xend=ci_50_upper_limit, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        }
+        if (input$ci_method == "circular standard deviation") {
+            p <- p + geom_segment(data = statistics, aes(x=std_circ_low_lim, y=0, xend=std_circ_low_lim, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+            p <- p + geom_segment(data = statistics, aes(x=std_circ_up_lim, y=0, xend=std_circ_up_lim, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        }
+        if (input$ci_method == "angular standard deviation") {
+            p <- p + geom_segment(data = statistics, aes(x=std_ang_low_lim, y=0, xend=std_ang_low_lim, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+            p <- p + geom_segment(data = statistics, aes(x=std_ang_up_lim, y=0, xend=std_ang_up_lim, yend=1), size = 1.5, color="red",linetype = "dashed", arrow = NULL) + theme(legend.position = "none") 
+        }
     }
 
     return(p)

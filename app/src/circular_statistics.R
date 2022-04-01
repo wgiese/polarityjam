@@ -18,8 +18,10 @@ compute_circular_statistics <- function(data, feature, parameters) {
     sin_mean <- sin_sum/length(circular_data)
     cos_mean <- cos_sum/length(circular_data)
     polarity_index <- sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
-    std_angular <- sqrt(2.0*(1.0-polarity_index)) 
-    std_circular <- sqrt(-2.0*log(polarity_index))
+    std_angular <- sqrt(2.0*(1.0-polarity_index))*180.0/pi
+    std_circular <- sqrt(-2.0*log(polarity_index))*180.0/pi
+
+
     print("Polarity index")
     print(polarity_index)    
     print("STD from circular")
@@ -27,11 +29,28 @@ compute_circular_statistics <- function(data, feature, parameters) {
     print(std_circular)
 
     angle_mean_rad <- atan2(sin_mean, cos_mean)
-    angle_mean_deg <- angle_mean_rad*180.0/3.1415926
+    angle_mean_deg <- angle_mean_rad*180.0/pi
     if (angle_mean_rad < 0.0) {
-        angle_mean_deg <- 360.0 + angle_mean_rad*180.0/3.1415926
+        angle_mean_deg <- 360.0 + angle_mean_rad*180.0/pi
     }
-
+    
+    print("STD:")
+    std_circ_up_lim <- angle_mean_deg + std_circular
+    if ( std_circ_up_lim > 360.0)
+        std_circ_up_lim <- std_circ_up_lim - 360.0    
+    print(std_circ_up_lim)
+    std_circ_low_lim <- angle_mean_deg - std_circular
+    if ( std_circ_low_lim < 0.0)
+        std_circ_low_lim <- std_circ_low_lim + 360.0    
+    print(std_circ_low_lim)
+    
+    std_ang_up_lim <- angle_mean_deg + std_angular
+    if ( std_ang_up_lim > 360.0)
+        std_ang_up_lim <- std_ang_up_lim - 360.0    
+    std_ang_low_lim <- angle_mean_deg - std_angular
+    if ( std_ang_low_lim < 0.0)
+        std_ang_low_lim <- std_ang_low_lim + 360.0    
+ 
     
     rayleigh_test_res <- r.test(circular_data)
     #rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
@@ -41,16 +60,25 @@ compute_circular_statistics <- function(data, feature, parameters) {
     rayleigh_test <- rayleigh_test_res$p.value
     rayleigh_test_mu <- rayleigh_test_mu_res$p.value
 
-    ci_res <- vm.bootstrap.ci(circular_data)
-    print("Confidence interval:")
-    print(ci_res$mu.ci)
-    print(str(ci_res$mu.ci))
-    print(ci_res$mu.ci[[1]])
-    ci_lower_limit <- 180.0*ci_res$mu.ci[[1]]/3.1415926
-    ci_upper_limit <- 180.0*ci_res$mu.ci[[2]]/3.1415926
+    ci_95_res <- vm.bootstrap.ci(circular_data, alpha = 0.05)
+    #print("Confidence interval:")
+    #print(ci_res$mu.ci)
+    #print(str(ci_res$mu.ci))
+    #print(ci_res$mu.ci[[1]])
+    ci_95_lower_limit <- 180.0*ci_95_res$mu.ci[[1]]/pi
+    ci_95_upper_limit <- 180.0*ci_95_res$mu.ci[[2]]/pi
 
-    print(ci_res$mu.ci[[2]])
-    #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
+    ci_90_res <- vm.bootstrap.ci(circular_data, alpha = 0.1)
+    ci_90_lower_limit <- 180.0*ci_90_res$mu.ci[[1]]/pi
+    ci_90_upper_limit <- 180.0*ci_90_res$mu.ci[[2]]/pi
+
+    ci_50_res <- vm.bootstrap.ci(circular_data, alpha = 0.5)
+    ci_50_lower_limit <- 180.0*ci_50_res$mu.ci[[1]]/pi
+    ci_50_upper_limit <- 180.0*ci_50_res$mu.ci[[2]]/pi
+
+
+
+#against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
     #against_flow <- against_flow [(against_flow < 210*pi/180.0),]
     #with_flow <- polarity_data[((polarity_data > 330*pi/180.0) | (polarity_data < 30*pi/180.0)),]
   
@@ -64,11 +92,20 @@ compute_circular_statistics <- function(data, feature, parameters) {
     values <- data.frame( "polarity_index" = polarity_index, 
                           "mean" = angle_mean_deg,
                           "std_angular" = std_angular,
+                          "std_circ_up_lim" = std_circ_up_lim,
+                          "std_circ_low_lim" = std_circ_low_lim,
                           "std_circular" = std_circular,
+                          "std_ang_up_lim" = std_ang_up_lim,
+                          "std_ang_low_lim" = std_ang_low_lim,
                           "rayleigh_test" = rayleigh_test,
                           "rayleigh_test_mu" = rayleigh_test_mu,
-                          "ci_lower_limit" = ci_lower_limit,
-                          "ci_upper_limit" = ci_upper_limit)
+                          "ci_95_lower_limit" = ci_95_lower_limit,
+                          "ci_95_upper_limit" = ci_95_upper_limit,
+                          "ci_90_lower_limit" = ci_90_lower_limit,
+                          "ci_90_upper_limit" = ci_90_upper_limit,
+                          "ci_50_lower_limit" = ci_50_lower_limit,
+                          "ci_50_upper_limit" = ci_50_upper_limit
+    )
   
     return(values)
 }
