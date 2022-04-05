@@ -15,7 +15,7 @@ def get_cellpose_model(use_gpu):
 
 def get_cellpose_segmentation(parameters, im_seg):
     """Gets the cellpose segmentation"""
-    get_logger().info("Get cellpose segmentation. This might take some time.")
+    get_logger().info("Calculate cellpose segmentation. This might take some time...")
 
     model = get_cellpose_model(parameters["use_gpu"])
     if parameters["channel_nucleus"] >= 0:
@@ -26,25 +26,32 @@ def get_cellpose_segmentation(parameters, im_seg):
     # masks, flows, styles, diams = model.eval(im_seg, channels=channels)
     masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
 
-    if parameters["clear_border"]:
-        masks = skimage.segmentation.clear_border(masks)
-
     return masks
 
 
 def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
+    get_logger().info("Look up cellpose segmentation...")
     stem = Path(filepath).stem
     segmentation = Path(filepath).parent.joinpath(stem + "_seg.npy")
+
     if segmentation.exists():
+        get_logger().info("Load cellpose segmentation...")
+
         # in case an annotated mask is available
         cellpose_seg = np.load(str(segmentation), allow_pickle=True)
         cellpose_mask = cellpose_seg.item()['masks']
-        if parameters["clear_border"]:
-            cellpose_mask = skimage.segmentation.clear_border(cellpose_mask)
+
     else:
         cellpose_mask = get_cellpose_segmentation(parameters, img_seg)
 
-    get_logger().info("Number of cell labels: %s" % np.max(cellpose_mask))
+    if parameters["clear_border"]:
+        cellpose_mask_clear_border = skimage.segmentation.clear_border(cellpose_mask)
+        number_of_cellpose_borders = len(np.unique(cellpose_mask)) - len(np.unique(cellpose_mask_clear_border))
+        cellpose_mask = cellpose_mask_clear_border
+
+        get_logger().info("Removed number of cellpose borders: %s" % number_of_cellpose_borders)
+
+    get_logger().info("Detected number of cellpose labels: %s" % len(np.unique(cellpose_mask)))
 
     return cellpose_mask
 

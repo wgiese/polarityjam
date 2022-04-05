@@ -12,7 +12,7 @@ channel_junction: 0
 channel_nucleus : 1
 channel_golgi : -1
 channel_expression_marker : 0
-estimated_cell_diameter : 100
+estimated_cell_diameter : 250
 
 membrane_thickness : 4
 

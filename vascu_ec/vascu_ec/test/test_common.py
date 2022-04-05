@@ -1,36 +1,49 @@
-import logging
 import os
 import tempfile
 import unittest
-from pyunpack import Archive
 from pathlib import Path
 
 import yaml
+from pyunpack import Archive
 
-from vascu_ec.vascu_ec_logging import LOGGER_NAME
+import vascu_ec.test.test_config as config
 from vascu_ec.utils.io import list_files_recursively
+from vascu_ec.vascu_ec_logging import close_logger
 
 
 class TestCommon(unittest.TestCase):
     """Base class all tests inherit from. Responsible for temporary directory, cleanup, parameters."""
+
     def setUp(self) -> None:
-        self.tmp_dir = tempfile.TemporaryDirectory()
+        if config._TARGET_DIR:
+            self.tmp_dir = Path(config._TARGET_DIR)
+            self.output_path = self.tmp_dir.joinpath("output")
+            self.data_path = self.tmp_dir.joinpath("data")
+        else:
+            self.tmp_dir = tempfile.TemporaryDirectory()
+            self.output_path = Path(self.tmp_dir.name).joinpath("output")
+            self.data_path = Path(self.tmp_dir.name).joinpath("data")
+
         self.current_path = Path(os.path.dirname(os.path.realpath(__file__)))
         self.parameters, self.param_base_file = self.load_parameters()
 
     def tearDown(self) -> None:
-        self.tmp_dir.cleanup()
-        logging.getLogger(LOGGER_NAME).handlers.clear()
+        close_logger()
+        if isinstance(self.tmp_dir, tempfile.TemporaryDirectory):
+            self.tmp_dir.cleanup()
 
     def extract_test_data(self):
-        Archive(str(self.current_path.joinpath("resources", "data.zip"))).extractall(str(self.tmp_dir.name))
+        if isinstance(self.tmp_dir, tempfile.TemporaryDirectory):
+            target = str(self.tmp_dir.name)
+        else:
+            target = str(self.tmp_dir)
+        Archive(str(self.current_path.joinpath("resources", "data.zip"))).extractall(str(target))
 
     def get_test_image_path(self, image_name):
-        data_path = Path(self.tmp_dir.name).joinpath("data")
-        if not data_path.exists():
+        if not self.data_path.exists():
             self.extract_test_data()
 
-        files_list = list_files_recursively(data_path)
+        files_list = list_files_recursively(self.data_path)
         test_image_path = files_list[[i.stem + i.suffix for i in files_list].index(image_name)]
 
         return test_image_path
@@ -38,16 +51,15 @@ class TestCommon(unittest.TestCase):
     def get_test_image_folder(self, mode):
         # "gn" = golgi_nuclei, "g" = "no golgi", "n" = "no nuclei"
 
-        data_path = Path(self.tmp_dir.name).joinpath("data")
-        if not data_path.exists():
+        if not self.data_path.exists():
             self.extract_test_data()
 
         if mode == "gn":
-            return data_path.joinpath("golgi_nuclei")
+            return self.data_path.joinpath("golgi_nuclei")
         elif mode == "n":
-            return data_path.joinpath("no_nuclei")
+            return self.data_path.joinpath("no_nuclei")
         elif mode == "g":
-            return data_path.joinpath("no_golgi")
+            return self.data_path.joinpath("no_golgi")
         else:
             return None
 

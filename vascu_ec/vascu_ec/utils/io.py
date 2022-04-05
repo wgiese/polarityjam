@@ -1,11 +1,18 @@
 import glob
 import os
+import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import skimage.io
 import yaml
+
+"""
+Global variable to save program call time.
+"""
+
+CALL_TIME = None
 
 
 def read_parameters(parameter_file):
@@ -95,3 +102,14 @@ def list_files_recursively(path, root=None, relative=False) -> list:
         break
 
     return files_list
+
+
+def get_doc_file_prefix():
+    global CALL_TIME
+
+    if not CALL_TIME:
+        CALL_TIME = time.strftime('%Y%m%d_%H-%M-%S')
+
+    call_time = CALL_TIME
+
+    return "run_%s" % call_time

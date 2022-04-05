@@ -6,14 +6,12 @@ import numpy as np
 import pandas as pd
 
 from vascu_ec.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
-from vascu_ec.utils.io import read_parameters, read_image, create_path_recursively, get_tif_list, read_key_file
+from vascu_ec.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
+    get_doc_file_prefix, write_dict_to_yml, create_path_recursively
 from vascu_ec.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
 from vascu_ec.utils.seg import load_or_get_cellpose_segmentation
 from vascu_ec.vascu_ec_logging import get_logger
 
-
-# todo: copy parameter file to output folder.
-# todo: add a logger handler to log into the file in the output folder.
 
 # todo: Rename. Postponed for now due to missing junction-features.
 # todo: run the app on a server? Ask for resources! Missing features?
@@ -44,6 +42,13 @@ def run(args):
 
     # start routine
     _run(filepath, parameters, output_path, filename)
+    _finish(parameters, output_path)
+
+
+def _finish(parameters, output_path):
+    # write parameters to disk
+    out_param = Path(output_path).joinpath("%s_param%s" % (get_doc_file_prefix(), ".yml"))
+    write_dict_to_yml(out_param, parameters)
 
 
 def _run(infile, parameters, output_path, fileout_name):
@@ -63,7 +68,8 @@ def _run(infile, parameters, output_path, fileout_name):
     plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
-    properties_df = get_features_from_cellpose_seg_multi_channel(parameters, img, cellpose_mask, fileout_name, output_path)
+    properties_df = get_features_from_cellpose_seg_multi_channel(parameters, img, cellpose_mask, fileout_name,
+                                                                 output_path)
 
     get_logger().info("Head of created dataset: \n %s" % properties_df.head())
 
@@ -110,6 +116,8 @@ def run_stack(args):
         # start routine
         _run(filepath, parameters, output_path, filename)
 
+    _finish(parameters, output_path)
+
 
 def run_key(args):
     set_figure_dpi()
@@ -140,7 +148,8 @@ def run_key(args):
     # empty DF summarizing overall results
     summary_df = pd.DataFrame()
 
-    for index, row in key_file.iterrows():
+    offset = 0
+    for _, row in key_file.iterrows():
         # current stack input sub folder
         cur_sub_path = str(row['folder_name'])
         if cur_sub_path.startswith(os.path.sep):
@@ -151,11 +160,11 @@ def run_key(args):
         cur_sub_out_path = str(row["short_name"])
         output_path = output_path_base.joinpath(cur_sub_out_path)
 
-        # empty results dataset
+        # empty results dataset for each condition
         merged_properties_df = pd.DataFrame()
 
         file_list = get_tif_list(input_path)
-        for filepath in file_list:
+        for file_index, filepath in enumerate(file_list):
             filepath = Path(filepath)
             filename = filepath.stem + filepath.suffix
 
@@ -177,9 +186,13 @@ def run_key(args):
             else:
                 merged_properties_df = pd.concat([merged_properties_df, properties_df], ignore_index=True)
 
-            summary_df.at[index, "folder_name"] = row["folder_name"]
-            summary_df.at[index, "short_name"] = row["short_name"]
-            summary_df.at[index, "filepath"] = filepath
-            summary_df.at[index, "cell_number"] = np.max(cellpose_mask)
+            summary_df.at[offset + file_index, "folder_name"] = row["folder_name"]
+            summary_df.at[offset + file_index, "short_name"] = row["short_name"]
+            summary_df.at[offset + file_index, "filepath"] = filepath
+            summary_df.at[offset + file_index, "cell_number"] = len(np.unique(cellpose_mask))
 
-            summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")))
+        offset = offset + len(file_list)
+        merged_properties_df.to_csv(str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv")))
+    summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")))
+
+    _finish(parameters, output_path_base)
