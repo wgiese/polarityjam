@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import cellpose.models
+from cellpose import utils
 import numpy as np
 import skimage.segmentation
 from skimage import morphology
@@ -75,8 +76,7 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
 
 
 def get_outline_from_mask(mask, width=1):
-    """"""
-    # TODO: revise use built in function from cellpose
+    """computes outline for a mask with a single label"""
 
     mask = mask.astype(bool)
     dilated_mask = ndi.binary_dilation(mask, iterations=width)
@@ -84,3 +84,16 @@ def get_outline_from_mask(mask, width=1):
     outline_mask = np.logical_xor(dilated_mask, eroded_mask)
 
     return outline_mask
+
+def get_outline_with_multiple_labels(mask, width=1):
+    """ TODO: not used at the moment, faster for multiple masks/mask labels"""
+    
+    outline_list= np.array(utils.outlines_list(masks))
+    outlines = np.zeros((mask.shape[0],mask.shape[1]))
+    for mask_id, outline_coords in enumerate(outline_list):
+       if (outline_coords.T.shape[1] < 10):
+           outlines[tuple(outline_coords.T)] = mask_id + 1
+
+    outlines_mask = ndi.morphology.binary_dilation(outlines.astype(bool), iterations = width)
+
+    return outlines_mask 
