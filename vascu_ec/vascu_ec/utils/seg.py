@@ -63,9 +63,12 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
         get_logger().info("Removed number of cellpose borders: %s" % number_of_cellpose_borders)
         
         #TODO: remove small objects here
-        #cellpose_mask_remove_small_objects = morphology.remove_small_objects(masks, parameters["min_macrophage_area"], connectivity=2)
-
+        cellpose_mask_remove_small_objects = morphology.remove_small_objects(cellpose_mask, parameters["min_cell_size"], connectivity=2)
+        number_of_cellpose_small_objects = len(np.unique(cellpose_mask)) - len(np.unique(cellpose_mask_remove_small_objects))
+        cellpose_mask = cellpose_mask_remove_small_objects
  
+        get_logger().info("Removed number of small objects: %s" % number_of_cellpose_small_objects)
+    
     get_logger().info("Detected number of cellpose labels: %s" % len(np.unique(cellpose_mask)))
 
     return cellpose_mask

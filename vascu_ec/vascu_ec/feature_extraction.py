@@ -62,6 +62,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_golgi_mask=None):
     """Thresholds given single_cell_mask. Returns True if falls under threshold."""
+    #TODO: check if this can be removed, we already remove small objects from the cellpose mask
     if len(single_cell_mask[single_cell_mask == 1]) < parameters["min_cell_size"]:
         return True
 
