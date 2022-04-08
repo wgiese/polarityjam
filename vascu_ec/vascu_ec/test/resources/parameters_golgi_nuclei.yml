@@ -23,6 +23,7 @@ plot_alignment: true
 plot_marker: true
 plot_polarity: true
 plot_ratio_method: true
+plot_cyclic_orientation: true
 show_polarity_angles: true
 use_given_mask: false
 use_gpu: false

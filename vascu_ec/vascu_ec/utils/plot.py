@@ -64,7 +64,8 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
 
 def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
                   output_path):
-    """
+    """ function to plot nuclei-golgi polarity vectors 
+    
     parameters  :   dict
                     user defined parameters
     im_junction :   numpy.array (2-dim), float
@@ -212,6 +213,17 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
 
 def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_mask, nuclei_mask=None):
+    """ function to plot cell (and optionally nuclei) orientation/alignment 
+    
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    masks       :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains cell masks
+    """
+
+
     number_sub_figs = 1
 
     if nuclei_mask is not None:
@@ -220,13 +232,19 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
 
     fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
 
+    #feature_to_plot = 'eccentricity'
+    feature_to_plot = 'shape_orientation'
+
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
 
     for index, row in single_cell_props.iterrows():
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['eccentricity']
+        if feature_to_plot == 'shape_orientation':     
+            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['shape_orientation']*180.0/np.pi
+        else:
+            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['eccentricity']
         cell_eccentricity += single_cell_mask
 
     if nuclei_mask is not None:
@@ -234,7 +252,8 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
 
         cax_0 = ax[0].imshow(
             np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=0, vmax=1.0, alpha=0.5
-        )
+        ) 
+        
         color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)
         color_bar.set_label('eccentricity')
         ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
@@ -267,7 +286,25 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
 
     else:
         ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
-        ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha=0.25)
+
+        if feature_to_plot == 'shape_orientation':
+            v_min = 0.0         
+            v_max = 180.0
+            yticks = [0.0,45.0,90.0,135.0,180.0]
+        else:
+            v_min = 0.0
+            v_max = 1.0
+            yticks = [0.0,0.5,1.0]
+        
+        cax = ax.imshow(
+            np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.5
+        )
+        #ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha=0.25)
+        
+        color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
+        color_bar.set_label(feature_to_plot)
+        color_bar.ax.set_yticks(yticks)
+
 
     for index, row in single_cell_props.iterrows():
         orientation = row['shape_orientation']
@@ -395,13 +432,14 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
     plt.close(fig)
 
 
-def plot_cyclical(parameters, input_image, cell_masks_approx, output_path, filename):
+def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
     
 
     get_logger().info("Plotting shape orientation on a cyclic scale")
 
 
-    lab_image = label(input_image)
+    #lab_image = label(input_image)
+    lab_image = label(cell_masks_approx)
     regions = regionprops(lab_image)
     orient_list = []
     for region in regions:
@@ -425,7 +463,6 @@ def plot_cyclical(parameters, input_image, cell_masks_approx, output_path, filen
     plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.png")))
     plt.close(fig)
 
-    get_logger().info("Done: Plotting shape orientation on a cyclic scale.")
     #return cm_phase
 
 
