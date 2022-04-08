@@ -395,7 +395,12 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
     plt.close(fig)
 
 
-def plot_cyclical(input_image, cell_masks_approx):
+def plot_cyclical(parameters, input_image, cell_masks_approx, output_path, filename):
+    
+
+    get_logger().info("Plotting shape orientation on a cyclic scale")
+
+
     lab_image = label(input_image)
     regions = regionprops(lab_image)
     orient_list = []
@@ -403,7 +408,8 @@ def plot_cyclical(input_image, cell_masks_approx):
         cell_masks_approx[lab_image == region.label] = region.orientation * (180 / np.pi) + 90
         orient_list.append(np.round(math.degrees(region.orientation)))
 
-    cell_masks_approx[cell_masks_approx == 0] = np.nan
+    #cell_masks_approx[cell_masks_approx == 0] = np.nan
+    cell_masks_approx= np.ma.masked_where(cell_masks_approx == 0, cell_masks_approx)
 
     masked_data = (lab_image != 0)
     t_f = (masked_data * 1)
@@ -412,10 +418,15 @@ def plot_cyclical(input_image, cell_masks_approx):
     fig = plt.figure(figsize=(20, 20))
     cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)  # todo: color scale OK? Put on top of file.
     plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
+    #plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
     plt.colorbar(cm_phase)
+
+    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.pdf")))
+    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.png")))
     plt.close(fig)
 
-    return cm_phase
+    get_logger().info("Done: Plotting shape orientation on a cyclic scale.")
+    #return cm_phase
 
 
 def plot_adjacency_matrix(label_image, intensity_image):
@@ -462,8 +473,16 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_ratio_method(
             parameters,
             im_junction,
-            [cell_mask_rem_island],
+            cell_mask_rem_island,
             properties_dataset,
+            filename,
+            output_path
+        )
+    if parameters["plot_cyclic_orientation"]:
+        plot_cyclical(
+            parameters,
+            im_junction,
+            cell_mask_rem_island,
             filename,
             output_path
         )
