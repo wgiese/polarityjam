@@ -146,11 +146,15 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     cos_mean <- cos_sum/length(circular_data)
     
     polarity_index <- sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
+    std_angular <- sqrt(2.0*(1.0-polarity_index))*180.0/pi
+    std_circular <- sqrt(-2.0*log(polarity_index))*180.0/pi    
     angle_mean_rad <- atan2(sin_mean, cos_mean)/2.0
     angle_mean_deg <- angle_mean_rad*180.0/3.1415926
     if (angle_mean_rad < 0.0) {
-        angle_mean_deg <- 180.0 + angle_mean_rad*180.0/3.1415926
+        angle_mean_deg <- 180.0 + angle_mean_rad*180.0/pi
     }
+    
+    
 
     print("mean")
     print(angle_mean_deg)
@@ -160,21 +164,39 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     #rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
     
     rayleigh_test <- rayleigh_test_res$p.value
+    rayleigh_test_mu_res <- v0.test(circular_data, mu0 = pi)
     #rayleigh_test_mu <- rayleigh_test_mu_res$p.value
     ci_res <- vm.bootstrap.ci(circular_data)
     print("Confidence interval:")
     print(ci_res$mu.ci)
     print(str(ci_res$mu.ci))
-    ci_lower_limit <- 90.0*ci_res$mu.ci[[1]]/3.1415926
-    ci_upper_limit <- 90.0*ci_res$mu.ci[[2]]/3.1415926
+    ci_lower_limit <- 90.0*ci_res$mu.ci[[1]]/pi
+    ci_upper_limit <- 90.0*ci_res$mu.ci[[2]]/pi
 
     if (ci_res$mu.ci[[1]] < 0.0) {
-        ci_lower_limit <- 180.0 + 90.0*ci_res$mu.ci[[1]]/3.1415926
+        ci_lower_limit <- 180.0 + 90.0*ci_res$mu.ci[[1]]/pi
     }
 
     if (ci_res$mu.ci[[2]] < 0.0) {
-        ci_upper_limit <- 180.0 + 90.0*ci_res$mu.ci[[2]]/3.1415926
+        ci_upper_limit <- 180.0 + 90.0*ci_res$mu.ci[[2]]/pi
     }
+
+    print("STD:")
+    std_circ_up_lim <- angle_mean_deg + std_circular
+    if ( std_circ_up_lim > 180.0)
+        std_circ_up_lim <- std_circ_up_lim - 180.0    
+    print(std_circ_up_lim)
+    std_circ_low_lim <- angle_mean_deg - std_circular
+    if ( std_circ_low_lim < 0.0)
+        std_circ_low_lim <- std_circ_low_lim + 180.0    
+    print(std_circ_low_lim)
+    
+    std_ang_up_lim <- angle_mean_deg + std_angular
+    if ( std_ang_up_lim > 180.0)
+        std_ang_up_lim <- std_ang_up_lim - 180.0    
+    std_ang_low_lim <- angle_mean_deg - std_angular
+    if ( std_ang_low_lim < 0.0)
+        std_ang_low_lim <- std_ang_low_lim + 180.0
 
  
   #signed_polarity_index <- (nrow(against_flow) - nrow(with_flow))/(nrow(against_flow) + nrow(with_flow))
@@ -188,6 +210,12 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
   values <- data.frame( "polarity_index" = polarity_index, 
                         "rayleigh_test" = rayleigh_test,
                         "mean" = angle_mean_deg,
+                        "std_angular" = std_angular,
+                        "std_circ_up_lim" = std_circ_up_lim,
+                        "std_circ_low_lim" = std_circ_low_lim,
+                        "std_circular" = std_circular,
+                        "std_ang_up_lim" = std_ang_up_lim,
+                        "std_ang_low_lim" = std_ang_low_lim,
                         "ci_lower_limit" = ci_lower_limit,
                         "ci_upper_limit" = ci_upper_limit)
  
