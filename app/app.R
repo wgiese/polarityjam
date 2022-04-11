@@ -65,7 +65,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 shinyDirButton("dir", "Input directory", "Upload"),
                 verbatimTextOutput("dir", placeholder = TRUE),
                 actionButton("refreshStack", "Refresh"),
-                selectInput("dataset", "Choose a dataset:",
+                selectInput("dataset_merged", "Choose a dataset:",
                             choices = c("merged_file")),
                 downloadButton("downloadProcessedData", "Download")
             ),
@@ -809,6 +809,7 @@ server <- function(input, output, session) {
             filename <- "merged_file.csv"
             if (input$dataset == "statistics_file"){
                 filename <- "statistics_file.csv"
+                print("Download merged_file.csv")
             }
             if (input$dataset == "merged_plot_file"){
                 filename <- paste0("merge_plot", input$image_file_format)
