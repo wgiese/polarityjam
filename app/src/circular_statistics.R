@@ -113,10 +113,10 @@ transform_rad_degrees <- function(value, source_low, source_high, target_low, ta
     
     res <- 180.0*value/pi
     if (value < target_low) {
-        res <- 180.0*value/pi + 360.0
+        res <- 180.0*value/pi + target_high
     }    
     if (value > target_high) {
-        res <- 180.0*value/pi + 360.0
+        res <- 180.0*value/pi - target_high
     }    
 
     return(res)
@@ -183,6 +183,22 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
     print("Confidence interval:")
     print(ci_res$mu.ci)
     print(str(ci_res$mu.ci))
+    
+    ci_95_res <- vm.bootstrap.ci(circular_data, alpha = 0.05)
+    ci_95_lower_limit <- transform_rad_degrees(ci_95_res$mu.ci[[1]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+    ci_95_upper_limit <- transform_rad_degrees(ci_95_res$mu.ci[[2]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+
+    ci_90_res <- vm.bootstrap.ci(circular_data, alpha = 0.1)
+    ci_90_lower_limit <- transform_rad_degrees(ci_90_res$mu.ci[[1]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+    ci_90_upper_limit <- transform_rad_degrees(ci_90_res$mu.ci[[2]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+
+    ci_50_res <- vm.bootstrap.ci(circular_data, alpha = 0.5)
+    ci_50_lower_limit <- transform_rad_degrees(ci_50_res$mu.ci[[1]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+    ci_50_upper_limit <- transform_rad_degrees(ci_50_res$mu.ci[[2]]/2.0,-pi/2.0,pi/2.0,0.0,180.0)
+
+
+
+
     ci_lower_limit <- 90.0*ci_res$mu.ci[[1]]/pi
     ci_upper_limit <- 90.0*ci_res$mu.ci[[2]]/pi
 
@@ -229,9 +245,13 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
                         "std_circular" = std_circular,
                         "std_ang_up_lim" = std_ang_up_lim,
                         "std_ang_low_lim" = std_ang_low_lim,
-                        "ci_lower_limit" = ci_lower_limit,
-                        "ci_upper_limit" = ci_upper_limit)
- 
+                        "ci_95_lower_limit" = ci_95_lower_limit,
+                        "ci_95_upper_limit" = ci_95_upper_limit,
+                        "ci_90_lower_limit" = ci_90_lower_limit,
+                        "ci_90_upper_limit" = ci_90_upper_limit,
+                        "ci_50_lower_limit" = ci_50_lower_limit,
+                        "ci_50_upper_limit" = ci_50_upper_limit
+                    )
   return(values)
 }
 
