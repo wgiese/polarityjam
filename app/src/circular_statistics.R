@@ -65,18 +65,17 @@ compute_circular_statistics <- function(data, feature, parameters) {
     #print(ci_res$mu.ci)
     #print(str(ci_res$mu.ci))
     #print(ci_res$mu.ci[[1]])
-    ci_95_lower_limit <- 180.0*ci_95_res$mu.ci[[1]]/pi
-    ci_95_upper_limit <- 180.0*ci_95_res$mu.ci[[2]]/pi
+    ci_95_lower_limit <- transform_rad_degrees(ci_95_res$mu.ci[[1]],-pi,pi,0.0,360.0)
+    ci_95_upper_limit <- transform_rad_degrees(ci_95_res$mu.ci[[2]],-pi,pi,0.0,360.0)
+
 
     ci_90_res <- vm.bootstrap.ci(circular_data, alpha = 0.1)
-    ci_90_lower_limit <- 180.0*ci_90_res$mu.ci[[1]]/pi
-    ci_90_upper_limit <- 180.0*ci_90_res$mu.ci[[2]]/pi
+    ci_90_lower_limit <- transform_rad_degrees(ci_90_res$mu.ci[[1]],-pi,pi,0.0,360.0)
+    ci_90_upper_limit <- transform_rad_degrees(ci_90_res$mu.ci[[2]],-pi,pi,0.0,360.0)
 
     ci_50_res <- vm.bootstrap.ci(circular_data, alpha = 0.5)
-    ci_50_lower_limit <- 180.0*ci_50_res$mu.ci[[1]]/pi
-    ci_50_upper_limit <- 180.0*ci_50_res$mu.ci[[2]]/pi
-
-
+    ci_50_lower_limit <- transform_rad_degrees(ci_50_res$mu.ci[[1]],-pi,pi,0.0,360.0)
+    ci_50_upper_limit <- transform_rad_degrees(ci_50_res$mu.ci[[2]],-pi,pi,0.0,360.0)
 
 #against_flow <- polarity_data[(polarity_data 150*pi/180.0),]
     #against_flow <- against_flow [(against_flow < 210*pi/180.0),]
@@ -108,6 +107,20 @@ compute_circular_statistics <- function(data, feature, parameters) {
     )
   
     return(values)
+}
+
+transform_rad_degrees <- function(value, source_low, source_high, target_low, target_high) {
+    
+    res <- 180.0*value/pi
+    if (value < target_low) {
+        res <- 180.0*value/pi + 360.0
+    }    
+    if (value > target_high) {
+        res <- 180.0*value/pi + 360.0
+    }    
+
+    return(res)
+
 }
 
 comparison_circular_statistics <- function(data_1, data_2, feature, parameters) {
