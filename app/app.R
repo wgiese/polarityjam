@@ -137,6 +137,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 ),
 
                 checkboxInput("kde_plot", "KDE plot", FALSE),
+                checkboxInput("scatter_plot", "Scatter plot", FALSE),
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 #checkboxInput("left_axial", "hemirose on left", FALSE),

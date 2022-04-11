@@ -15,7 +15,7 @@ library(CircStats)
 
 ```{r read_data}
 #filepath <- "/home/wgiese/image-data-workflows/vascu-ec-app/merged.csv"
-filepath <- "../test_data/120821_BSA_01.csv"
+filepath <- "../test_data/stack_EC_microscopy/120821 BSA #01.csv"
 ec_features <- read.csv(file = filepath)
 #summary(ec_features)
 ```

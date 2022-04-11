@@ -61,19 +61,34 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
                         alpha = 0.5)
     }    
     
+    if (input$scatter_plot) {
+        print("plot points")
+        p + geom_point(aes(x = feature_circular, y = 1))
+
+    }
+
     p <- p + ggtitle(plot_title) +
         theme(plot.title = element_text(size = 18, face = "bold")) +
         theme(axis.text.x = element_text(size = 18)) +
         coord_polar(start = -pi/2.0, direction = -1) +
         scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
+        scale_y_continuous(limits = c(0, 1.1)) +
         theme_minimal(base_size = text_size) +
         xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) +
         ylab("polarity index") 
         #theme(axis.text.y=element_blank()) +
-  
+
+    if (input$scatter_plot) {
+        print("plot points")
+        p <- p + geom_point(aes(x = feature_circular, y = 1))
+
+    }
+
+
+ 
     if (input$area_scaled) {
-            p <- p + scale_y_sqrt()
+            p <- p + scale_y_sqrt() + scale_y_continuous(limits = c(0, sqrt(1.1)))
     }
 
  
