@@ -33,7 +33,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     
     
     p_value_ <- signif(statistics[1,"rayleigh_test"], digits=3)
-    if(input$stats_method == "rayleigh_cond_mean_180")
+    if(input$stats_method == "Rayleigh Conditional")
         p_value_ <- signif(statistics[1,"rayleigh_test_mu"], digits=3)
     
 

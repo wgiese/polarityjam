@@ -125,7 +125,13 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
-                            choices = c("rayleigh_uniform", "rayleigh_cond_mean_180")),
+                            choices = c("Rayleigh uniform", "Rayleigh conditional")),
+                conditionalPanel(
+                    condition = "input.stats_method == 'Rayleigh conditional'",
+                    numericInput("cond_mean_direction",
+                            "Conditional mean direction", value = 180),
+                    NULL
+                ),    
                 textInput("exp_condition", "Exp. condition", "condition A"),
  
                 checkboxInput("ci_plot", "Confidence interval (CI)", TRUE),
@@ -135,7 +141,6 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                 choices = c("95% CI of the mean","90% CI of the mean","50% CI of the mean", 
                                 "circular standard deviation", "angular standard deviation"))
                 ),
-
                 checkboxInput("kde_plot", "KDE plot", FALSE),
                 checkboxInput("scatter_plot", "Scatter plot", FALSE),
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
