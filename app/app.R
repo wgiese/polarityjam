@@ -125,9 +125,10 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
-                            choices = c("Rayleigh uniform", "Rayleigh conditional")),
+                            choices = c("Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test", "None")),
                 conditionalPanel(
-                    condition = "input.stats_method == 'Rayleigh conditional'",
+                   # condition = "input.stats_method %in% c('V-Test')",
+                    condition = "input.stats_method == 'V-Test'",
                     numericInput("cond_mean_direction",
                             "Conditional mean direction", value = 180),
                     NULL

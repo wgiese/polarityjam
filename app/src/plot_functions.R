@@ -31,17 +31,23 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
 
     polarity_index <- signif(statistics[1,"polarity_index"], digits=3)
     
-    
     p_value_ <- signif(statistics[1,"rayleigh_test"], digits=3)
-    if(input$stats_method == "Rayleigh Conditional")
-        p_value_ <- signif(statistics[1,"rayleigh_test_mu"], digits=3)
+    if(input$stats_method == "V-Test")
+        p_value_ <- signif(statistics[1,"v_test"], digits=3)
     
 
     if (statistics[1,"rayleigh_test"] < 0.001) 
-        p_value <- "p < 0.001"
+        p_value <- "P < 0.001"
     else
-        p_value <- paste0("p = ", toString(p_value_))
+        p_value <- paste0("P = ", toString(p_value_))
     
+    
+    if (input$stats_method == "Watson's Test")
+        p_value <-  statistics[1,"watson_test"] 
+    if (input$stats_method == "Rao's Test")
+        p_value <-  statistics[1,"rao_test"] 
+
+
     p <- ggplot()
     
     if (input$kde_plot) {
@@ -64,7 +70,6 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     if (input$scatter_plot) {
         print("plot points")
         p + geom_point(aes(x = feature_circular, y = 1))
-
     }
 
     p <- p + ggtitle(plot_title) +
@@ -75,9 +80,18 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
                        breaks = (c(0, 90, 180, 270))) +
         scale_y_continuous(limits = c(0, 1.1)) +
         theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) +
+        #xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) +
         ylab("polarity index") 
         #theme(axis.text.y=element_blank()) +
+    
+
+    if (input$stats_method != "None") {
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) 
+    }
+    else {
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s \n condition: %s", length(feature_circular), polarity_index, input$exp_condition)) 
+    } 
+
 
     if (input$scatter_plot) {
         print("plot points")
@@ -88,7 +102,7 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
 
  
     if (input$area_scaled) {
-            p <- p + scale_y_sqrt() + scale_y_continuous(limits = c(0, sqrt(1.1)))
+            p <- p + scale_y_sqrt(limits = c(0,sqrt(1.1))) ##+ scale_y_continuous(limits = c(0, sqrt(1.1)))
     }
 
  

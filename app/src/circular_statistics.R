@@ -54,11 +54,21 @@ compute_circular_statistics <- function(data, feature, parameters) {
     
     rayleigh_test_res <- r.test(circular_data)
     #rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
-    rayleigh_test_mu_res <- v0.test(circular_data, mu0 = pi)
+    watson_res <- capture.output(watson.test(circular_data, alpha = 0, dist = "vonmises"))
+    #v_test_res <- v0.test(circular_data, mu0 = pi)
+    rao_res <- capture.output(rao.spacing.test(circular_data, alpha = 0))     
+
+    v_test_res <- v0.test(circular_data, mu0 = pi)
     #rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
-    
+    if (input$stats_method %in% c('V-Test')) {
+        v_test_res <- v0.test(circular_data, mu0 = pi*input$cond_mean_direction/180.0)
+        #av_test_res <- v0.test(circular_data, mu0 = pi*input$cond_mean_direction/180.0)
+    }
+
+
     rayleigh_test <- rayleigh_test_res$p.value
-    rayleigh_test_mu <- rayleigh_test_mu_res$p.value
+    v_test <- v_test_res$p.value
+   # rayleigh_test_mu <- rayleigh_test_mu_res$p.value
 
     ci_95_res <- vm.bootstrap.ci(circular_data, alpha = 0.05)
     #print("Confidence interval:")
@@ -97,7 +107,9 @@ compute_circular_statistics <- function(data, feature, parameters) {
                           "std_ang_up_lim" = std_ang_up_lim,
                           "std_ang_low_lim" = std_ang_low_lim,
                           "rayleigh_test" = rayleigh_test,
-                          "rayleigh_test_mu" = rayleigh_test_mu,
+                          "v_test" = v_test,
+                          "watson_test" = watson_res[5], 
+                          "rao_test" = rao_res[5], 
                           "ci_95_lower_limit" = ci_95_lower_limit,
                           "ci_95_upper_limit" = ci_95_upper_limit,
                           "ci_90_lower_limit" = ci_90_lower_limit,

@@ -28,12 +28,38 @@ res <- r.test(ec_features$angle_deg, degree=TRUE)
 print(res)
 print(res$p.value)
 
+test_array <- c("hallo 123","Ciao")
+print("Ciao" %in% test_array)
+
 ```
 
 ```{r rayleigh_test_mu}
-res <- v0.test(ec_features$angle_deg, mu0=180, degree=TRUE) 
+res <- v0.test(ec_features$angle_deg, mu0=180, degree=TRUE)  
 print(res)
 print(res$p.value)
+
+res <- capture.output(rao.spacing.test(ec_features$angle_rad, alpha = 0))  
+print(res)
+str(res)
+print(res[5])
+
+res <- watson.test(ec_features$angle_deg, alpha = 0, dist = "vonmises")
+print(res)
+str(res)
+res <-array(as.matrix(unlist(res)), dim=c(6, 1))
+print(res)
+#print(res$statistic)
+#print(res$row)
+res <- capture.output(watson.test(ec_features$angle_deg, alpha = 0, dist = "vonmises"))
+print(res)
+print(res[5])
+
+res <- watson.two.test(ec_features$angle_deg, ec_features$angle_rad)
+print(res)
+str(res)
+print(res$statistic)
+print(res$row)
+
 ```
 
 ```{r plot_circular}
