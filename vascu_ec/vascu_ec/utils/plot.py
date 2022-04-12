@@ -83,8 +83,24 @@ def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, s
     nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: why 70? why doing that at all if it is a mask?
     golgi_mask_ = np.where(golgi_mask == True, 1, 0)
 
+    cell_angle = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+        if row_label == 0:
+            continue
+        single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['angle_deg']
+        cell_angle += single_cell_mask
+
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
-    ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
+    cax = ax.imshow(
+        np.ma.masked_where(cell_mask == 0, cell_angle), cmap=cm.cm.phase, vmin=0, vmax=360, alpha=0.5
+    )
+    color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
+    color_bar.set_label("polarity angle")
+    color_bar.ax.set_yticks([0,90,180,270,360])    
+
+    #ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
     ax.imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_), plt.cm.gist_rainbow, vmin=0, vmax=100, alpha=0.5)
     ax.imshow(np.ma.masked_where(golgi_mask_ == 0, golgi_mask_), plt.cm.gist_rainbow, vmin=0, vmax=100, alpha=0.5)
 
@@ -96,8 +112,9 @@ def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, s
         if parameters["show_polarity_angles"]:
             ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
 
-    ax.set_xlim(0, im_junction.shape[0])
-    ax.set_ylim(0, im_junction.shape[1])
+    ax.set_xlim(0, im_junction.shape[1])
+    ax.set_ylim(0, im_junction.shape[0])
+    ax.invert_yaxis()
 
     if "pdf" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.pdf")))
@@ -305,7 +322,6 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
         color_bar.set_label(feature_to_plot)
         color_bar.ax.set_yticks(yticks)
 
-
     for index, row in single_cell_props.iterrows():
         orientation = row['shape_orientation']
         x0 = row['X_cell']
@@ -359,16 +375,20 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
     # set title and ax limits
     if nuclei_mask is not None:
         ax[0].set_title("alignment cell shape")
-        ax[0].set_xlim(0, im_junction.shape[0])
-        ax[0].set_ylim(0, im_junction.shape[1])
-
+        ax[0].set_xlim(0, im_junction.shape[1])
+        ax[0].set_ylim(0, im_junction.shape[0])
+        ax[0].invert_yaxis()
+        
         ax[1].set_title("alignment nuclei shape")
-        ax[1].set_xlim(0, im_junction.shape[0])
-        ax[1].set_ylim(0, im_junction.shape[1])
+        ax[1].set_xlim(0, im_junction.shape[1])
+        ax[1].set_ylim(0, im_junction.shape[0])
+        ax[1].invert_yaxis()
     else:
         ax.set_title("alignment cell shape")
-        ax.set_xlim(0, im_junction.shape[0])
-        ax.set_ylim(0, im_junction.shape[1])
+        ax.set_xlim(0, im_junction.shape[1])
+        ax.set_ylim(0, im_junction.shape[0])
+        ax.invert_yaxis()
+
 
     # save to disk
     plt.tight_layout()
