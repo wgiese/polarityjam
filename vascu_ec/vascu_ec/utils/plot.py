@@ -252,6 +252,16 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
     #feature_to_plot = 'eccentricity'
     feature_to_plot = 'shape_orientation'
 
+    if feature_to_plot == 'shape_orientation':
+        v_min = 0.0         
+        v_max = 180.0
+        yticks = [0.0,45.0,90.0,135.0,180.0]
+    else:
+        v_min = 0.0
+        v_max = 1.0
+        yticks = [0.0,0.5,1.0]
+     
+
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
 
     for index, row in single_cell_props.iterrows():
@@ -267,12 +277,22 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
     if nuclei_mask is not None:
         ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
-        cax_0 = ax[0].imshow(
-            np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=0, vmax=1.0, alpha=0.5
-        ) 
+        if feature_to_plot == 'shape_orientation':   
+            cax_0 = ax[0].imshow(
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.5
+            )
+        else:
+            cax_0 = ax[0].imshow(
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
+            )
         
-        color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)
-        color_bar.set_label('eccentricity')
+        color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)  # , extend='both')
+        color_bar.set_label(feature_to_plot)
+        color_bar.ax.set_yticks(yticks)
+
+        #color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)
+        #color_bar.set_label('eccentricity')
+ 
         ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
         get_logger().info("Calculating nuclei eccentricity...")
@@ -284,9 +304,13 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
             if row_label == 0:
                 continue
 
-            single_cell_mask = np.where(cell_mask == row_label, True, 0) * row['eccentricity']
+            single_cell_mask = np.where(cell_mask == row_label, True, 0) 
             single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-            single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+            if feature_to_plot == 'shape_orientation':     
+                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['shape_orientation_nuc']*180.0/np.pi
+            else:
+                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+            #single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
             nuclei_eccentricity += single_nuclei_mask
 
         get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
@@ -294,12 +318,21 @@ def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_m
 
         nuclei_mask_ = np.where(nuclei_mask is True, 70, 0)  # todo: threshold?
 
-        cax_1 = ax[1].imshow(np.ma.masked_where(
-            nuclei_mask_ == 0, nuclei_eccentricity), plt.cm.bwr, vmin=0, vmax=1.0, alpha=0.5
-        )
+        if feature_to_plot == 'shape_orientation': 
+            cax_1 = ax[1].imshow(np.ma.masked_where(
+                nuclei_mask_ == 0, nuclei_eccentricity), cmap =cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+            )
+        else:  
+            cax_1 = ax[1].imshow(np.ma.masked_where(
+                nuclei_mask_ == 0, nuclei_eccentricity), cmap =plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
+            )
 
+        #color_bar = fig.colorbar(cax_1, ax=ax[1], shrink=0.3)  # , extend='both')
+        #color_bar.set_label('eccentricity')
         color_bar = fig.colorbar(cax_1, ax=ax[1], shrink=0.3)  # , extend='both')
-        color_bar.set_label('eccentricity')
+        color_bar.set_label(feature_to_plot)
+        color_bar.ax.set_yticks(yticks)
+
 
     else:
         ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
