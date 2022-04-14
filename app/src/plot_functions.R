@@ -241,10 +241,19 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
         scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
         theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s" , length(feature_circular), polarity_index, p_value, input$exp_condition)) +
+#        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s" , length(feature_circular), polarity_index, p_value, input$exp_condition)) +
         ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
-  
+ 
+    if (input$stats_method != "None") {
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) 
+    }
+    else {
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s \n condition: %s", length(feature_circular), polarity_index, input$exp_condition)) 
+    } 
+
+
+ 
     if (input$area_scaled) {
         p <- p + scale_y_sqrt()
     }
