@@ -63,7 +63,7 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         plt.close(fig)
 
 
-def plot_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
+def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
                   output_path):
     """ function to plot nuclei-golgi polarity vectors 
     
@@ -231,7 +231,7 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
     plt.close(fig)
 
 
-def plot_alignment(im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot, nuclei_mask=None):
+def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot, nuclei_mask=None):
     """ function to plot cell (and optionally nuclei) orientation/alignment 
     
     parameters  :   dict
@@ -547,8 +547,9 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
     get_logger().info("Plotting data...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
+    # TODO: adapt name plot polarity in parameter files
     if parameters["plot_polarity"] and nuclei_mask is not None and golgi_mask is not None:
-        plot_polarity(
+        plot_organelle_polarity(
             parameters,
             im_junction,
             cell_mask_rem_island,
@@ -565,8 +566,9 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_marker_polarity(
             parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
         )
+    # TODO: rename alignment to orientation
     if parameters["plot_alignment"]:
-        plot_alignment(
+        plot_shape_props(
             im_junction,
             properties_dataset,
             filename,
@@ -585,7 +587,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
             output_path
         )
     if parameters["plot_cyclic_orientation"]:
-        plot_alignment(
+        plot_shape_props(
             im_junction,
             properties_dataset,
             filename,
