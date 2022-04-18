@@ -338,7 +338,10 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     dataset.at[index, "X_cell"] = props.centroid[0]
     dataset.at[index, "Y_cell"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation"] = np.pi / 2.0 - props.orientation
+    #dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
+    orientation = np.pi / 2.0 + props.orientation
+    dataset.at[index, "shape_orientation"] = orientation
+    #dataset.at[index, "shape_orientation"] = 0.0 
     # assumes flow from left to right anlong x-axis
     dataset.at[index, "flow_shape_alignment"] = np.sin(props.orientation)
     dataset.at[index, "major_axis_length"] = props.major_axis_length
@@ -390,13 +393,17 @@ def compute_marker_vector_norm(x_cell, y_cell, x_weighted, y_weighted):
 
 def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
     """Computes the marker polarity radius"""
-    vec_x = x_weighted - x_cell
-    vec_y = y_weighted - y_cell
+    vec_x = x_cell - x_weighted
+    vec_y = y_cell - y_weighted
     angle_rad_ = np.arctan2(vec_x, vec_y)
     angle_rad = angle_rad_
 
-    if angle_rad_ < 0.0:
-        angle_rad = 2.0 * np.pi + angle_rad_
+    angle_rad = np.pi - angle_rad_
+
+    #if angle_rad_ < 0.0:
+    #    angle_rad = np.pi - angle_rad_
+    #else:
+    #    angle_rad = angle_rad_ 
 
     return angle_rad, vec_x, vec_y
 

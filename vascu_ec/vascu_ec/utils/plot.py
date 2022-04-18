@@ -16,6 +16,7 @@ from vascu_ec.vascu_ec_logging import get_logger
 FIGURE_DPI = 300
 FONTSIZE_TEXT_ANNOTATIONS = 3
 MARKERSIZE = 2
+ALPHA_MASKS = 0.5
 
 def set_figure_dpi():
     mpl.rcParams['figure.dpi'] = FIGURE_DPI
@@ -71,8 +72,14 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
                     user defined parameters
     im_junction :   numpy.array (2-dim), float
                     channel containing the junction staining (used for segmentation)
-    masks       :   numpy.array (2-dim), int
+    cell_mask   :   numpy.array (2-dim), int
                     same dimension as im_junction, contains cell masks
+    nuclei_mask :
+    golgi_mask  :
+    single_cell_props :
+    filename :
+    output_path :
+
     """
 
     width = parameters["graphics_width"]
@@ -371,13 +378,17 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
         y0 = row['Y_cell']
 
         x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-        y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        #y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
+        y1_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
         x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
-        y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
+        #y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
+        y2_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
 
-        x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
+        #x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
+        x1_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
         y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
-        x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+        #x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
+        x2_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
         y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
 
         if nuclei_mask is not None:
