@@ -327,7 +327,7 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
         get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
         get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
 
-        nuclei_mask_ = np.where(nuclei_mask is True, 70, 0)  # todo: threshold?
+        nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: threshold?
 
         if feature_to_plot == 'shape_orientation': 
             cax_1 = ax[1].imshow(np.ma.masked_where(
