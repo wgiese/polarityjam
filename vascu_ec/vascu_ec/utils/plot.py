@@ -3,6 +3,7 @@ from pathlib import Path
 
 import cmocean as cm
 import matplotlib as mpl
+import tifffile
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage.future import graph
@@ -132,6 +133,9 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     if "png" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.png")))
     plt.close(fig)
+
+    if "tif" in parameters["graphics_output_format"]:
+        tifffile.imsave(str(Path(output_path).joinpath(filename + "_nuclei_golgi_polarity.tif")), np.ma.masked_where(cell_mask == 0, cell_angle))
 
 
 def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
