@@ -65,7 +65,7 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         plt.close(fig)
 
 
-def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, filename,
+def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, base_filename,
                   output_path):
     """ function to plot nuclei-golgi polarity vectors 
     
@@ -75,12 +75,15 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
                     channel containing the junction staining (used for segmentation)
     cell_mask   :   numpy.array (2-dim), int
                     same dimension as im_junction, contains cell masks
-    nuclei_mask :
-    golgi_mask  :
-    single_cell_props :
-    filename :
-    output_path :
-
+    nuclei_mask :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains nuclei masks
+    golgi_mask  :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains golgi masks
+    single_cell_props : pandas data frame
+    base_filename : string 
+                    base_filename for plots
+    output_path :   string
+                    output path for plots 
     """
 
     width = parameters["graphics_width"]
@@ -88,9 +91,6 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
 
     nuclei_mask = nuclei_mask.astype(bool)
     golgi_mask = golgi_mask.astype(bool)
-
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: why 70? why doing that at all if it is a mask?
-    golgi_mask_ = np.where(golgi_mask == True, 1, 0)
 
     cell_angle = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
 
@@ -109,13 +109,16 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     color_bar.set_label("polarity angle")
     color_bar.ax.set_yticks([0,90,180,270,360])    
 
-    #ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
-    ax.imshow(np.ma.masked_where(nuclei_mask_ == 0, nuclei_mask_), plt.cm.gist_rainbow, vmin=0, vmax=100, alpha=0.5)
-    ax.imshow(np.ma.masked_where(golgi_mask_ == 0, golgi_mask_), plt.cm.gist_rainbow, vmin=0, vmax=100, alpha=0.5)
+    zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+    rgb_golgi = np.dstack((golgi_mask.astype(int)*256,zero,zero,golgi_mask.astype(float)*0.5))
+    rgb_nuclei = np.dstack((zero,zero,nuclei_mask.astype(int)*256,nuclei_mask.astype(float)*0.5))
+
+    ax.imshow(rgb_nuclei)
+    ax.imshow(rgb_golgi)
 
     for index, row in single_cell_props.iterrows():
-        ax.plot(row["Y_nuc"], row["X_nuc"], '.g', markersize = MARKERSIZE)
-        ax.plot(row["Y_golgi"], row["X_golgi"], '.m', markersize= MARKERSIZE)
+        ax.plot(row["Y_nuc"], row["X_nuc"], '.g', markersize=MARKERSIZE)
+        ax.plot(row["Y_golgi"], row["X_golgi"], '.m', markersize=MARKERSIZE)
         ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"] - row["Y_nuc"], row["X_golgi"] - row["X_nuc"],
                  color='white', width=2)
         if parameters["show_polarity_angles"]:
@@ -127,15 +130,15 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     ax.axis('off')
 
     if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.pdf")))
+        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.pdf")))
     if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.svg")))
+        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.svg")))
     if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_nuclei_golgi_vector.png")))
+        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.png")))
     plt.close(fig)
 
     if "tif" in parameters["graphics_output_format"]:
-        tifffile.imsave(str(Path(output_path).joinpath(filename + "_nuclei_golgi_polarity.tif")), np.ma.masked_where(cell_mask == 0, cell_angle))
+        tifffile.imsave(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_polarity.tif")), np.ma.masked_where(cell_mask == 0, cell_angle))
 
 
 def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
@@ -205,8 +208,12 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
         ax[2].set_title("mean intensity nucleus")
 
     # save output
-    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
+    if "pdf" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
+    if "svg" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.svg")))
+    if "png" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
     plt.close(fig)
 
 
