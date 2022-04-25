@@ -5,6 +5,8 @@ import skimage.filters
 import skimage.io
 import skimage.measure
 import skimage.segmentation
+import pysal as psy
+import networkx as nw
 
 from vascu_ec.utils.plot import plot_dataset
 from vascu_ec.utils.rag import orientation_graph_nf
@@ -451,3 +453,25 @@ def remove_islands(frame_graph, mask):
         mask[:, :][mask[:, :] == elemet] = 0
 
     return frame_graph, mask
+
+def morans_data_prep(rag,feature):
+    "Takes a region adjacency graph and a list of cell features
+    "propogates features to graph so morans I can be performed"
+    weihgts = psy.lib.weights.W.from_networkx(rag)
+
+    morans_features = []
+    rag_labels = list(rag.nodes)
+    moran_keys = weihgts.neighbors.keys()
+
+    for nombritas in zip(rag_labels,moran_keys):
+        feature2append = rag.nodes[nombritas[0]]
+        single_feature = (feature2append[feature])
+        morans_features.append(single_feature)
+    return(morans_features,weihgts)
+
+
+def run_morans(morans_features,weihgts):
+    "run morans I, measure of spatial coorelation and signficance respectively:  mr_i.I,  mr_i.p_norm"
+    mi = psy.explore.esda.Moran(morans_features, weihgts, two_tailed=False)
+
+    return(mi)
