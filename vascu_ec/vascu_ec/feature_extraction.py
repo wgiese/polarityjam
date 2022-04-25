@@ -338,10 +338,7 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     dataset.at[index, "X_cell"] = props.centroid[0]
     dataset.at[index, "Y_cell"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    #dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
-    orientation = np.pi / 2.0 + props.orientation
-    dataset.at[index, "shape_orientation"] = orientation
-    #dataset.at[index, "shape_orientation"] = 0.0 
+    dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
     dataset.at[index, "flow_shape_alignment"] = np.sin(props.orientation)
     dataset.at[index, "major_axis_length"] = props.major_axis_length
@@ -358,7 +355,7 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     dataset.at[index, "X_nuc"] = props.centroid[0]
     dataset.at[index, "Y_nuc"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation_nuc"] = np.pi / 2.0 - props.orientation
+    dataset.at[index, "shape_orientation_nuc"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
     dataset.at[index, "flow_shape_alignment_nuc"] = np.sin(np.pi / 2.0 - props.orientation)
     dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length

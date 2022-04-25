@@ -214,6 +214,7 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
         plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.svg")))
     if "png" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
+
     plt.close(fig)
 
 
@@ -243,13 +244,17 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
                  color='white', width=2)
 
     ax.set_title("marker polarity")
+    if "pdf" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.pdf")))
+    if "svg" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.svg")))
+    if "png" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.png")))
 
-    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.pdf")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.png")))
     plt.close(fig)
 
 
-def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot, nuclei_mask=None):
+def plot_shape_props(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot, nuclei_mask=None):
     """ function to plot cell (and optionally nuclei) orientation/alignment 
     
     parameters  :   dict
@@ -389,16 +394,12 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
         y0 = row['Y_cell']
 
         x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-        #y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
         y1_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
         x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
-        #y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
         y2_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
 
-        #x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
         x1_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
         y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
-        #x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
         x2_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
         y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
 
@@ -408,7 +409,7 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
             ax[0].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax[0].plot(y0, x0, '.b', markersize=MARKERSIZE)
             orientation_degree = 180.0 * orientation / np.pi
-            ax[0].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=4)
+            ax[0].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
 
             # plot orientation degree nucleus
             orientation = row['shape_orientation_nuc']
@@ -416,20 +417,20 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
             y0 = row['Y_nuc']
 
             x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-            y1_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            y1_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
             x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-            y2_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
+            y2_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
 
-            x1_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            x1_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
             y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-            x2_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
+            x2_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
             y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
 
             ax[1].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
             ax[1].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax[1].plot(y0, x0, '.b', markersize=MARKERSIZE)
             orientation_degree = 180.0 * orientation / np.pi
-            ax[1].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=4)
+            ax[1].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
         else:
             ax.plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
             ax.plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
@@ -462,9 +463,13 @@ def plot_shape_props(im_junction, single_cell_props, filename, output_path, cell
 
     # save to disk
     plt.tight_layout()
-    plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".pdf")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".svg")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".png")))
+    
+    if "pdf" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".pdf")))
+    if "svg" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".svg")))
+    if "png" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".png")))
     plt.close(fig)
 
 
@@ -517,43 +522,49 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
         ax.set_ylim(0, im_junction.shape[1])
 
     plt.tight_layout()
-    plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.png")))
-    plt.close(fig)
-
-
-def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
     
+    if "pdf" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
+    if "svg" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.svg")))
+    if "png" in parameters["graphics_output_format"]:
+        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.png")))
 
-    get_logger().info("Plotting shape orientation on a cyclic scale")
-
-
-    #lab_image = label(input_image)
-    lab_image = label(cell_masks_approx)
-    regions = regionprops(lab_image)
-    orient_list = []
-    for region in regions:
-        cell_masks_approx[lab_image == region.label] = region.orientation * (180 / np.pi) + 90
-        orient_list.append(np.round(math.degrees(region.orientation)))
-
-    #cell_masks_approx[cell_masks_approx == 0] = np.nan
-    cell_masks_approx= np.ma.masked_where(cell_masks_approx == 0, cell_masks_approx)
-
-    masked_data = (lab_image != 0)
-    t_f = (masked_data * 1)
-    masked_data[np.where(t_f == 0), np.where(t_f == 0)] = np.nan
-
-    fig = plt.figure(figsize=(20, 20))
-    cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)  # todo: color scale OK? Put on top of file.
-    plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
-    #plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
-    plt.colorbar(cm_phase)
-
-    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.pdf")))
-    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.png")))
     plt.close(fig)
 
-    #return cm_phase
+## TODO: remove this function, has been integrated in plot_shape_props
+#def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
+#
+#
+#    get_logger().info("Plotting shape orientation on a cyclic scale")
+#
+#
+#    #lab_image = label(input_image)
+#    lab_image = label(cell_masks_approx)
+#    regions = regionprops(lab_image)
+#    orient_list = []
+#    for region in regions:
+#        cell_masks_approx[lab_image == region.label] = region.orientation * (180 / np.pi) + 90
+#        orient_list.append(np.round(math.degrees(region.orientation)))
+#
+#    #cell_masks_approx[cell_masks_approx == 0] = np.nan
+#    cell_masks_approx= np.ma.masked_where(cell_masks_approx == 0, cell_masks_approx)
+#
+#    masked_data = (lab_image != 0)
+#    t_f = (masked_data * 1)
+#    masked_data[np.where(t_f == 0), np.where(t_f == 0)] = np.nan
+#
+#    fig = plt.figure(figsize=(20, 20))
+#    cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)  # todo: color scale OK? Put on top of file.
+#    plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
+#    #plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
+#    plt.colorbar(cm_phase)
+#
+#    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.pdf")))
+#    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.png")))
+#    plt.close(fig)
+#
+#    #return cm_phase
 
 
 def plot_adjacency_matrix(label_image, intensity_image):
@@ -591,6 +602,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
     # TODO: rename alignment to orientation
     if parameters["plot_alignment"]:
         plot_shape_props(
+            parameters,
             im_junction,
             properties_dataset,
             filename,
@@ -610,6 +622,7 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         )
     if parameters["plot_cyclic_orientation"]:
         plot_shape_props(
+            parameters,
             im_junction,
             properties_dataset,
             filename,
