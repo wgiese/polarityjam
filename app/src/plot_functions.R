@@ -49,22 +49,39 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
 
 
     p <- ggplot()
+
+    colour_fill <- "black"
+    colour <- "black"
     
+    if (input$select_colourmap == "Okabe_Ito") {
+        colour_n <- input$select_colour %% length(Okabe_Ito)
+        colour_fill <- Okabe_Ito[colour_n]
+        colour <- Okabe_Ito[colour_n]
+    }
+    
+    alpha <- 0.5
+    if (input$adjust_alpha == TRUE) {
+        alpha <- input$alpha_fill
+        if (input$outline != "colour")
+            colour <- input$outline
+    }
+
+
     if (input$kde_plot) {
       p <-  p + 
         geom_density(aes(x = feature_circular, y = ..count../max(..count..) ),
-                     colour = "black",
-                     fill = "black",
-                     alpha = 0.5)
+                     colour = colour,
+                     fill = colour_fill,
+                     alpha = alpha)
     }
     
     if (input$histogram_plot) {
       p <- p + 
           geom_histogram(aes(x = feature_circular, y = ..ncount..),
                         breaks = seq(0, 360, bin_size),
-                        colour = "black",
-                        fill = "black",
-                        alpha = 0.5)
+                        colour = colour,
+                        fill = colour_fill,
+                        alpha = alpha)
     }    
     
     if (input$scatter_plot) {

@@ -169,6 +169,24 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     choices = c("up","down","left","right","all"))
                 ),
 
+                selectInput("select_colourmap", "Choose a color scheme",
+                            choices = c("gray", "Okabe_Ito", "Tol_bright", "Tol_muted", "Tol_light")),
+                
+                conditionalPanel(
+                    condition = "input.select_colourmap != 'gray'",
+                    numericInput ("select_colour", "Select a color from color scheme:", value=1, min = 1, max = 10, step = 1),
+                ),
+                
+                checkboxInput("adjust_alpha", "adjust transparency", FALSE),
+                
+                conditionalPanel(
+                    condition = "input.adjust_alpha == true",
+                    numericInput ("alpha_fill", "set alpha fill:", value=0.5, min = 0.0, max = 1.0, step = 0.1),
+                    selectInput ("outline", "choose outline style:", choice = c("colour","white","black"))
+                ),
+                
+                
+
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
                 selectInput("image_file_format", "Choose image file format:",
