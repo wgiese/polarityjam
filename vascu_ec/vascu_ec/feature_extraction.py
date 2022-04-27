@@ -455,8 +455,8 @@ def remove_islands(frame_graph, mask):
     return frame_graph, mask
 
 def morans_data_prep(rag,feature):
-    "Takes a region adjacency graph and a list of cell features
-    "propogates features to graph so morans I can be performed"
+    """Takes a region adjacency graph and a list of cell features"""
+    """propogates features to graph so morans I can be performed."""
     weihgts = psy.lib.weights.W.from_networkx(rag)
 
     morans_features = []
@@ -471,7 +471,7 @@ def morans_data_prep(rag,feature):
 
 
 def run_morans(morans_features,weihgts):
-    "run morans I, measure of spatial coorelation and signficance respectively:  mr_i.I,  mr_i.p_norm"
+    """run morans I, measure of spatial coorelation and signficance respectively:  mr_i.I,  mr_i.p_norm."""
     mi = psy.explore.esda.Moran(morans_features, weihgts, two_tailed=False)
 
     return(mi)
