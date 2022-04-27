@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
+import pysal.explore as pysalexp
+import pysal.lib as pysallib
 import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
 import skimage.measure
 import skimage.segmentation
-import pysal as psy
-import networkx as nw
 
 from vascu_ec.utils.plot import plot_dataset
 from vascu_ec.utils.rag import orientation_graph_nf
@@ -64,7 +64,7 @@ def get_golgi_mask(parameters, img, cellpose_mask):
 
 def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_golgi_mask=None):
     """Thresholds given single_cell_mask. Returns True if falls under threshold."""
-    #TODO: check if this can be removed, we already remove small objects from the cellpose mask
+    # TODO: check if this can be removed, we already remove small objects from the cellpose mask
     if len(single_cell_mask[single_cell_mask == 1]) < parameters["min_cell_size"]:
         return True
 
@@ -271,6 +271,9 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             )
         )
 
+    # morans I analysis
+    fill_morans_i(properties_dataset, rag)
+
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
@@ -280,6 +283,21 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     )
 
     return properties_dataset
+
+
+def fill_morans_i(properties_dataset, rag):
+    get_logger().info("Performing morans I group statistic...")
+
+    # extract FOI and weights
+    morans_feature, morans_weights = morans_data_prep(rag, "area")
+    morans_i = run_morans(morans_feature, morans_weights)
+
+    get_logger().info("Morans I value: %s " % morans_i.I)
+    get_logger().info("Morans I p norm: %s " % morans_i.p_norm)
+
+    # extend dataset
+    properties_dataset["morans_i"] = [morans_i.I] * len(properties_dataset)
+    properties_dataset["morans_p_norm"] = [morans_i.p_norm] * len(properties_dataset)
 
 
 def get_single_cell_prop(single_cell_mask):
@@ -454,24 +472,19 @@ def remove_islands(frame_graph, mask):
 
     return frame_graph, mask
 
-def morans_data_prep(rag,feature):
+
+def morans_data_prep(rag, feature):
     """Takes a region adjacency graph and a list of cell features"""
     """propogates features to graph so morans I can be performed."""
-    weihgts = psy.lib.weights.W.from_networkx(rag)
+    weights = pysallib.weights.W.from_networkx(rag)
+    # extract the feature of interest from the rag
+    morans_features = [rag.nodes[nodes_idx][feature] for nodes_idx in list(rag.nodes)]
 
-    morans_features = []
-    rag_labels = list(rag.nodes)
-    moran_keys = weihgts.neighbors.keys()
-
-    for nombritas in zip(rag_labels,moran_keys):
-        feature2append = rag.nodes[nombritas[0]]
-        single_feature = (feature2append[feature])
-        morans_features.append(single_feature)
-    return(morans_features,weihgts)
+    return morans_features, weights
 
 
-def run_morans(morans_features,weihgts):
+def run_morans(morans_features, weihgts):
     """run morans I, measure of spatial coorelation and signficance respectively:  mr_i.I,  mr_i.p_norm."""
-    mi = psy.explore.esda.Moran(morans_features, weihgts, two_tailed=False)
+    mi = pysalexp.esda.Moran(morans_features, weihgts, two_tailed=False)
 
-    return(mi)
+    return mi
