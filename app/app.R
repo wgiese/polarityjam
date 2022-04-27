@@ -51,6 +51,16 @@ library(fs)
 library(rjson)
 
 
+#From Paul Tol: https://personal.sron.nl/~pault/
+Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
+
+Tol_muted <- c('#88CCEE', '#44AA99', '#117733', '#332288', '#DDCC77', '#999933','#CC6677', '#882255', '#AA4499', '#DDDDDD')
+
+Tol_light <- c('#BBCC33', '#AAAA00', '#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF', '#44BB99', '#DDDDDD')
+
+#From Color Universal Design (CUD): https://jfly.uni-koeln.de/color/
+Okabe_Ito <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000")
+
 
 # Create a reactive object here that we can share between all the sessions.
 vals <- reactiveValues(count=0)
@@ -149,8 +159,16 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 #checkboxInput("left_axial", "hemirose on left", FALSE),
-                selectInput("hemi_rose_options", "Hemirose plot options:",
-                            choices = c("up","down","left","right","all")),
+                
+                selectInput("plot_mode", "Choose data modality:",
+                            choices = c("circular", "semicircular", "linear")),
+
+                conditionalPanel(
+                    condition = "input.plot_mode == 'semicircular'",
+                    selectInput("hemi_rose_options", "Hemirose plot options:",
+                    choices = c("up","down","left","right","all"))
+                ),
+
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
                 selectInput("image_file_format", "Choose image file format:",
