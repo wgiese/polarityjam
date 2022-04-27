@@ -23,9 +23,13 @@ feature_of_interest: "area"
 ## plot options
 
 plot_polarity: True
-plot_marker: True
 plot_alignment: True
+feature_color_scale: ["angle_deg","cyclic"] 
+# feature_color_scale: ["eccentricity","cyclic"] 
+
+plot_marker: True
 plot_ratio_method: False
+plot_cyclic_orientation: False
 
 outline_width : 2
 show_polarity_angles: True
