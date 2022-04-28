@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import networkx as nx
 import numpy as np
 import yaml
 
-from vascu_ec.feature_extraction import get_image_for_segmentation
+from vascu_ec.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
 from vascu_ec.test.test_common import TestCommon
 from vascu_ec.utils.io import read_parameters, read_image
 
@@ -68,6 +69,70 @@ class TestFunctions(TestCommon):
 
         # expect junctions channel only
         self.assertEqual((1024, 1024), r.shape)
+
+    def test_morans_i_anti_correlation(self):
+        # prepare anti-correlation sample
+        graph = nx.grid_2d_graph(10, 10)
+
+        for i in range(0, 10):
+            if (i % 2) == 0:
+                for j in range(0, 10):
+                    if (j % 2) == 0:
+                        nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
+                    else:
+                        nx.set_node_attributes(graph, {(i, j): 1}, name="morani")
+            else:
+                for j in range(0, 10):
+                    if (j % 2) == 0:
+                        nx.set_node_attributes(graph, {(i, j): 1}, name="morani")
+
+                    else:
+                        nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
+
+        # run morans i
+        feature_list, weights = morans_data_prep(graph, "morani")
+        mr_i = run_morans(feature_list, weights)
+
+        # check the output
+        self.assertEqual(-1, mr_i.I)
+
+    def test_morans_i_random(self):
+        # prepare random sample
+        graph = nx.grid_2d_graph(10, 10)
+
+        empty_int = np.zeros((10, 10))
+        for i in range(0, 10):
+            for j in range(0, 10):
+                rand_int = np.random.normal(0, 1)
+                if rand_int >= .5:
+                    empty_int[i, j] = 1
+                else:
+                    empty_int[i, j] = 0
+                nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
+        # run
+        feature_list, weights = morans_data_prep(graph, "morani")
+        mr_i = run_morans(feature_list, weights)
+
+        # assert
+        self.assertAlmostEqual(0, mr_i.I, delta=0.3)
+
+    def test_morans_i_correlated(self):
+        # prepare correlated sample
+        graph = nx.grid_2d_graph(10, 10)
+
+        empty_int = np.zeros((10, 10))
+        for i in range(0, 10):
+            for j in range(0, 10):
+                rand_int = 1.1
+                empty_int[i, j] = rand_int
+                nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
+
+        # run
+        feature_list, weights = morans_data_prep(graph, "morani")
+        mr_i = run_morans(feature_list, weights)
+
+        # assert
+        self.assertEqual(1, mr_i.I)
 
 
 class EmptyTestClass:
