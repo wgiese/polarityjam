@@ -139,9 +139,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             step = 1,
                             value = 0),
                 selectInput("feature_select", "Choose a feature:",
-                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
-                            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
-                            "mean_expression","marker_polarity","area","perimeter")),
+                            choices = c("nuclei_golgi_polarity", "major_axis_shape_orientation",
+                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
+                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
                             choices = c("Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test", "None")),
                 conditionalPanel(
@@ -520,25 +520,17 @@ server <- function(input, output, session) {
         statistics_df[ind,1] <- "number of cells"
         statistics_df[ind,2] <- nrow(results_df)
         
-        print(statistics_df)
-
         ind <- ind + 1
         statistics_df[ind,1] <- "mean (degree)"
         statistics_df[ind,2] <- signif(statistics[1,"mean"], digits = 3)
-        
-        print(statistics_df)
         
         ind <- ind + 1
         statistics_df[ind,1] <- "polarity index"
         statistics_df[ind,2] <- signif(statistics[1,"polarity_index"], digits = 3)
         
-        print(statistics_df)
-        
         ind <- ind + 1
         statistics_df[ind,1] <- "signed polarity index (mean = 180)"
         statistics_df[ind,2] <- signif(statistics[1,"signed_polarity_index"], digits = 3)
-        
-        print(statistics_df)
 
         ind <- ind + 1
         statistics_df[ind,1] <- "angular standard deviation"
@@ -558,8 +550,6 @@ server <- function(input, output, session) {
         statistics_df[ind,1] <- "95% confidence interval of the mean, upper limit: "
         statistics_df[ind,2] <- signif(statistics[1,"ci_95_upper_limit"], digits = 3)
 
-        print(statistics_df)
-        
         ind <- ind + 1
         statistics_df[ind,1] <- "Rayleigh test, p-value:"
         statistics_df[ind,2] <- p_value
@@ -568,7 +558,6 @@ server <- function(input, output, session) {
         statistics_df[ind,1] <- "V-test p-value (cond. mean = 180): "
         statistics_df[ind,2] <- p_value_mu
 
-        print(statistics_df)
 
 
 

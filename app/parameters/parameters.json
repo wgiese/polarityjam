@@ -6,6 +6,7 @@
     "major_over_minor_ratio": ["major_to_minor_ratio", "linear", "major to minor axis ratio"],
     "major_over_minor_ratio_nucleus": ["major_to_minor_ratio_nuc", "linear", "major to minor axis ratio"],
     "mean_expression": ["mean_expression", "linear", "mean intensity"],
+    "mean_expression_nuc": ["mean_expression_nuc", "linear", "mean intensity nucleus"],
     "marker_polarity": ["marker_polarity_rad", "axial", "marker polarity"],
     "perimeter": ["perimeter", "linear", "perimeter"],
     "area": ["area", "linear", "area"],
