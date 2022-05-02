@@ -18,6 +18,8 @@ compute_circular_statistics <- function(data, feature, parameters) {
     sin_mean <- sin_sum/length(circular_data)
     cos_mean <- cos_sum/length(circular_data)
     polarity_index <- sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
+    
+    signed_polarity_index <- -sign(cos_mean)*sqrt(sin_mean*sin_mean + cos_mean*cos_mean)
     std_angular <- sqrt(2.0*(1.0-polarity_index))*180.0/pi
     std_circular <- sqrt(-2.0*log(polarity_index))*180.0/pi
 
@@ -100,6 +102,7 @@ compute_circular_statistics <- function(data, feature, parameters) {
   
     values <- data.frame( "polarity_index" = polarity_index, 
                           "mean" = angle_mean_deg,
+                          "signed_polarity_index" = signed_polarity_index, 
                           "std_angular" = std_angular,
                           "std_circ_up_lim" = std_circ_up_lim,
                           "std_circ_low_lim" = std_circ_low_lim,

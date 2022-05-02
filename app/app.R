@@ -77,11 +77,17 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 shinyDirButton("dir", "Input directory", "Upload"),
                 verbatimTextOutput("dir", placeholder = TRUE),
                 actionButton("refreshStack", "Refresh"),
+                
+                selectInput("sample_col", "Identifier of samples", choices = ""),
+                selectInput("condition_col", "Identifier of conditions", choices = ""),
+
                 selectInput("dataset_merged", "Choose a dataset:",
                             choices = c("merged_file")),
                 downloadButton("downloadProcessedData", "Download")
             ),
- 
+            
+             
+
             #conditionalPanel(condition = "input.tidyInput==true",
             #    selectInput("x_var", "Select variable for x-axis", choices = ""),
             #    selectInput("y_var", "Select variable for y-axis", choices = ""),
@@ -159,7 +165,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 #checkboxInput("left_axial", "hemirose on left", FALSE),
-                
+ 
                 selectInput("plot_mode", "Choose data modality:",
                             choices = c("circular", "semicircular", "linear")),
 
@@ -376,7 +382,34 @@ server <- function(input, output, session) {
  
                })
   
-  
+    observe({
+
+        #if (is.data.frame(mergedStack())) {
+        #    print("Not a data frame")
+        #    var_list <- c("none")
+        #}
+        #else {
+            var_names  <- colnames(mergedStack())
+            print("var_names")
+            print(var_names)
+        if (length(var_names) > 0) {
+            var_list <- c("none", var_names)
+        }
+        else {
+            print("var_name is not a list")
+            var_list <- c("none")
+        }
+        print("var_list")
+        print(var_list)
+        #}
+    #    #        updateSelectInput(session, "colour_list", choices = var_list)
+    #    #updateSelectInput(session, "y_var", choices = var_list, selected="Value")
+    #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
+        updateSelectInput(session, "sample_col", choices = var_list, selected="label")
+        updateSelectInput(session, "condition_col", choices = var_list, selected="filename")
+    #    #updateSelectInput(session, "filter_column", choices = var_list, selected="none")
+    })
+
 
   mergedStack <- reactive({
     "
@@ -467,7 +500,9 @@ server <- function(input, output, session) {
     colnames(statistics_df) <- c("entity", "value") #, "comment")
 
     if (parameters[input$feature_select][[1]][2] == "axial") {
-      
+        statistics_df <- as.data.frame(matrix(nrow=10,ncol=3))
+        colnames(statistics_df) <- c("entity", "value", "description") #, "comment")
+
         x_data <- unlist(results_df[feature])*180.0/pi
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         print("Statistics")
@@ -476,7 +511,7 @@ server <- function(input, output, session) {
         p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
         #if (statistics[1,"rayleigh_test"] < 0.001)
         #    p_value <- "p < 0.001"
-        p_value_mu <- signif(statistics[1,"rayleigh_test_mu"], digits = 3)
+        p_value_mu <- signif(statistics[1,"v_test"], digits = 3)
         #if (statistics[1,"rayleigh_test_mu"] < 0.001)
         #    p_value_mu <- "p < 0.001"
      
@@ -485,17 +520,29 @@ server <- function(input, output, session) {
         statistics_df[ind,1] <- "number of cells"
         statistics_df[ind,2] <- nrow(results_df)
         
+        print(statistics_df)
+
         ind <- ind + 1
         statistics_df[ind,1] <- "mean (degree)"
         statistics_df[ind,2] <- signif(statistics[1,"mean"], digits = 3)
+        
+        print(statistics_df)
         
         ind <- ind + 1
         statistics_df[ind,1] <- "polarity index"
         statistics_df[ind,2] <- signif(statistics[1,"polarity_index"], digits = 3)
         
+        print(statistics_df)
+        
+        ind <- ind + 1
+        statistics_df[ind,1] <- "signed polarity index (mean = 180)"
+        statistics_df[ind,2] <- signif(statistics[1,"signed_polarity_index"], digits = 3)
+        
+        print(statistics_df)
+
         ind <- ind + 1
         statistics_df[ind,1] <- "angular standard deviation"
-        statistics_df[ind,2] <- signif(statistics[1,"std_angular"])
+        statistics_df[ind,2] <- signif(statistics[1,"std_angular"],digits = 3)
         statistics_df[ind,3] <- "angular standard deviation, takes values in [0,sqrt(2)], see https://doi.org/10.18637/jss.v031.i10 for more info."
 
         ind <- ind + 1
@@ -505,20 +552,23 @@ server <- function(input, output, session) {
 
         ind <- ind + 1
         statistics_df[ind,1] <- "95% confidence interval of the mean, lower limit: "
-        statistics_df[ind,2] <- signif(statistics[1,"ci_lower_limit"], digits = 3)
+        statistics_df[ind,2] <- signif(statistics[1,"ci_95_lower_limit"], digits = 3)
 
         ind <- ind + 1
         statistics_df[ind,1] <- "95% confidence interval of the mean, upper limit: "
-        statistics_df[ind,2] <- signif(statistics[1,"ci_upper_limit"], digits = 3)
+        statistics_df[ind,2] <- signif(statistics[1,"ci_95_upper_limit"], digits = 3)
 
+        print(statistics_df)
+        
         ind <- ind + 1
         statistics_df[ind,1] <- "Rayleigh test, p-value:"
         statistics_df[ind,2] <- p_value
         
         ind <- ind + 1
-        statistics_df[ind,1] <- "Rayleigh test, p-value (cond. mean = 180): "
+        statistics_df[ind,1] <- "V-test p-value (cond. mean = 180): "
         statistics_df[ind,2] <- p_value_mu
 
+        print(statistics_df)
 
 
 
