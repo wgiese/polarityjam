@@ -75,7 +75,7 @@ def _run(infile, parameters, output_path, fileout_name):
 
     # write output
     fileout_base, _ = os.path.splitext(fileout_name)
-    properties_df.to_csv(str(Path(output_path).joinpath(fileout_base + ".csv")))
+    properties_df.to_csv(str(Path(output_path).joinpath(fileout_base + ".csv")), index=False)
 
     return properties_df, cellpose_mask
 
@@ -193,6 +193,6 @@ def run_key(args):
 
         offset = offset + len(file_list)
         merged_properties_df.to_csv(str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv")))
-    summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")))
+    summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")), index = False)
 
     _finish(parameters, output_path_base)
