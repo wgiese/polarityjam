@@ -149,7 +149,7 @@ def run_key(args):
     summary_df = pd.DataFrame()
 
     offset = 0
-    for _, row in key_file.iterrows():
+    for k, row in key_file.iterrows():
         # current stack input sub folder
         cur_sub_path = str(row['folder_name'])
         if cur_sub_path.startswith(os.path.sep):
@@ -192,7 +192,11 @@ def run_key(args):
             summary_df.at[offset + file_index, "cell_number"] = len(np.unique(cellpose_mask))
 
         offset = offset + len(file_list)
-        merged_properties_df.to_csv(str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv")))
+        merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
+        merged_properties_df.to_csv(merged_file, index = False)
+        key_file.at[k, "feature_table"] = merged_file
+
     summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")), index = False)
+    key_file.to_csv(str(output_path_base.joinpath("key_file" + ".csv")), index = False)
 
     _finish(parameters, output_path_base)

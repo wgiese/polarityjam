@@ -74,8 +74,8 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df2.shape[0], 99, delta=10)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 32)
-        self.assertEqual(df2.shape[1], 32)
+        self.assertEqual(df1.shape[1], 31)
+        self.assertEqual(df2.shape[1], 31)
 
         # two csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -105,8 +105,8 @@ class TestIntegration(TestCommon):
 
         # number of features should not change
         self.assertEqual(df1.shape[1], 36)
-        self.assertEqual(df2.shape[1], 37)
-        self.assertEqual(df3.shape[1], 37)
+        self.assertEqual(df2.shape[1], 36)
+        self.assertEqual(df3.shape[1], 36)
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -138,8 +138,8 @@ class TestIntegration(TestCommon):
 
         # number of features should not change
         self.assertEqual(df1.shape[1], 24)
-        self.assertEqual(df2.shape[1], 25)
-        self.assertEqual(df3.shape[1], 25)
+        self.assertEqual(df2.shape[1], 24)
+        self.assertEqual(df3.shape[1], 24)
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -164,7 +164,7 @@ class TestIntegration(TestCommon):
         df_sum = pd.read_csv(Path(out_path).joinpath("summary_table.csv"))
 
         # processed three images
-        self.assertEqual(df_sum.shape, (3, 5))
+        self.assertEqual(df_sum.shape, (3, 4))
 
         # processed two conditions
         Path(out_path).joinpath("cond_1", "merged_table_cond_1.csv").exists()
