@@ -49,7 +49,7 @@ library(CircStats)
 library(readxl)
 library(fs)
 library(rjson)
-
+library(DescTools)
 
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
@@ -75,11 +75,44 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
         sidebarLayout(
             sidebarPanel(
                 radioButtons("data_upload_form", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
-
-                shinyDirButton("dir", "Input directory", "Upload"),
-                verbatimTextOutput("dir", placeholder = TRUE),
-                actionButton("refreshStack", "Refresh"),
                 
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'single file'",
+                    fileInput("stackData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation", "File upload", TRUE),
+                ),
+
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'folder'",
+                    shinyDirButton("dir", "Input directory", "Upload"),
+                    verbatimTextOutput("dir", placeholder = TRUE),
+                    actionButton("refreshStack", "Refresh"),
+                ),
+                
+
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'key file'",
+                    fileInput("keyData", "Upload catalogue",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation_key", "File upload", TRUE),
+                ),
+
+   
+                #conditionalPanel(
+                #    condition = "input.data_upload_form == 'folder'",
+                #    shinyDirButton("dir", "Input directory", "Upload"),
+                #    verbatimTextOutput("dir", placeholder = TRUE),
+                #    actionButton("refreshStack", "Refresh"),
+                #),
+
+                                
                 selectInput("sample_col", "Identifier of samples", choices = ""),
                 selectInput("condition_col", "Identifier of conditions", choices = ""),
 
@@ -114,13 +147,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Image stack analysis",
         sidebarLayout(
             sidebarPanel(
-                fileInput("stackData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                checkboxInput("header_correlation", "File upload", TRUE),
-#                shinyDirButton("dir", "Input directory", "Upload"),
+                #                shinyDirButton("dir", "Input directory", "Upload"),
 #                verbatimTextOutput("dir", placeholder = TRUE),
 #                actionButton("refreshStack", "Refresh"),
                 sliderInput("bins",
@@ -422,35 +449,90 @@ server <- function(input, output, session) {
    
     inFileStackData <- input$stackData
 
-    if (is.null(inFileStackData)) {
+    if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+        results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    } else if (input$data_upload_form == "folder") {
         datapath <- stack_data_info$datapath 
         
-        # get list of files in the datapath
         file_list <- list.files(datapath)
         print("File_list")
         print(file_list)
-
+    
         counter <- 1
         plist <- list()
         results_all_df <-data.frame()
         tag <- FALSE
         
         for (file_name in file_list[1:length(file_list)]){
-
-          if (file_ext(file_name) == "csv") {
-            results_df <- read.csv(paste0(datapath,"/",file_name))
-            results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
-            results_all_df  <- rbind(results_all_df, results_df )
-          }
+    
+            if (file_ext(file_name) == "csv") {
+                results_df <- read.csv(paste0(datapath,"/",file_name))
+                results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
+                results_all_df  <- rbind(results_all_df, results_df )
+            }
         }
         
         if (length(results_all_df) > 1) {
-          results_all_df$datapath <- datapath
-          results_all_df$experimental_condition <- input$exp_condition
+            results_all_df$datapath <- datapath
+            results_all_df$experimental_condition <- input$exp_condition
         }
-    } else {    
-        results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+
+    } else if ((input$data_upload_form == "key file") & !is.null(input$keyData) ) {
+        results_all_df <-data.frame()
+        print("key data path")
+        print(input$keyData$datapath)
+        key_file <- read.csv(input$keyData$datapath, header = input$header_correlation)
+        print(key_file)
+
+        for (i in 1:nrow(key_file)){
+            data_path <- key_file[i,"feature_table"]
+            print("data_path")
+            print(data_path)
+            #split_path <- SplitPath(input$keyData)$dirname
+            #print(split_path)
+            results_df <- read.csv(data_path)
+            results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
+            results_all_df  <- rbind(results_all_df, results_df )
+        }
+
+    } else {
+
+        
+        results_all_df <-data.frame()
+        #datapath = "../test_data/stack_EC_microscopy/120821 BSA #01.csv"
+        #results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     }
+
+
+    #if (is.null(inFileStackData)) {
+    #    datapath <- stack_data_info$datapath 
+    #    
+    #    # get list of files in the datapath
+    #    file_list <- list.files(datapath)
+    #    print("File_list")
+    #    print(file_list)
+    #
+    #    counter <- 1
+    #    plist <- list()
+    #    results_all_df <-data.frame()
+    #    tag <- FALSE
+    #    
+    #    for (file_name in file_list[1:length(file_list)]){
+    #
+    #      if (file_ext(file_name) == "csv") {
+    #        results_df <- read.csv(paste0(datapath,"/",file_name))
+    #        results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
+    #        results_all_df  <- rbind(results_all_df, results_df )
+    #      }
+    #    }
+    #    
+    #    if (length(results_all_df) > 1) {
+    #      results_all_df$datapath <- datapath
+    #      results_all_df$experimental_condition <- input$exp_condition
+    #    }
+    #} else {    
+    #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    #}
     
     
     results_all_df
