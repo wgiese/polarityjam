@@ -8,10 +8,10 @@ import skimage.io
 import skimage.measure
 import skimage.segmentation
 
-from vascu_ec.utils.plot import plot_dataset
-from vascu_ec.utils.rag import orientation_graph_nf
-from vascu_ec.utils.seg import get_outline_from_mask
-from vascu_ec.vascu_ec_logging import get_logger
+from polarityjam.utils.plot import plot_dataset
+from polarityjam.utils.rag import orientation_graph_nf
+from polarityjam.utils.seg import get_outline_from_mask
+from polarityjam.polarityjam_logging import get_logger
 
 
 def get_image_for_segmentation(parameters, img):

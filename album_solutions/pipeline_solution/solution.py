@@ -1,7 +1,7 @@
 from album.runner.api import setup, get_args
 
 
-env_file = """name: Vascuec-Solution
+env_file = """name: Polarityjam
 channels:
   - conda-forge
   - defaults
@@ -54,11 +54,11 @@ def install():
     import subprocess
     import sys
     import os
-    print("Installing vascu_ec and dependencies")
-    vascu_repo = Path(get_package_path()).joinpath('vascu_repo')
-    os.mkdir(vascu_repo)
-    Repo.clone_from("https://github.com/wgiese/vascu-ec-app",vascu_repo)
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", Path(vascu_repo).joinpath('vascu_ec')])
+    print("Installing polarityjam and dependencies")
+    polarityjam_repo = Path(get_package_path()).joinpath('polarityjam')
+    os.mkdir(polarityjam_repo)
+    Repo.clone_from("https://github.com/wgiese/vascu-ec-app", polarityjam_repo)
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", Path(polarityjam_repo).joinpath('polarityjam')])
 
 
 def run():
@@ -66,46 +66,45 @@ def run():
     from pathlib import Path
     import os
     
-    #collecting argument as strings for better readability and to build the vascu_ec call string  
+    #collecting argument as strings for better readability and to build the polarityjam call string  
     run_string = str(get_args().run_command)
     parameter_string = str(get_args().parameter_file)
     input_string = str(get_args().input_file)
     output_string = str(get_args().output_path)
     filename_prefix_string = str(get_args().filename_prefix)
     key_string = str(get_args().key_csv)
-    vascu_string = "vascu_ec"
+    polarityjam_string = "polarityjam"
     
     
     #Determine the mode to run Vascu_ec
     
     if run_string == "test":
-        vascu_call = "vascu_ec_test"
-        os.system(vascu_call)
+        polarityjam_call = "polarityjam_test"
+        os.system(polarityjam_call)
     else:
-    
         #Normal run
         if run_string == "run":
             #run with prefix
             if filename_prefix_string != "None":
-                vascu_call = '%s %s %s %s %s --filename_prefix %s' %(vascu_string,run_string,parameter_string,input_string,output_string,filename_prefix_string)
-                os.system(vascu_call)
+                polarityjam_call = '%s %s %s %s %s --filename_prefix %s' %(polarityjam_string,run_string,parameter_string,input_string,output_string,filename_prefix_string)
+                os.system(polarityjam_call)
                 
             #run without prefix
             else:
-                vascu_call = '%s %s %s %s %s' %(vascu_string,run_string,parameter_string,input_string,output_string)
-                os.system(vascu_call)
+                polarityjam_call = '%s %s %s %s %s' %(polarityjam_string,run_string,parameter_string,input_string,output_string)
+                os.system(polarityjam_call)
                 
         #run with keys csv
         if run_string == "run-key":
             if key_string != "None":
-                vascu_call = '%s %s %s %s %s %s' %(vascu_string,run_string,parameter_string,input_string,key_string,output_string)
-                os.system(vascu_call)
+                polarityjam_call = '%s %s %s %s %s %s' %(polarityjam_string,run_string,parameter_string,input_string,key_string,output_string)
+                os.system(polarityjam_call)
             else:
-                print("You tried to run vascu_ec in the key mode without providing a key.csv file!")
+                print("You tried to run polarityjam in the key mode without providing a key.csv file!")
         #Run on multiple files
         if run_string == "run-stack":
-            vascu_call = '%s %s %s %s %s' %(vascu_string,run_string,parameter_string,input_string,output_string)
-            os.system(vascu_call)
+            polarityjam_call = '%s %s %s %s %s' %(polarityjam_string,run_string,parameter_string,input_string,output_string)
+            os.system(polarityjam_call)
 
 
 def prepare_test():
@@ -113,29 +112,26 @@ def prepare_test():
 
 
 def test():
-    from album.runner.api import setup, get_args
     import os
-    vascu_call = "vascu_ec_test"
-    os.system("vascu_ec_test")
+    os.system("polarityjam_test")
 
 
 def close():
-    from album.runner.api import setup, get_args
     print("closing")
 
 
 setup(
     group="album",
-    name="Vascuec-Solution",
+    name="Polarityjam-Solution",
     version="0.1.0",
-    title="A Solution to run the Vascuec App",
-    description="A Solution to run the Vascuec App.",
+    title="A Solution to run the polarityjam feature extraction pipeline",
+    description="A Solution to run the polarityjam Feature Extraction Pipeline.",
     authors=["Lucas Rieckert", "Jan Philipp Albrecht"],
     cite=[{
         "text": "Your first citation text",
         "doi": "your first citation doi"
     }],
-    tags=["vascuec", "test"],
+    tags=["polarityjam", "test"],
     license="UNLICENSE",
     documentation="",
     covers=[{
@@ -147,7 +143,7 @@ setup(
         "name": "run_command",
         "type": "string",
         "default": "run",
-        "description": "How do you want to run vascuec? run for single tiff file, run-stack for a directory containing multiple tiff files, run-key for a csv file containing a list of  directorys containing tiff files or test for the test-suit",
+        "description": "How do you want to run polarityjam? run for single tiff file, run-stack for a directory containing multiple tiff files, run-key for a csv file containing a list of  directorys containing tiff files or test for the test-suit",
 		"required": True
 		},
         {

@@ -1,14 +1,14 @@
 import argparse
 import sys
 
-import vascu_ec
-from vascu_ec.commandline import run, run_stack, run_key
-from vascu_ec.utils.io import create_path_recursively
-from vascu_ec.vascu_ec_logging import configure_logger, get_logger, get_log_file, close_logger
+import polarityjam
+from polarityjam.commandline import run, run_stack, run_key
+from polarityjam.utils.io import create_path_recursively
+from polarityjam.polarityjam_logging import configure_logger, get_logger, get_log_file, close_logger
 
 
 def startup():
-    """Entry points of `vascu-ec`."""
+    """Entry points of `polarityjam`."""
     parser = create_parser()
     args = parser.parse_args()
 
@@ -16,7 +16,7 @@ def startup():
 
 
 def __run_subcommand(args, parser):
-    """Calls a specific album subcommand."""
+    """Calls a specific subcommand."""
     command = ""
     try:
         command = sys.argv[1]  # command always expected at second position
@@ -30,7 +30,7 @@ def __run_subcommand(args, parser):
 
     get_logger().debug("Running %s subcommand..." % command)
 
-    get_logger().info("VascuShare Version %s" % vascu_ec.__version__)
+    get_logger().info("Polarityjam Version %s" % polarityjam.__version__)
 
     args.func(args)  # execute entry point function
 
@@ -38,7 +38,7 @@ def __run_subcommand(args, parser):
 
 
 def create_parser():
-    parser = VascuParser()
+    parser = PolarityjamParser()
 
     # run action
     p = parser.create_file_command_parser('run', run, 'Feature extraction from a single tiff image.')
@@ -77,7 +77,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.exit(2, '%s: error: %s\n' % (self.prog, message))
 
 
-class VascuParser(ArgumentParser):
+class PolarityjamParser(ArgumentParser):
     def __init__(self):
         super().__init__()
         self.parent_parser = self.create_parent_parser()
@@ -88,7 +88,7 @@ class VascuParser(ArgumentParser):
     def create_parent_parser():
         """Parent parser for all subparsers to have the same set of arguments."""
         parent_parser = ArgumentParser(add_help=False)
-        parent_parser.add_argument('--version', '-V', action='version', version="%s " % vascu_ec.__version__)
+        parent_parser.add_argument('--version', '-V', action='version', version="%s " % polarityjam.__version__)
         # parse logging
         parent_parser.add_argument(
             '--log',
@@ -103,18 +103,18 @@ class VascuParser(ArgumentParser):
         """Creates the main parser for the framework."""
         parser = ArgumentParser(
             add_help=True,
-            description='VascuShare - feature extraction pipeline for multichannel images.',
+            description='Polarityjam - feature extraction pipeline for multichannel images.',
             parents=[self.parent_parser])
         return parser
 
     def create_command_parser(self, command_name, command_function, command_help):
-        """Creates a parser for a VascuShare command, specified by a name, a function and a help description."""
+        """Creates a parser for a Polarityjam command, specified by a name, a function and a help description."""
         parser = self.subparsers.add_parser(command_name, help=command_help, parents=[self.parent_parser])
         parser.set_defaults(func=command_function)
         return parser
 
     def create_file_command_parser(self, command_name, command_function, command_help):
-        """Creates a parser for a VascuShare command dealing with a file.
+        """Creates a parser for a Polarityjam command dealing with a file.
 
         Parser is specified by a name, a function and a help description.
         """

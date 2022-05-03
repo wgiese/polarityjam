@@ -1,4 +1,4 @@
-from vascu_ec.argument_parsing import startup
+from polarityjam.argument_parsing import startup
 
 
 def main():
