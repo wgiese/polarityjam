@@ -22,7 +22,7 @@ transform_2_axial <- function(input, feature_2_axial) {
 
 #rose_plot_2_axial <- function(feature_2_axial)
 
-rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
+rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title, plot_nr = 0, text_size = 24) {
   
     bin_size = 360/input$bins
   
@@ -54,7 +54,11 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     colour <- "black"
     
     if (input$select_colourmap == "Okabe_Ito") {
-        colour_n <- input$select_colour %% length(Okabe_Ito)
+        if (plot_nr == 0)
+            colour_n <- input$select_colour %% length(Okabe_Ito)
+        else
+            colour_n <- plot_nr %% length(Okabe_Ito)
+        
         colour_fill <- Okabe_Ito[colour_n]
         colour <- Okabe_Ito[colour_n]
     }

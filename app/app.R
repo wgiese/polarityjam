@@ -789,7 +789,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_all_df[feature])*180.0/pi
         statistics <- compute_circular_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, 0, text_size)
       
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -865,11 +865,20 @@ server <- function(input, output, session) {
     }
     
     feature <- parameters[input$feature_select][[1]][1]
-    
-    plist <- vector('list', length(unique(results_all_df$filename)))
-    
-    for(file_name in unique(results_all_df$filename)) {
-      results_df <- subset(results_all_df, results_all_df$filename == file_name )
+    condition_col <- input$condition_col   
+
+    condition_list <- unlist(unique(results_all_df[condition_col]))
+    #plist <- vector('list', length(unique(results_all_df$filename)))
+    plist <- vector('list', length(condition_list))
+    print("length of plot list")
+    print(plist)
+    print("list of unique entries")
+    print(unlist(unique(results_all_df[condition_col])))
+ 
+    #for(file_name in unique(results_all_df$filename)) {
+    #  results_df <- subset(results_all_df, results_all_df$filename == file_name )
+    for(file_name in condition_list) {
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name )
       
       #values <- compute_polarity_index(results_df)
       
@@ -903,7 +912,8 @@ server <- function(input, output, session) {
         #polarity_index <- polarity_indices[[i]]
         #angle_mean_deg <- angle_mean_degs[[i]]
       
-        results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        #results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name)
       
         plot_title <- file_name
         if (nchar(file_name) > 15) {
@@ -919,7 +929,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_df[feature])*180.0/pi
         print(paste0("Length of filename", toString(i)))
         
-                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
         
       }
       else if (parameters[input$feature_select][[1]][2] == "2-axial") {
