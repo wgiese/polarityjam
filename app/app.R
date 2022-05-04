@@ -261,12 +261,18 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 selectInput("datasetSingleImage", "Download:",
                             choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
                             tags$hr(),
+
+    
+                numericInput ("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
+                numericInput ("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
+                
                 checkboxInput("header_image", "File upload", TRUE),
                 downloadButton("downloadCorrelationData", "Download")
             ),
             mainPanel(
                 tabsetPanel(
-                tabPanel("Plot", plotOutput("correlation_plot", height = "1000px"))#,
+                tabPanel("Plot", plotOutput("correlation_plot", height = "1000px")),#,
+                tabPanel("Spoke Plot", plotOutput("spoke_plot", height = "1000px"))#,
                 #tabPanel("Statistics", tableOutput("singleImageStatistics"))
                 )
             )
@@ -1092,29 +1098,122 @@ server <- function(input, output, session) {
     
     plot_correlation <- reactive({
       
-      parameters <- fromJSON(file = "parameters/parameters.json")
+        parameters <- fromJSON(file = "parameters/parameters.json")
       
-      inFileCorrelationData <- input$correlationData
+        text_size <- 42
+
+        inFileCorrelationData <- input$correlationData
       
-      if (is.null(inFileCorrelationData))
-        return(NULL)
+        if (is.null(inFileCorrelationData))
+            return(NULL)
       
-      print(inFileCorrelationData$datapath)
-      correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        print(inFileCorrelationData$datapath)
+        correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
       
-      feature_1 <- parameters[input$feature_select_1][[1]][1]
-      feature_2 <- parameters[input$feature_select_2][[1]][1]
-      
-      plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
-      colnames(plot_df) <- c("x","y")
-      p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point()
-      p
-      
+        feature_1 <- parameters[input$feature_select_1][[1]][1]
+        feature_2 <- parameters[input$feature_select_2][[1]][1]
+        feature_1_values <- unlist(correlation_data[feature_1])
+        feature_2_values <- unlist(correlation_data[feature_2])
+        
+        feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+        feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+
+        res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+
+        print(res)
+        print(str(res))
+        p_value <- signif(res$p.value, digits = 3)
+        reg_coeff <- signif(res$r, digits = 3)
+
+        #reg_coeff <- res$r
+        #p_value <- res$p.value
+
+        plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
+        #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
+        #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
+        colnames(plot_df) <- c("x","y")
+        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = 3) + theme_minimal(base_size = text_size)# theme_bw()
+        p <- p + theme(aspect.ratio=3/3)
+        p <- p + xlab(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
+        p
+
     })
     
     output$correlation_plot <- renderPlot({
       
       p <- plot_correlation()
+      p
+    })  
+    
+    spoke_plot_correlation <- reactive({
+      
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        text_size <- 14      
+
+        inFileCorrelationData <- input$correlationData
+      
+        if (is.null(inFileCorrelationData))
+            return(NULL)
+      
+        print(inFileCorrelationData$datapath)
+        correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+      
+        feature_1 <- parameters[input$feature_select_1][[1]][1]
+        feature_2 <- parameters[input$feature_select_2][[1]][1]
+        feature_1_values <- unlist(correlation_data[feature_1])
+        feature_2_values <- unlist(correlation_data[feature_2])
+        
+        res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+
+        print(res)
+        print(str(res))
+        reg_coeff <- res$r
+        p_value <- res$p.value
+
+        #plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
+        feature_1_values_deg <- unlist(correlation_data[feature_1])*180.0/pi
+        feature_2_values_deg <- unlist(correlation_data[feature_2])*180.0/pi
+
+        
+
+        p <- ggplot()
+        p <- p + geom_point(aes(x = feature_2_values_deg, y = 1, size = 3))
+        p <- p + geom_point(aes(x = feature_1_values_deg, y = 0.5, size = 3))
+        
+        #for (i in 1:length(feature_1_values_deg)) {    
+        #    p <- p + geom_segment(aes(x=feature_1_values_deg[i], y=0.5, xend=feature_2_values_deg[i], yend=1.0, size = 0.3, color="red"))
+        #    print(feature_1_values_deg[i])
+        #}
+        
+        #p <- p + geom_segment(aes(x=feature_1_values_deg[1], y=0.5, xend=feature_2_values_deg[1], yend=1.0, size = 0.3, color="red"))
+        #p <- p + geom_segment(aes(x=feature_1_values_deg[2], y=0.5, xend=feature_2_values_deg[2], yend=1.0, size = 0.3, color="red"))
+        
+        p <- p + geom_segment(aes(x=feature_1_values_deg, y=0.5, xend=feature_2_values_deg, yend=1.0, size = 0.1, color="red"))
+        
+        p <- p + ggtitle("spoke_plot") +
+            theme(plot.title = element_text(size = 18, face = "bold")) +
+            theme(axis.text.x = element_text(size = 18)) +
+            coord_polar(start = -pi/2.0, direction = -1) +
+            scale_x_continuous(limits = c(0, 180),
+                       breaks = (c(0, 45, 90, 135))) +
+            scale_x_continuous(limits = c(0, 360),
+                       breaks = (c(0, 90, 180, 270))) +
+            scale_y_continuous(limits = c(0, 1.1)) +
+            theme_minimal(base_size = text_size) 
+
+        p   
+
+        #colnames(plot_df) <- c("x","y")
+        #p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = 3) + theme_bw()
+        #p <- p + theme(aspect.ratio=3/3)
+        #p <- p + xlab(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
+        #p
+
+    })
+    
+    output$spoke_plot <- renderPlot({
+      
+      p <- spoke_plot_correlation()
       p
     })  
     
