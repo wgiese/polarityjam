@@ -492,3 +492,22 @@ def run_morans(morans_features, weihgts):
     mi = pysalexp.esda.Moran(morans_features, weihgts, two_tailed=False)
 
     return mi
+def second_nieghbours(rag,node):
+   "return ind labels of second nearest neigbours of rag"
+    second_nearest = []
+    first_nearest = (list(rag.neighbors(node)))
+    for element in first_nearest:
+        k_nearest = (list(rag.neighbors(element)))
+        second_nearest = second_nearest + k_nearest 
+    set1nd = set(first_nearest)
+    set2nd = set(second_nearest)
+    twond_heybrs = list(set2nd.difference(set1nd))
+    twond_heybrs = list(filter(lambda a: a != node, twond_heybrs))
+
+    return(twond_heybrs)
+
+
+def shared_edges(rag,node):
+    "return ind labels of neighbours but its a function "
+    first_nearest = list(set(rag.neighbors(node)))
+    return(first_nearest)
