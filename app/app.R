@@ -1131,7 +1131,9 @@ server <- function(input, output, session) {
         feature_1 <- parameters[input$feature_select_1][[1]][1]
         feature_2 <- parameters[input$feature_select_2][[1]][1]
         feature_1_values <- unlist(correlation_data[feature_1])
+        feature_1_values_ <- correlation_data[feature_1]*180.0/pi
         feature_2_values <- unlist(correlation_data[feature_2])
+        feature_2_values_ <- correlation_data[feature_2]*180.0/pi
         
         feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
         feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
@@ -1149,7 +1151,7 @@ server <- function(input, output, session) {
         #reg_coeff <- res$r
         #p_value <- res$p.value
 
-        plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
+        plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
         #colnames(plot_df) <- c(feature_1_name, feature_2_name)
@@ -1244,6 +1246,7 @@ server <- function(input, output, session) {
       
       p <- spoke_plot_correlation()
       p
+
     })
 
     output$downloadPlotPDF <- downloadHandler(

@@ -280,13 +280,15 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
         v_min = 0.0         
         v_max = 180.0
         yticks = [0.0,45.0,90.0,135.0,180.0]
-        plot_title = "cell shape orientation"
-        color_bar_label = "cell shape orientation (degree)"    
+        plot_title_1 = "cell shape orientation"
+        plot_title_2 = "nuclei shape orientation"
+        color_bar_label = "shape orientation (degree)"    
     else:
         v_min = 0.0
         v_max = 1.0
         yticks = [0.0,0.5,1.0]
-        plot_title = "cell elongation"
+        plot_title_1 = "cell elongation"
+        plot_title_2 = "nuclei elongation"
         color_bar_label = "eccentricity"    
 
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
@@ -314,7 +316,7 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
             )
         
         color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)  # , extend='both')
-        color_bar.set_label(feature_to_plot)
+        color_bar.set_label(color_bar_label)
         color_bar.ax.set_yticks(yticks)
 
         #color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)
@@ -443,19 +445,19 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
 
     # set title and ax limits
     if nuclei_mask is not None:
-        ax[0].set_title(plot_title)
+        ax[0].set_title(plot_title_1)
         ax[0].set_xlim(0, im_junction.shape[1])
         ax[0].set_ylim(0, im_junction.shape[0])
         ax[0].invert_yaxis()
         ax[0].axis('off')
         
-        ax[1].set_title(plot_title)
+        ax[1].set_title(plot_title_2)
         ax[1].set_xlim(0, im_junction.shape[1])
         ax[1].set_ylim(0, im_junction.shape[0])
         ax[1].invert_yaxis()
         ax[1].axis('off')
     else:
-        ax.set_title(plot_title)
+        ax.set_title(plot_title_1)
         ax.set_xlim(0, im_junction.shape[1])
         ax.set_ylim(0, im_junction.shape[0])
         ax.invert_yaxis()
