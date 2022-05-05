@@ -34,6 +34,7 @@ options(shiny.maxRequestSize = 30*1024^2)
 
 library(shiny)
 library(shinyFiles)
+library(shinycssloaders)
 library(circular)
 #library(CircMLE)
 library(ggplot2)
@@ -49,7 +50,7 @@ library(CircStats)
 library(readxl)
 library(fs)
 library(rjson)
-library(DescTools)
+#library(DescTools)
 
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
@@ -172,7 +173,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
                             "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
-                            choices = c("Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test", "None")),
+                            choices = c("None", "Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test")),
                 conditionalPanel(
                    # condition = "input.stats_method %in% c('V-Test')",
                     condition = "input.stats_method == 'V-Test'",
@@ -248,12 +249,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Correlation analysis",
         sidebarLayout(
             sidebarPanel(
-                fileInput("correlationData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                checkboxInput("header_correlation", "File upload", TRUE),
+#                fileInput("correlationData", "Upload data file",
+#                            accept = c( "text/csv",
+#                            "text/comma-separated-values,text/plain",
+#                            ".csv",".xlsx")),
+#                            tags$hr(),
+#                checkboxInput("header_correlation", "File upload", TRUE),
                 selectInput("feature_select_1", "Choose a feature 1:",
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("feature_select_2", "Choose a feature 2:",
@@ -265,13 +266,21 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     
                 numericInput ("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
                 numericInput ("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
-                
-                checkboxInput("header_image", "File upload", TRUE),
-                downloadButton("downloadCorrelationData", "Download")
+                numericInput ("plot_height_corr", "Height (# pixels): ", value = 600),
+                numericInput ("plot_width_corr", "Width (# pixels):", value = 800),
+                checkboxInput ("header_image", "File upload", TRUE),
+                downloadButton ("downloadCorrelationData", "Download")
             ),
             mainPanel(
                 tabsetPanel(
-                tabPanel("Plot", plotOutput("correlation_plot", height = "1000px")),#,
+                tabPanel("Plot", downloadButton("downloadPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("correlation_plot", height="120%"))),
+                            NULL,
+                ),
+                            #plotOutput("correlation_plot", height = "1000px")),#,
                 tabPanel("Spoke Plot", plotOutput("spoke_plot", height = "1000px"))#,
                 #tabPanel("Statistics", tableOutput("singleImageStatistics"))
                 )
@@ -922,10 +931,17 @@ server <- function(input, output, session) {
         results_df <- subset(results_all_df, results_all_df[condition_col] == file_name)
       
         plot_title <- file_name
-        if (nchar(file_name) > 15) {
-            plot_title <- paste0("image #",toString(i))
-            print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
-        }        
+        
+        if (nchar(file_name) > 16) {
+            max_fl <- 6
+            file_name_end <- substr(file_name, nchar(file_name) - max_fl + 1, nchar(file_name))
+            file_name_start <- substr(file_name, 1, max_fl)
+            plot_title <-paste0(file_name_start, "...", file_name_end)
+        }
+        #if (nchar(file_name) > 15) {
+        #    plot_title <- paste0("image #",toString(i))
+        #    print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
+        #}        
 
 
       if (parameters[input$feature_select][[1]][2] == "axial") {
@@ -1100,15 +1116,17 @@ server <- function(input, output, session) {
       
         parameters <- fromJSON(file = "parameters/parameters.json")
       
-        text_size <- 42
+        text_size <- input$text_size_corr
 
-        inFileCorrelationData <- input$correlationData
+        #inFileCorrelationData <- input$correlationData
       
-        if (is.null(inFileCorrelationData))
-            return(NULL)
+        #if (is.null(inFileCorrelationData))
+        #    return(NULL)
       
-        print(inFileCorrelationData$datapath)
-        correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        #print(inFileCorrelationData$datapath)
+        #correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        
+        correlation_data <- mergedStack() #read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
       
         feature_1 <- parameters[input$feature_select_1][[1]][1]
         feature_2 <- parameters[input$feature_select_2][[1]][1]
@@ -1117,6 +1135,9 @@ server <- function(input, output, session) {
         
         feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
         feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+        
+        feature_1_name <- parameters[input$feature_select_1][[1]][3]
+        feature_2_name <- parameters[input$feature_select_2][[1]][3]
 
         res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
 
@@ -1131,15 +1152,19 @@ server <- function(input, output, session) {
         plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
+        #colnames(plot_df) <- c(feature_1_name, feature_2_name)
         colnames(plot_df) <- c("x","y")
-        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = 3) + theme_minimal(base_size = text_size)# theme_bw()
+        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = input$marker_size_corr) + theme_minimal(base_size = text_size)# theme_bw()
         p <- p + theme(aspect.ratio=3/3)
-        p <- p + xlab(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
-        p
+        p <- p + ggtitle(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
+        p <- p + xlab(feature_1_name) + ylab(feature_2_name)
 
     })
     
-    output$correlation_plot <- renderPlot({
+    width <- reactive ({ input$plot_width_corr })
+    height <- reactive ({ input$plot_height_corr })
+    
+    output$correlation_plot <- renderPlot(width = width, height = height, {
       
       p <- plot_correlation()
       p
@@ -1150,18 +1175,23 @@ server <- function(input, output, session) {
         parameters <- fromJSON(file = "parameters/parameters.json")
         text_size <- 14      
 
-        inFileCorrelationData <- input$correlationData
+        #inFileCorrelationData <- input$correlationData
       
-        if (is.null(inFileCorrelationData))
-            return(NULL)
+        #if (is.null(inFileCorrelationData))
+        #    return(NULL)
       
-        print(inFileCorrelationData$datapath)
-        correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
-      
+        #print(inFileCorrelationData$datapath)
+        #correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        correlation_data <- mergedStack()       
+
+
         feature_1 <- parameters[input$feature_select_1][[1]][1]
         feature_2 <- parameters[input$feature_select_2][[1]][1]
         feature_1_values <- unlist(correlation_data[feature_1])
         feature_2_values <- unlist(correlation_data[feature_2])
+        
+        feature_1_name <- parameters[input$feature_select_1][[1]][3]
+        feature_2_name <- parameters[input$feature_select_2][[1]][3]
         
         res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
 
@@ -1173,7 +1203,6 @@ server <- function(input, output, session) {
         #plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
         feature_1_values_deg <- unlist(correlation_data[feature_1])*180.0/pi
         feature_2_values_deg <- unlist(correlation_data[feature_2])*180.0/pi
-
         
 
         p <- ggplot()
@@ -1215,7 +1244,60 @@ server <- function(input, output, session) {
       
       p <- spoke_plot_correlation()
       p
-    })  
+    })
+
+    output$downloadPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+
+
+    output$downloadPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_corr*4, height = input$plot_height_corr*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(plot_correlation())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+  
     
     
     ### Panel C

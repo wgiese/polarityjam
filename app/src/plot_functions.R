@@ -58,7 +58,14 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
             colour_n <- input$select_colour %% length(Okabe_Ito)
         else
             colour_n <- plot_nr %% length(Okabe_Ito)
-        
+
+        print("colour number")
+        print(colour_n)
+        print("plot_nr")        
+        print(plot_nr)        
+        print("number of colors")        
+        print(length(Okabe_Ito))        
+
         colour_fill <- Okabe_Ito[colour_n]
         colour <- Okabe_Ito[colour_n]
     }
