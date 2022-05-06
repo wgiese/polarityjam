@@ -19,6 +19,50 @@ transform_2_axial <- function(input, feature_2_axial) {
     return(feature_transformed)
 }
 
+select_color <- function(parameters, input, plot_nr) {
+    color <- "black"
+    
+    if (input$select_colormap == "Okabe_Ito") {
+        if (plot_nr == 0)
+            color_n <- input$select_color %% length(Okabe_Ito)
+        else
+            color_n <- (plot_nr + input$select_color) %% length(Okabe_Ito)
+
+        print("color number")
+        print(color_n)
+        print("plot_nr")        
+        print(plot_nr)        
+        print("number of colors")        
+        print(length(Okabe_Ito))        
+
+        color <- Okabe_Ito[color_n]
+
+    } else if (input$select_colormap == "Tol_bright") {
+        if (plot_nr == 0)
+            color_n <- input$select_color %% length(Tol_bright)
+        else
+            color_n <- (plot_nr + input$select_color) %% length(Tol_bright)
+
+        color <- Tol_bright[color_n]
+    } else if (input$select_colormap == "Tol_muted") {
+        if (plot_nr == 0)
+            color_n <- input$select_color %% length(Tol_muted)
+        else
+            color_n <- (plot_nr + input$select_color) %% length(Tol_muted)
+
+        color <- Tol_muted[color_n]
+    } else if (input$select_colormap == "Tol_light") {
+        if (plot_nr == 0)
+            color_n <- input$select_color %% length(Tol_light)
+        else
+            color_n <- (plot_nr + input$select_color) %% length(Tol_light)
+
+        color <- Tol_light[color_n]
+    }
+  
+    return(color)
+}
+
 
 #rose_plot_2_axial <- function(feature_2_axial)
 
@@ -50,39 +94,22 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
 
     p <- ggplot()
 
-    colour_fill <- "black"
-    colour <- "black"
-    
-    if (input$select_colourmap == "Okabe_Ito") {
-        if (plot_nr == 0)
-            colour_n <- input$select_colour %% length(Okabe_Ito)
-        else
-            colour_n <- plot_nr %% length(Okabe_Ito)
-
-        print("colour number")
-        print(colour_n)
-        print("plot_nr")        
-        print(plot_nr)        
-        print("number of colors")        
-        print(length(Okabe_Ito))        
-
-        colour_fill <- Okabe_Ito[colour_n]
-        colour <- Okabe_Ito[colour_n]
-    }
+    color_fill <- select_color(parameters, input, plot_nr)
+    color <- color_fill
     
     alpha <- 0.5
     if (input$adjust_alpha == TRUE) {
         alpha <- input$alpha_fill
-        if (input$outline != "colour")
-            colour <- input$outline
+        if (input$outline != "color")
+            color <- input$outline
     }
 
 
     if (input$kde_plot) {
       p <-  p + 
         geom_density(aes(x = feature_circular, y = ..count../max(..count..) ),
-                     colour = colour,
-                     fill = colour_fill,
+                     color = color,
+                     fill = color_fill,
                      alpha = alpha)
     }
     
@@ -90,8 +117,8 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
       p <- p + 
           geom_histogram(aes(x = feature_circular, y = ..ncount..),
                         breaks = seq(0, 360, bin_size),
-                        colour = colour,
-                        fill = colour_fill,
+                        color = color,
+                        fill = color_fill,
                         alpha = alpha)
     }    
     
@@ -183,23 +210,23 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
     if (input$histogram_comparison) {
     p <- p + geom_histogram(aes(x = feature_circular_1, y = ..density..),#, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "blue",
                    alpha = 0.5) +
         geom_histogram(aes(x = feature_circular_2, y = ..density..),#, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "red",
                    alpha = 0.5)
     }
     
     if (input$kde_comparison) {
         p <- p + geom_density(aes(x = feature_circular_1, y = ..density.. ),
-                    colour = "black",
+                    color = "black",
                     fill = "red",
                     alpha = 0.5) +
         geom_density(aes(x = feature_circular_2, y = ..density.. ),
-                    colour = "black",
+                    color = "black",
                     fill = "blue",
                     alpha = 0.5) 
     }
@@ -258,7 +285,7 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
     p <- ggplot() +
         geom_histogram(aes(x = feature_circular_, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5) +
 #        geom_density(aes(x = feature_circular)) +
@@ -399,7 +426,7 @@ compare_plot_2_axial <- function(parameters, input, statistics, feature_circular
     p <- ggplot() +
         geom_histogram(aes(x = feature_circular, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5) +
 #        geom_density(aes(x = feature_circular)) +
@@ -441,14 +468,14 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
     if (input$histogram_plot) {
         p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
                    breaks = seq(0, max(feature_linear), bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
     }
 
     if (input$kde_plot) {
         p <- p + geom_density(aes(x = feature_linear, y = ..density..),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
 
@@ -478,14 +505,14 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
     if (input$histogram_plot) {
         p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
                    breaks = seq(0, max(feature_linear), bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
     }
 
     if (input$kde_plot) {
         p <- p + geom_density(aes(x = feature_linear, y = ..density..),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
 
@@ -517,23 +544,23 @@ compare_plot_linear <- function(parameters, input, statistics, feature_linear_1,
     if (input$histogram_plot) {
         p <- p + geom_histogram(aes(x = feature_linear_1, y = ..density..),
                    breaks = seq(0, max(max_1,max_2), bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5) +
              geom_histogram(aes(x = feature_linear_2, y = ..density..),
                    breaks = seq(0, max(max_1,max_2), bin_size),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
     }
 
     if (input$kde_plot) {
         p <- p + geom_density(aes(x = feature_linear_1, y = ..density..),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5) +
             geom_density(aes(x = feature_linear_1, y = ..density..),
-                   colour = "black",
+                   color = "black",
                    fill = "black",
                    alpha = 0.5)
     }

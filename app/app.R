@@ -205,12 +205,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     choices = c("up","down","left","right","all"))
                 ),
 
-                selectInput("select_colourmap", "Choose a color scheme",
+                selectInput("select_colormap", "Choose a color scheme",
                             choices = c("gray", "Okabe_Ito", "Tol_bright", "Tol_muted", "Tol_light")),
                 
                 conditionalPanel(
-                    condition = "input.select_colourmap != 'gray'",
-                    numericInput ("select_colour", "Select a color from color scheme:", value=1, min = 1, max = 10, step = 1),
+                    condition = "input.select_colormap != 'gray'",
+                    numericInput ("select_color", "Select a color from color scheme:", value=1, min = 1, max = 10, step = 1),
                 ),
                 
                 checkboxInput("adjust_alpha", "adjust transparency", FALSE),
@@ -218,7 +218,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 conditionalPanel(
                     condition = "input.adjust_alpha == true",
                     numericInput ("alpha_fill", "set alpha fill:", value=0.5, min = 0.0, max = 1.0, step = 0.1),
-                    selectInput ("outline", "choose outline style:", choice = c("colour","white","black"))
+                    selectInput ("outline", "choose outline style:", choice = c("color","white","black"))
                 ),
                 
                 
@@ -446,7 +446,7 @@ server <- function(input, output, session) {
         print("var_list")
         print(var_list)
         #}
-    #    #        updateSelectInput(session, "colour_list", choices = var_list)
+    #    #        updateSelectInput(session, "color_list", choices = var_list)
     #    #updateSelectInput(session, "y_var", choices = var_list, selected="Value")
     #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
         updateSelectInput(session, "sample_col", choices = var_list, selected="label")
@@ -1156,7 +1156,7 @@ server <- function(input, output, session) {
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
         #colnames(plot_df) <- c(feature_1_name, feature_2_name)
         colnames(plot_df) <- c("x","y")
-        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = input$marker_size_corr) + theme_minimal(base_size = text_size)# theme_bw()
+        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(color = "black", size = input$marker_size_corr) + theme_minimal(base_size = text_size)# theme_bw()
         p <- p + theme(aspect.ratio=3/3)
         p <- p + ggtitle(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
         p <- p + xlab(feature_1_name) + ylab(feature_2_name)
@@ -1235,7 +1235,7 @@ server <- function(input, output, session) {
         p   
 
         #colnames(plot_df) <- c("x","y")
-        #p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(colour = "black", size = 3) + theme_bw()
+        #p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(color = "black", size = 3) + theme_bw()
         #p <- p + theme(aspect.ratio=3/3)
         #p <- p + xlab(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
         #p
@@ -1334,7 +1334,7 @@ server <- function(input, output, session) {
       p <- ggplot() +
         geom_histogram(aes(cond1_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "black",
+                       color = "black",
                        fill = "green", alpha = 0.2) +
         ggtitle("cellular orientation") +
         theme(axis.text.x = element_text(size = 18)) +
@@ -1349,19 +1349,19 @@ server <- function(input, output, session) {
       
       p <- p + geom_histogram(aes(cond2_data$angle_deg),
                               breaks = seq(0, 360, bin_size),
-                              colour = "black",
+                              color = "black",
                               fill = "red", alpha = 0.2)
       
       
       p1 <- ggplot() +
         geom_histogram(aes(cond1_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "white",
+                       color = "white",
                        fill = "blue",
                        alpha = 0.5) +
         geom_histogram(aes(cond2_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "white",
+                       color = "white",
                        fill = "red",
                        alpha = 0.5) +
         ggtitle(paste0(" ")) +
