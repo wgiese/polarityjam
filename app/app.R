@@ -221,7 +221,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     selectInput ("outline", "choose outline style:", choice = c("color","white","black"))
                 ),
                 
-                
+                numericInput ("plot_height_A", "Height (# pixels): ", value = 600),
+                numericInput ("plot_width_A", "Width (# pixels):", value = 800),
 
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
@@ -234,8 +235,20 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             mainPanel(
                 tabsetPanel(
 #                    tabPanel("Table", tableOutput("merged_stack")),
-                    tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
-                    tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
+                    tabPanel("Plot", downloadButton("downloadMergedPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadMergedPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadMergedPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadMergedPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("merged_plot", height="120%"))),
+                            NULL,
+                    ),
+                    tabPanel("MultiPlot", downloadButton("downloadMultiPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadMultiPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadMultiPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadMultiPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("multi_dist_plot", height="120%"))),
+                            NULL,
+                    ),
                     tabPanel("Statistics", tableOutput("merged_statistics"))
                 )
             )
@@ -832,12 +845,15 @@ server <- function(input, output, session) {
     p
 
   })  
+
+    width_A <- reactive ({ input$plot_width_A })
+    height_A <- reactive ({ input$plot_height_A })
   
-  output$merged_plot <- renderPlot({
+    output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     
-    p <-merged_plot()
-    p
-  })  
+        p <-merged_plot()
+        p
+    })  
   
   multi_plot <- reactive({
     
@@ -987,7 +1003,7 @@ server <- function(input, output, session) {
     
   })  
   
-  output$multi_dist_plot <- renderPlot({
+  output$multi_dist_plot <- renderPlot(width = width_A, height = height_A, {
     
       multi_plot()
     
@@ -1109,7 +1125,114 @@ server <- function(input, output, session) {
       }
     )
     
+   
+    # download for merged plot
     
+    output$downloadMergedPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadMergedPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadMergedPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+    output$downloadMergedPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_A*4, height = input$plot_height_A*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(merged_plot())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+ 
+    # download for multi plot
+    # TODO: check why multi plot files have a grid when downloaded, while no grid is displayed in the app
+
+
+    output$downloadMultiPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadMultiPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadMultiPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+    output$downloadMultiPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_A*4, height = input$plot_height_A*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(multi_plot())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+
+
     ### Panel B
     
     plot_correlation <- reactive({
@@ -1284,8 +1407,6 @@ server <- function(input, output, session) {
         },
         contentType = "application/eps" # MIME type of the image
     )
-
-
 
     output$downloadPlotPNG <- downloadHandler(
         filename <- function() {
