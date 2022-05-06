@@ -819,14 +819,14 @@ server <- function(input, output, session) {
         x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
 
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, 0, text_size)
       
     } else {
       
         x_data <- unlist(results_all_df[feature])
         statistics <- compute_linear_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, 0, text_size)
     }
     
     p
@@ -965,14 +965,14 @@ server <- function(input, output, session) {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         #}
         #plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
         
       } else {
         
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
         #plot_title <- file_name
-        p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
+        p <- linear_histogram(parameters, input, statistics, x_data, i,  plot_title)
       }
       
       

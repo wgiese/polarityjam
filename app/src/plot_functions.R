@@ -255,7 +255,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
 
 
 
-rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
+rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title, plot_nr = 0, text_size = 24) {
   
     bin_size = 360/input$bins
     #plot_title <- parameters[input$feature_select][[1]][3]
@@ -279,15 +279,26 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
         feature_circular_ <- feature_circular 
     }
 
+    color_fill <- select_color(parameters, input, plot_nr)
+    color <- color_fill
+    
+    alpha <- 0.5
+    if (input$adjust_alpha == TRUE) {
+        alpha <- input$alpha_fill
+        if (input$outline != "color")
+            color <- input$outline
+    }
 
 
+    
+    #TODO: add scatter plot and KDE
 
     p <- ggplot() +
         geom_histogram(aes(x = feature_circular_, y = ..ncount..),
                    breaks = seq(0, 360, bin_size),
-                   color = "black",
-                   fill = "black",
-                   alpha = 0.5) +
+                   color = color,
+                   fill = color_fill,
+                   alpha = alpha) +
 #        geom_density(aes(x = feature_circular)) +
         ggtitle(plot_title) +
         theme(plot.title = element_text(size = 10, face = "bold")) +
@@ -457,7 +468,7 @@ compare_plot_2_axial <- function(parameters, input, statistics, feature_circular
   
 }
 
-linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, text_size = 24) {
+linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, plot_nr = 0, text_size = 24) {
   
     
     bin_size = max(feature_linear)/input$bins
