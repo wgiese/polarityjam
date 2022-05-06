@@ -8,10 +8,10 @@ import skimage.io
 import skimage.measure
 import skimage.segmentation
 
+from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
 from polarityjam.utils.seg import get_outline_from_mask
-from polarityjam.polarityjam_logging import get_logger
 
 
 def get_image_for_segmentation(parameters, img):
@@ -417,9 +417,9 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
 
     angle_rad = np.pi - angle_rad_
 
-    #if angle_rad_ < 0.0:
+    # if angle_rad_ < 0.0:
     #    angle_rad = np.pi - angle_rad_
-    #else:
+    # else:
     #    angle_rad = angle_rad_ 
 
     return angle_rad, vec_x, vec_y
@@ -488,30 +488,35 @@ def morans_data_prep(rag, feature):
 
 
 def run_morans(morans_features, weihgts):
-    """run morans I, measure of spatial coorelation and signficance respectively:  mr_i.I,  mr_i.p_norm."""
+    """run morans I, measure of spatial correlation and significance respectively:  mr_i.I,  mr_i.p_norm."""
     mi = pysalexp.esda.Moran(morans_features, weihgts, two_tailed=False)
 
     return mi
-def second_nieghbours(rag,node):
-   "return ind labels of second nearest neigbours of rag"
+
+
+# todo: nowhere used, include in the feature analysis
+def second_neighbors(rag, node):
+    """return ind labels of second nearest neighbors of rag"""
     second_nearest = []
     first_nearest = (list(rag.neighbors(node)))
     for element in first_nearest:
         k_nearest = (list(rag.neighbors(element)))
-        second_nearest = second_nearest + k_nearest 
+        second_nearest = second_nearest + k_nearest
     set1nd = set(first_nearest)
     set2nd = set(second_nearest)
     twond_heybrs = list(set2nd.difference(set1nd))
     twond_heybrs = list(filter(lambda a: a != node, twond_heybrs))
 
-    return(twond_heybrs)
+    return twond_heybrs
 
 
-def shared_edges(rag,node):
-    "return ind labels of neighbours but its a function "
+# todo: nowhere used, include in the feature analysis
+def shared_edges(rag, node):
+    """return ind labels of neighbours but its a function """
     first_nearest = list(set(rag.neighbors(node)))
-    return(first_nearest)
+    return first_nearest
 
+# todo: nowhere used, include in the feature analysis, fix import errors
 def morans_I(G,feature_list):
     "do morans i with less dependencies"
     "To do this you need a feature list - u get this from the data prep function"
