@@ -511,3 +511,25 @@ def shared_edges(rag,node):
     "return ind labels of neighbours but its a function "
     first_nearest = list(set(rag.neighbors(node)))
     return(first_nearest)
+
+def morans_I(G,feature_list):
+    "do morans i with less dependencies"
+    "To do this you need a feature list - u get this from the data prep function"
+    "and a graph - G"
+    value = feature_list
+    weightMatrix = nx.to_numpy_matrix(G)
+
+    meanValue = np.mean(value)
+    valueDifFromMean = value - meanValue
+    numberOfValues = len(value)
+    sumOfWeightMatrix = np.sum(weightMatrix)
+    summedVariance = np.sum((value - meanValue)**2)
+
+    weightedCov = 0
+    for i in range(weightMatrix.shape[0]):
+        for j in range(weightMatrix.shape[1]):
+            weightedCov += weightMatrix[i, j] * valueDifFromMean[i] * valueDifFromMean[j]
+
+    weightedCovariance = weightedCov
+    moransI = (numberOfValues * weightedCovariance) / (sumOfWeightMatrix * summedVariance)
+    return(moransI)
