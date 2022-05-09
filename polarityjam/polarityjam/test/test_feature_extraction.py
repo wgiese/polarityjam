@@ -4,9 +4,9 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from vascu_ec.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
-from vascu_ec.test.test_common import TestCommon
-from vascu_ec.utils.io import read_parameters, read_image
+from polarityjam.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
+from polarityjam.test.test_common import TestCommon
+from polarityjam.utils.io import read_parameters, read_image
 
 
 class TestFunctions(TestCommon):

@@ -7,7 +7,7 @@ import skimage.segmentation
 from skimage import morphology
 from scipy import ndimage as ndi
 
-from vascu_ec.vascu_ec_logging import get_logger
+from polarityjam.polarityjam_logging import get_logger
 
 
 def get_cellpose_model(parameters):

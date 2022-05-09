@@ -2,11 +2,11 @@ import time
 import unittest
 from pathlib import Path
 
-import vascu_ec.test.test_config as config
+import polarityjam.test.test_config as config
 
-from vascu_ec.test import test_integration, test_feature_extraction
-from vascu_ec.utils.io import create_path_recursively
-from vascu_ec.vascu_ec_logging import get_logger
+from polarityjam.test import test_integration, test_feature_extraction
+from polarityjam.utils.io import create_path_recursively
+from polarityjam.polarityjam_logging import get_logger
 
 
 def start_tests(target_folder=None):

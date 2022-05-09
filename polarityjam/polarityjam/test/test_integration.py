@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from vascu_ec.argument_parsing import startup
-from vascu_ec.test.test_common import TestCommon
-from vascu_ec.utils.io import get_doc_file_prefix
+from polarityjam.argument_parsing import startup
+from polarityjam.test.test_common import TestCommon
+from polarityjam.utils.io import get_doc_file_prefix
 
 
 class TestIntegration(TestCommon):
