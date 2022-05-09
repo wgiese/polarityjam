@@ -988,7 +988,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
         #plot_title <- file_name
-        p <- linear_histogram(parameters, input, statistics, x_data, i,  plot_title)
+        p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size)
       }
       
       

@@ -476,55 +476,30 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
   
     p <- ggplot()
 
-    if (input$histogram_plot) {
-        p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
-                   breaks = seq(0, max(feature_linear), bin_size),
-                   color = "black",
-                   fill = "black",
-                   alpha = 0.5)
-    }
-
-    if (input$kde_plot) {
-        p <- p + geom_density(aes(x = feature_linear, y = ..density..),
-                   color = "black",
-                   fill = "black",
-                   alpha = 0.5)
-
-    }
-
-    p <- p + ggtitle(plot_title) +
-        theme(axis.text.x = element_text(size = 18)) +
-        theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
- 
-    p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
-    return(p)
-  
-}
-
-
-
-
-linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, text_size = 24) {
-  
+    color_fill <- select_color(parameters, input, plot_nr)
+    color <- color_fill
     
-    bin_size = max(feature_linear)/input$bins
-    #plot_title <- parameters[input$feature_select][[1]][3]
-  
-    p <- ggplot()
+    alpha <- 0.5
+    if (input$adjust_alpha == TRUE) {
+        alpha <- input$alpha_fill
+        if (input$outline != "color")
+            color <- input$outline
+    }
+
+
 
     if (input$histogram_plot) {
         p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
                    breaks = seq(0, max(feature_linear), bin_size),
-                   color = "black",
-                   fill = "black",
+                   color = color,
+                   fill = color_fill,
                    alpha = 0.5)
     }
 
     if (input$kde_plot) {
         p <- p + geom_density(aes(x = feature_linear, y = ..density..),
-                   color = "black",
-                   fill = "black",
+                   color = color,
+                   fill = color_fill,
                    alpha = 0.5)
 
     }
@@ -538,6 +513,43 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
     return(p)
   
 }
+
+
+
+
+#linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, plot_nr = 0, text_size = 24) {
+#  
+#    
+#    bin_size = max(feature_linear)/input$bins
+    #plot_title <- parameters[input$feature_select][[1]][3]
+##  
+#    p <- ggplot()
+#
+#    if (input$histogram_plot) {
+#        p <- p + geom_histogram(aes(x = feature_linear, y = ..density..),
+#                   breaks = seq(0, max(feature_linear), bin_size),
+#                   color = "black",
+#                   fill = "black",
+#                   alpha = 0.5)
+#    }
+
+#    if (input$kde_plot) {
+#        p <- p + geom_density(aes(x = feature_linear, y = ..density..),
+#                   color = "black",
+#                   fill = "black",
+#                   alpha = 0.5)
+#
+#    }
+
+#    p <- p + ggtitle(plot_title) +
+#        theme(axis.text.x = element_text(size = 18)) +
+#        theme_minimal(base_size = text_size) +
+#        xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
+# 
+#    p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
+#    return(p)
+  
+#}
 
 
 compare_plot_linear <- function(parameters, input, statistics, feature_linear_1, feature_linear_2, plot_title, text_size = 24) {
