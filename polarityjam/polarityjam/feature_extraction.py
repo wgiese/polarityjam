@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import networkx as nx
 import pysal.explore as pysalexp
 import pysal.lib as pysallib
 import scipy.ndimage as ndi
@@ -517,11 +518,16 @@ def shared_edges(rag, node):
     return first_nearest
 
 # todo: nowhere used, include in the feature analysis, fix import errors
-def morans_I(G,feature_list):
+# dependency issues should be resolved
+# Not sure if this implimentation is able to handle non/grid lattice graphs
+def morans_I(G,feature):
     "do morans i with less dependencies"
-    "To do this you need a feature list - u get this from the data prep function"
+    "To do this you need a feature name associated with graph feature"
     "and a graph - G"
-    value = feature_list
+    
+    morans_features = [G.nodes[nodes_idx][feature] for nodes_idx in list(G.nodes)]
+
+    value = morans_features
     weightMatrix = nx.to_numpy_matrix(G)
 
     meanValue = np.mean(value)
