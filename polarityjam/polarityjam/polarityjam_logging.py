@@ -2,9 +2,9 @@ import logging
 import sys
 from pathlib import Path
 
-from vascu_ec.utils.io import get_doc_file_prefix
+from polarityjam.utils.io import get_doc_file_prefix
 
-LOGGER_NAME = 'vascu_ec'
+LOGGER_NAME = 'polarityjam'
 
 
 def get_logger():

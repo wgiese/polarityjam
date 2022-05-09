@@ -10,26 +10,26 @@ if you cloned the whole project and now look at this instructions visit [this fi
 - Install via pip:
     - clone https://github.com/wgiese/vascu-ec-app via git or download via browser
     - change to the base directory
-    - run `pip install -e vascu_ec`
+    - run `pip install -e polarityjam`
     
 ## Execute the feature extraction pipeline
 
 - from the commandline:
-    - run `vascu_ec` to obtain further help on how to start a feature extraction process
-    - run `vascu_ec_test` to run the provided test suit and check your installation 
+    - run `polarityjam` to obtain further help on how to start a feature extraction process
+    - run `polarityjam_test` to run the provided test suit and check your installation 
     
 ### Extract features from single tif
 
-run `vascu_ec run paramfile.yml input.tif outputpath`. 
+run `polarityjam run paramfile.yml input.tif outputpath`. 
 Optionally define a `--filename_prefix` to rename the input file.
 
 ### Extract features from a folder containing tif files
 
-run `vascu_ec run-stack paramfile.yml inputpath outputpath`. 
+run `polarityjam run-stack paramfile.yml inputpath outputpath`. 
 
 ### Extract features from a given list of conditions (folders) provided within a csv file
 
-run `vascu_ec run-key paramfile.yml inputpath inputkey.csv outputpath`. 
+run `polarityjam run-key paramfile.yml inputpath inputkey.csv outputpath`. 
 csv file might look like this:
 
 |folder_name  |short_name |

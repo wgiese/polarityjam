@@ -9,9 +9,9 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 from skimage.measure import label, regionprops
 
-from vascu_ec.utils.rag import orientation_graph_nf
-from vascu_ec.utils.seg import get_outline_from_mask
-from vascu_ec.vascu_ec_logging import get_logger
+from polarityjam.utils.rag import orientation_graph_nf
+from polarityjam.utils.seg import get_outline_from_mask
+from polarityjam.polarityjam_logging import get_logger
 
 # for figure plot resolution
 FIGURE_DPI = 300

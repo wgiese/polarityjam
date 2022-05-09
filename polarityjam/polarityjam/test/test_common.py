@@ -6,9 +6,9 @@ from pathlib import Path
 import yaml
 from pyunpack import Archive
 
-import vascu_ec.test.test_config as config
-from vascu_ec.utils.io import list_files_recursively
-from vascu_ec.vascu_ec_logging import close_logger
+import polarityjam.test.test_config as config
+from polarityjam.utils.io import list_files_recursively
+from polarityjam.polarityjam_logging import close_logger
 
 
 class TestCommon(unittest.TestCase):

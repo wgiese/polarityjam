@@ -2,7 +2,7 @@ from album.runner.api import setup, get_args
 
 glob_ip = ""
 
-env_file = """name: Vascuec-R-Shiny-App-Solution
+env_file = """name: Polarityjam-R-Shiny-App-Solution
 channels:
   - conda-forge
   - defaults
@@ -34,11 +34,11 @@ def install():
     import subprocess
     import sys
     import os
-    print("Installing vascu_ec and dependencies")
-    vascu_repo = Path(get_package_path()).joinpath('vascu_repo')
-    os.mkdir(vascu_repo)
-    Repo.clone_from("https://github.com/wgiese/vascu-ec-app",vascu_repo)
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", Path(vascu_repo).joinpath('vascu_ec')])
+    print("Installing polarityjam and dependencies")
+    polarityjam_repo = Path(get_package_path()).joinpath('polarityjam')
+    os.mkdir(polarityjam_repo)
+    Repo.clone_from("https://github.com/wgiese/vascu-ec-app",polarityjam_repo)
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", Path(polarityjam_repo).joinpath('polarityjam')])
 
 
 def run():
@@ -56,7 +56,7 @@ def run():
   
     class LogPipe(threading.Thread):
 
-        #Class adapted from GitHub: https://gist.github.com/alfredodeza/dcea71d5c0234c54d9b1
+        # Class adapted from GitHub: https://gist.github.com/alfredodeza/dcea71d5c0234c54d9b1
     
         def __init__(self):
             """Setup the object with a logger and a loglevel
@@ -105,7 +105,7 @@ def run():
                 pass
     
     #Path to R-Shiny-App
-    vascu_repo = Path(get_package_path()).joinpath('vascu_repo','app')
+    polarityjam_repo = Path(get_package_path()).joinpath('polarityjam','app')
     tmp_str = ""
     
     #Pipe to pipe the output of the R-Shiny subprocess into a buffer StringIO which can be accessed
@@ -117,9 +117,9 @@ def run():
     
     #start the R-Shiny-App in a subprocess
     if platform.system() == 'Windows':
-        process = Popen(["Rscript", Path(vascu_repo).joinpath('app.R')], creationflags=CREATE_NEW_CONSOLE,stdout=logpipe,stderr=logpipe)
+        process = Popen(["Rscript", Path(polarityjam_repo).joinpath('app.R')], creationflags=CREATE_NEW_CONSOLE,stdout=logpipe,stderr=logpipe)
     else:
-        process = subprocess.run(["Rscript", Path(vascu_repo).joinpath('app.R')],stdout=logpipe,stderr=logpipe,shell=True)
+        process = subprocess.run(["Rscript", Path(polarityjam_repo).joinpath('app.R')],stdout=logpipe,stderr=logpipe,shell=True)
     
     #While the subprocess runs the output gets filtered for the Ip of the App. If found a webbrowser will be opened
     while process.poll()==None:
@@ -142,22 +142,22 @@ def test():
     global glob_ip
     #Test if the App is live
     if urllib.request.urlopen(glob_ip).getcode() == 200:
-        print("Vascu_ec R-shiny App succesfully started. Test succesfull!")
+        print("Polarityjam R-shiny App succesfully started. Test succesfull!")
     else:
-        print("Vascu_ec R-shiny App could not be started. Test failed!") 
+        print("Polarityjam R-shiny App could not be started. Test failed!")
 
 setup(
     group="album",
-    name="Vascuec-R-Shiny-App-Solution",
+    name="Polarityjam-r-shiny",
     version="0.1.0",
-    title="Vascuec R Shiny App Solution",
-    description="A Solution to run the Vascuec R Shiny App.",
+    title="Polarityjam R-Shiny App Solution",
+    description="A Solution to run the Polarityjam R Shiny App.",
     authors=["Lucas Rieckert", "Jan Philipp Albrecht"],
     cite=[{
         "text": "Your first citation text",
         "doi": "your first citation doi"
     }],
-    tags=["vascuec", "r","shiny","app"],
+    tags=["polarityjam", "r","shiny","app"],
     license="UNLICENSE",
     documentation="",
     covers=[{

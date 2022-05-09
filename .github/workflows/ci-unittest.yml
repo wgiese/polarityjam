@@ -27,11 +27,11 @@ jobs:
     - name: Install_linux
       run: |
         python -m pip install --upgrade pip
-        pip install -e vascu_ec
+        pip install -e polarityjam
         
     - name: Running_linux
       run: |
-        cd vascu_ec/
+        cd polarityjam/
         python -m unittest
 
         
@@ -50,11 +50,11 @@ jobs:
     - name: Install_windows
       run: |
         python -m pip install --upgrade pip
-        pip install -e vascu_ec
+        pip install -e polarityjam
         
     - name: Running_windows
       run: |
-        cd vascu_ec/
+        cd polarityjam/
         python -m unittest
         
   build_macos:
@@ -72,9 +72,9 @@ jobs:
     - name: Install_macos
       run: |
         python -m pip install --upgrade pip
-        pip install -e vascu_ec
+        pip install -e polarityjam
         
     - name: Running_macos
       run: |
-        cd vascu_ec/
+        cd polarityjam/
         python -m unittest

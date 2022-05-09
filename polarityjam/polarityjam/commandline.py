@@ -5,15 +5,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from vascu_ec.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
-from vascu_ec.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
+from polarityjam.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
+from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
-from vascu_ec.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
-from vascu_ec.utils.seg import load_or_get_cellpose_segmentation
-from vascu_ec.vascu_ec_logging import get_logger
+from polarityjam.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
+from polarityjam.utils.seg import load_or_get_cellpose_segmentation
+from polarityjam.polarityjam_logging import get_logger
 
 
-# todo: Rename. Postponed for now due to missing junction-features.
 # todo: run the app on a server? Ask for resources! Missing features?
 
 def run(args):
