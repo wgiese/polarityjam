@@ -855,30 +855,30 @@ server <- function(input, output, session) {
         p
     })  
   
-  multi_plot <- reactive({
+    multi_plot <- reactive({
     
-    source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
-    source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     
-    parameters <- fromJSON(file = "parameters/parameters.json")
-    text_size <- 12
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        text_size <- 12
     
-    datapath <- stack_data_info$datapath
-    print(datapath)
+        datapath <- stack_data_info$datapath
+        print(datapath)
     
-    file_list <- list.files(datapath)
-    print(file_list)
+        file_list <- list.files(datapath)
+        print(file_list)
     
-    i <- 1
-    angle_dists <- list()
-    file_names <- list()
-    polarity_indices <- list()
-    angle_mean_degs <- list()
+        i <- 1
+        angle_dists <- list()
+        file_names <- list()
+        polarity_indices <- list()
+        angle_mean_degs <- list()
     
-    results_all_df <- mergedStack()
+        results_all_df <- mergedStack()
     
-    for(row_nr in 1:nrow(results_all_df)) {
-      row <- results_all_df[row_nr,]
+        for(row_nr in 1:nrow(results_all_df)) {
+            row <- results_all_df[row_nr,]
       a <- row$major_axis_length
       b <- row$minor_axis_length
       
@@ -948,8 +948,8 @@ server <- function(input, output, session) {
       
         plot_title <- file_name
         
-        if (nchar(file_name) > 16) {
-            max_fl <- 6
+        if (nchar(file_name) > 37) {
+            max_fl <- 17
             file_name_end <- substr(file_name, nchar(file_name) - max_fl + 1, nchar(file_name))
             file_name_start <- substr(file_name, 1, max_fl)
             plot_title <-paste0(file_name_start, "...", file_name_end)
@@ -1275,6 +1275,7 @@ server <- function(input, output, session) {
         #p_value <- res$p.value
 
         plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+        #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
         #colnames(plot_df) <- c(feature_1_name, feature_2_name)
