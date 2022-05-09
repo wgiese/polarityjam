@@ -34,6 +34,7 @@ options(shiny.maxRequestSize = 30*1024^2)
 
 library(shiny)
 library(shinyFiles)
+library(shinycssloaders)
 library(circular)
 #library(CircMLE)
 library(ggplot2)
@@ -49,7 +50,7 @@ library(CircStats)
 library(readxl)
 library(fs)
 library(rjson)
-
+#library(DescTools)
 
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
@@ -74,10 +75,45 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Data preparation",
         sidebarLayout(
             sidebarPanel(
-                shinyDirButton("dir", "Input directory", "Upload"),
-                verbatimTextOutput("dir", placeholder = TRUE),
-                actionButton("refreshStack", "Refresh"),
+                radioButtons("data_upload_form", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
                 
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'single file'",
+                    fileInput("stackData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation", "File upload", TRUE),
+                ),
+
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'folder'",
+                    shinyDirButton("dir", "Input directory", "Upload"),
+                    verbatimTextOutput("dir", placeholder = TRUE),
+                    actionButton("refreshStack", "Refresh"),
+                ),
+                
+
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'key file'",
+                    fileInput("keyData", "Upload catalogue",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation_key", "File upload", TRUE),
+                ),
+
+   
+                #conditionalPanel(
+                #    condition = "input.data_upload_form == 'folder'",
+                #    shinyDirButton("dir", "Input directory", "Upload"),
+                #    verbatimTextOutput("dir", placeholder = TRUE),
+                #    actionButton("refreshStack", "Refresh"),
+                #),
+
+                                
                 selectInput("sample_col", "Identifier of samples", choices = ""),
                 selectInput("condition_col", "Identifier of conditions", choices = ""),
 
@@ -112,13 +148,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Image stack analysis",
         sidebarLayout(
             sidebarPanel(
-                fileInput("stackData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                checkboxInput("header_correlation", "File upload", TRUE),
-#                shinyDirButton("dir", "Input directory", "Upload"),
+                #                shinyDirButton("dir", "Input directory", "Upload"),
 #                verbatimTextOutput("dir", placeholder = TRUE),
 #                actionButton("refreshStack", "Refresh"),
                 sliderInput("bins",
@@ -143,7 +173,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
                             "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
-                            choices = c("Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test", "None")),
+                            choices = c("None", "Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test")),
                 conditionalPanel(
                    # condition = "input.stats_method %in% c('V-Test')",
                     condition = "input.stats_method == 'V-Test'",
@@ -175,12 +205,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     choices = c("up","down","left","right","all"))
                 ),
 
-                selectInput("select_colourmap", "Choose a color scheme",
+                selectInput("select_colormap", "Choose a color scheme",
                             choices = c("gray", "Okabe_Ito", "Tol_bright", "Tol_muted", "Tol_light")),
                 
                 conditionalPanel(
-                    condition = "input.select_colourmap != 'gray'",
-                    numericInput ("select_colour", "Select a color from color scheme:", value=1, min = 1, max = 10, step = 1),
+                    condition = "input.select_colormap != 'gray'",
+                    numericInput ("select_color", "Select a color from color scheme:", value=1, min = 1, max = 10, step = 1),
                 ),
                 
                 checkboxInput("adjust_alpha", "adjust transparency", FALSE),
@@ -188,10 +218,11 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 conditionalPanel(
                     condition = "input.adjust_alpha == true",
                     numericInput ("alpha_fill", "set alpha fill:", value=0.5, min = 0.0, max = 1.0, step = 0.1),
-                    selectInput ("outline", "choose outline style:", choice = c("colour","white","black"))
+                    selectInput ("outline", "choose outline style:", choice = c("color","white","black"))
                 ),
                 
-                
+                numericInput ("plot_height_A", "Height (# pixels): ", value = 600),
+                numericInput ("plot_width_A", "Width (# pixels):", value = 800),
 
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
@@ -204,8 +235,20 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             mainPanel(
                 tabsetPanel(
 #                    tabPanel("Table", tableOutput("merged_stack")),
-                    tabPanel("Plot", plotOutput("merged_plot", height = "860px")),
-                    tabPanel("MultiPlot", plotOutput("multi_dist_plot", height = "860px")),
+                    tabPanel("Plot", downloadButton("downloadMergedPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadMergedPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadMergedPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadMergedPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("merged_plot", height="120%"))),
+                            NULL,
+                    ),
+                    tabPanel("MultiPlot", downloadButton("downloadMultiPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadMultiPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadMultiPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadMultiPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("multi_dist_plot", height="120%"))),
+                            NULL,
+                    ),
                     tabPanel("Statistics", tableOutput("merged_statistics"))
                 )
             )
@@ -219,25 +262,39 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Correlation analysis",
         sidebarLayout(
             sidebarPanel(
-                fileInput("correlationData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                checkboxInput("header_correlation", "File upload", TRUE),
+#                fileInput("correlationData", "Upload data file",
+#                            accept = c( "text/csv",
+#                            "text/comma-separated-values,text/plain",
+#                            ".csv",".xlsx")),
+#                            tags$hr(),
+#                checkboxInput("header_correlation", "File upload", TRUE),
                 selectInput("feature_select_1", "Choose a feature 1:",
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("feature_select_2", "Choose a feature 2:",
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("datasetSingleImage", "Download:",
                             choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
-                            tags$hr(),
-                checkboxInput("header_image", "File upload", TRUE),
-                downloadButton("downloadCorrelationData", "Download")
+                #tags$hr(),
+                selectInput("corr_plot_option", "Choose a plot option:",
+                            choices = c("correlation plot","spoke plot")),
+                numericInput ("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
+                numericInput ("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
+                numericInput ("plot_height_corr", "Height (# pixels): ", value = 600),
+                numericInput ("plot_width_corr", "Width (# pixels):", value = 800),
+                checkboxInput ("header_image", "File upload", TRUE),
+                downloadButton ("downloadCorrelationData", "Download")
             ),
             mainPanel(
                 tabsetPanel(
-                tabPanel("Plot", plotOutput("correlation_plot", height = "1000px"))#,
+                tabPanel("Plot", downloadButton("downloadPlotPDF", "Download pdf-file"), 
+                            downloadButton("downloadPlotEPS", "Download eps-file"), 
+                            downloadButton("downloadPlotSVG", "Download svg-file"), 
+                            downloadButton("downloadPlotPNG", "Download png-file"),
+                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("correlation_plot", height="120%"))),
+                            NULL,
+                )
+                            #plotOutput("correlation_plot", height = "1000px")),#,
+                #tabPanel("Spoke Plot", plotOutput("spoke_plot", height = "1000px"))#,
                 #tabPanel("Statistics", tableOutput("singleImageStatistics"))
                 )
             )
@@ -402,7 +459,7 @@ server <- function(input, output, session) {
         print("var_list")
         print(var_list)
         #}
-    #    #        updateSelectInput(session, "colour_list", choices = var_list)
+    #    #        updateSelectInput(session, "color_list", choices = var_list)
     #    #updateSelectInput(session, "y_var", choices = var_list, selected="Value")
     #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
         updateSelectInput(session, "sample_col", choices = var_list, selected="label")
@@ -420,35 +477,90 @@ server <- function(input, output, session) {
    
     inFileStackData <- input$stackData
 
-    if (is.null(inFileStackData)) {
+    if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+        results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    } else if (input$data_upload_form == "folder") {
         datapath <- stack_data_info$datapath 
         
-        # get list of files in the datapath
         file_list <- list.files(datapath)
         print("File_list")
         print(file_list)
-
+    
         counter <- 1
         plist <- list()
         results_all_df <-data.frame()
         tag <- FALSE
         
         for (file_name in file_list[1:length(file_list)]){
-
-          if (file_ext(file_name) == "csv") {
-            results_df <- read.csv(paste0(datapath,"/",file_name))
-            results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
-            results_all_df  <- rbind(results_all_df, results_df )
-          }
+    
+            if (file_ext(file_name) == "csv") {
+                results_df <- read.csv(paste0(datapath,"/",file_name))
+                results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
+                results_all_df  <- rbind(results_all_df, results_df )
+            }
         }
         
         if (length(results_all_df) > 1) {
-          results_all_df$datapath <- datapath
-          results_all_df$experimental_condition <- input$exp_condition
+            results_all_df$datapath <- datapath
+            results_all_df$experimental_condition <- input$exp_condition
         }
-    } else {    
-        results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+
+    } else if ((input$data_upload_form == "key file") & !is.null(input$keyData) ) {
+        results_all_df <-data.frame()
+        print("key data path")
+        print(input$keyData$datapath)
+        key_file <- read.csv(input$keyData$datapath, header = input$header_correlation)
+        print(key_file)
+
+        for (i in 1:nrow(key_file)){
+            data_path <- key_file[i,"feature_table"]
+            print("data_path")
+            print(data_path)
+            #split_path <- SplitPath(input$keyData)$dirname
+            #print(split_path)
+            results_df <- read.csv(data_path)
+            results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
+            results_all_df  <- rbind(results_all_df, results_df )
+        }
+
+    } else {
+
+        
+        results_all_df <-data.frame()
+        #datapath = "../test_data/stack_EC_microscopy/120821 BSA #01.csv"
+        #results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     }
+
+
+    #if (is.null(inFileStackData)) {
+    #    datapath <- stack_data_info$datapath 
+    #    
+    #    # get list of files in the datapath
+    #    file_list <- list.files(datapath)
+    #    print("File_list")
+    #    print(file_list)
+    #
+    #    counter <- 1
+    #    plist <- list()
+    #    results_all_df <-data.frame()
+    #    tag <- FALSE
+    #    
+    #    for (file_name in file_list[1:length(file_list)]){
+    #
+    #      if (file_ext(file_name) == "csv") {
+    #        results_df <- read.csv(paste0(datapath,"/",file_name))
+    #        results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
+    #        results_all_df  <- rbind(results_all_df, results_df )
+    #      }
+    #    }
+    #    
+    #    if (length(results_all_df) > 1) {
+    #      results_all_df$datapath <- datapath
+    #      results_all_df$experimental_condition <- input$exp_condition
+    #    }
+    #} else {    
+    #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    #}
     
     
     results_all_df
@@ -705,7 +817,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_all_df[feature])*180.0/pi
         statistics <- compute_circular_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, 0, text_size)
       
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -720,25 +832,28 @@ server <- function(input, output, session) {
         x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
 
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, 0, text_size)
       
     } else {
       
         x_data <- unlist(results_all_df[feature])
         statistics <- compute_linear_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, 0, text_size)
     }
     
     p
 
   })  
+
+    width_A <- reactive ({ input$plot_width_A })
+    height_A <- reactive ({ input$plot_height_A })
   
-  output$merged_plot <- renderPlot({
+    output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     
-    p <-merged_plot()
-    p
-  })  
+        p <-merged_plot()
+        p
+    })  
   
   multi_plot <- reactive({
     
@@ -781,11 +896,20 @@ server <- function(input, output, session) {
     }
     
     feature <- parameters[input$feature_select][[1]][1]
-    
-    plist <- vector('list', length(unique(results_all_df$filename)))
-    
-    for(file_name in unique(results_all_df$filename)) {
-      results_df <- subset(results_all_df, results_all_df$filename == file_name )
+    condition_col <- input$condition_col   
+
+    condition_list <- unlist(unique(results_all_df[condition_col]))
+    #plist <- vector('list', length(unique(results_all_df$filename)))
+    plist <- vector('list', length(condition_list))
+    print("length of plot list")
+    print(plist)
+    print("list of unique entries")
+    print(unlist(unique(results_all_df[condition_col])))
+ 
+    #for(file_name in unique(results_all_df$filename)) {
+    #  results_df <- subset(results_all_df, results_all_df$filename == file_name )
+    for(file_name in condition_list) {
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name )
       
       #values <- compute_polarity_index(results_df)
       
@@ -819,13 +943,21 @@ server <- function(input, output, session) {
         #polarity_index <- polarity_indices[[i]]
         #angle_mean_deg <- angle_mean_degs[[i]]
       
-        results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        #results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name)
       
         plot_title <- file_name
-        if (nchar(file_name) > 15) {
-            plot_title <- paste0("image #",toString(i))
-            print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
-        }        
+        
+        if (nchar(file_name) > 16) {
+            max_fl <- 6
+            file_name_end <- substr(file_name, nchar(file_name) - max_fl + 1, nchar(file_name))
+            file_name_start <- substr(file_name, 1, max_fl)
+            plot_title <-paste0(file_name_start, "...", file_name_end)
+        }
+        #if (nchar(file_name) > 15) {
+        #    plot_title <- paste0("image #",toString(i))
+        #    print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
+        #}        
 
 
       if (parameters[input$feature_select][[1]][2] == "axial") {
@@ -835,7 +967,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_df[feature])*180.0/pi
         print(paste0("Length of filename", toString(i)))
         
-                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
+                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
         
       }
       else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -849,14 +981,14 @@ server <- function(input, output, session) {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         #}
         #plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, text_size)
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
         
       } else {
         
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
         #plot_title <- file_name
-        p <- linear_histogram(parameters, input, statistics, x_data, plot_title)
+        p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size)
       }
       
       
@@ -871,7 +1003,7 @@ server <- function(input, output, session) {
     
   })  
   
-  output$multi_dist_plot <- renderPlot({
+  output$multi_dist_plot <- renderPlot(width = width_A, height = height_A, {
     
       multi_plot()
     
@@ -993,36 +1125,359 @@ server <- function(input, output, session) {
       }
     )
     
+   
+    # download for merged plot
     
+    output$downloadMergedPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadMergedPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadMergedPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(merged_plot())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+    output$downloadMergedPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Merged_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_A*4, height = input$plot_height_A*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(merged_plot())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+ 
+    # download for multi plot
+    # TODO: check why multi plot files have a grid when downloaded, while no grid is displayed in the app
+
+
+    output$downloadMultiPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadMultiPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadMultiPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_A/72, height = input$plot_height_A/72)
+            plot(multi_plot())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+    output$downloadMultiPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Multi_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_A*4, height = input$plot_height_A*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(multi_plot())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+
+
     ### Panel B
     
     plot_correlation <- reactive({
       
-      parameters <- fromJSON(file = "parameters/parameters.json")
+        parameters <- fromJSON(file = "parameters/parameters.json")
       
-      inFileCorrelationData <- input$correlationData
+        text_size <- input$text_size_corr
+
+        #inFileCorrelationData <- input$correlationData
       
-      if (is.null(inFileCorrelationData))
-        return(NULL)
+        #if (is.null(inFileCorrelationData))
+        #    return(NULL)
       
-      print(inFileCorrelationData$datapath)
-      correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        #print(inFileCorrelationData$datapath)
+        #correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+        
+        correlation_data <- mergedStack() #read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
       
-      feature_1 <- parameters[input$feature_select_1][[1]][1]
-      feature_2 <- parameters[input$feature_select_2][[1]][1]
-      
-      plot_df <- as.data.frame(c(correlation_data[feature_1], correlation_data[feature_2]))
-      colnames(plot_df) <- c("x","y")
-      p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point()
-      p
-      
+        feature_1 <- parameters[input$feature_select_1][[1]][1]
+        feature_2 <- parameters[input$feature_select_2][[1]][1]
+        feature_1_values <- unlist(correlation_data[feature_1])
+        feature_1_values_ <- correlation_data[feature_1]*180.0/pi
+        feature_2_values <- unlist(correlation_data[feature_2])
+        feature_2_values_ <- correlation_data[feature_2]*180.0/pi
+        
+        feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+        feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+        
+        feature_1_name <- parameters[input$feature_select_1][[1]][3]
+        feature_2_name <- parameters[input$feature_select_2][[1]][3]
+
+        res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+
+        print(res)
+        print(str(res))
+        p_value <- signif(res$p.value, digits = 3)
+        reg_coeff <- signif(res$r, digits = 3)
+
+        #reg_coeff <- res$r
+        #p_value <- res$p.value
+
+        plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+        #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
+        #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
+        #colnames(plot_df) <- c(feature_1_name, feature_2_name)
+        colnames(plot_df) <- c("x","y")
+        p <-ggplot(plot_df, aes(x=x, y=y)) + geom_point(color = "black", size = input$marker_size_corr) + theme_minimal(base_size = text_size)# theme_bw()
+        p <- p + theme(aspect.ratio=3/3)
+        p <- p + ggtitle(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
+        p <- p + xlab(feature_1_name) + ylab(feature_2_name)
+
     })
     
-    output$correlation_plot <- renderPlot({
+    width <- reactive ({ input$plot_width_corr })
+    height <- reactive ({ input$plot_height_corr })
+    
+    output$correlation_plot <- renderPlot(width = width, height = height, {
       
-      p <- plot_correlation()
-      p
+        
+        if (input$corr_plot_option == "spoke plot") {
+            p <- spoke_plot_correlation()
+        } else {
+            p <- plot_correlation()
+        }
+        p
     })  
+    
+    spoke_plot_correlation <- reactive({
+      
+        parameters <- fromJSON(file = "parameters/parameters.json")
+
+        text_size <- input$text_size_corr
+        
+        correlation_data <- mergedStack()       
+
+        feature_1 <- parameters[input$feature_select_1][[1]][1]
+        feature_2 <- parameters[input$feature_select_2][[1]][1]
+        feature_1_values <- unlist(correlation_data[feature_1])
+        feature_2_values <- unlist(correlation_data[feature_2])
+        
+        feature_1_name <- parameters[input$feature_select_1][[1]][3]
+        feature_2_name <- parameters[input$feature_select_2][[1]][3]
+        
+        #res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+
+        #reg_coeff <- res$r
+        #p_value <- res$p.value
+
+        feature_1_values_deg <- unlist(correlation_data[feature_1])*180.0/pi
+        feature_2_values_deg <- unlist(correlation_data[feature_2])*180.0/pi
+        
+        feature_1_x_a <- list()
+        feature_1_y_a <- list()
+        feature_1_x_b <- list()
+        feature_1_y_b <- list()
+        
+
+        feature_2_x_a <- list()
+        feature_2_y_a <- list()
+        feature_2_x_b <- list()
+        feature_2_y_b <- list()
+        
+
+        print("until here")
+        for (i in 1:length(feature_1_values)) {
+        #    print(i)
+        #    print(feature_1_values[i])
+            feature_1_x_a[i] <- 0.5*cos(feature_1_values[i])    
+            feature_1_y_a[i] <- 0.5*sin(feature_1_values[i])    
+            feature_1_x_b[i] <- 0.5*cos(feature_1_values[i] + pi)    
+            feature_1_y_b[i] <- 0.5*sin(feature_1_values[i] + pi)    
+
+
+            #dist_a <- abs(feature_1_values[i] - feature_2_values[i])  
+            #dist_b <- abs(feature_1_values[i] - feature_2_values[i] - pi)  
+            
+            dist_a <- (cos(feature_1_values[i]) - cos(feature_2_values[i]))*(cos(feature_1_values[i]) - cos(feature_2_values[i])) 
+            dist_a <- dist_a + (sin(feature_1_values[i]) - sin(feature_2_values[i]))*(sin(feature_1_values[i]) - sin(feature_2_values[i])) 
+            
+            dist_b <- (cos(feature_1_values[i]) - cos(feature_2_values[i]+pi))*(cos(feature_1_values[i]) - cos(feature_2_values[i]+pi)) 
+            dist_b <- dist_b + (sin(feature_1_values[i]) - sin(feature_2_values[i]+pi))*(sin(feature_1_values[i]) - sin(feature_2_values[i]+pi)) 
+            
+
+            if (dist_a < dist_b){
+                feature_2_x_a[i] <- cos(feature_2_values[i])    
+                feature_2_y_a[i] <- sin(feature_2_values[i])    
+                feature_2_x_b[i] <- cos(feature_2_values[i] + pi)    
+                feature_2_y_b[i] <- sin(feature_2_values[i] + pi)    
+            } else {
+                feature_2_x_a[i] <- cos(feature_2_values[i] + pi)    
+                feature_2_y_a[i] <- sin(feature_2_values[i] + pi)    
+                feature_2_x_b[i] <- cos(feature_2_values[i])    
+                feature_2_y_b[i] <- sin(feature_2_values[i])    
+            }
+
+        }
+
+        
+        f_1 = data.frame(x1 = unlist(feature_1_x_a), y1 = unlist(feature_1_y_a))
+        f_2 = data.frame(x2 = unlist(feature_2_x_a), y2 = unlist(feature_2_y_a))
+        f_1 = data.frame(x1 = unlist(feature_1_x_b), y1 = unlist(feature_1_y_b))
+        f_2 = data.frame(x2 = unlist(feature_2_x_b), y2 = unlist(feature_2_y_b))
+
+
+        print(head(f_1))
+
+        p <- ggplot()
+        #p <- p + geom_point(aes(x = list(feature_2_x), y = list(feature_2_y), size = 3))
+        #p <- p + geom_point(aes(x = list(feature_1_x), y = list(feature_1_y), size = 3))
+        #p <- p + geom_point(aes(x = x1, y = y1, size = 3))
+        #p <- p + geom_point(aes(x = x2, y = y2, size = 3))
+        p <- p + geom_point(aes(x = unlist(feature_2_x_a), y = unlist(feature_2_y_a), size = 3))
+        p <- p + geom_point(aes(x = unlist(feature_1_x_a), y = unlist(feature_1_y_a), size = 3))
+        p <- p + geom_point(aes(x = unlist(feature_2_x_b), y = unlist(feature_2_y_b), size = 3))
+        p <- p + geom_point(aes(x = unlist(feature_1_x_b), y = unlist(feature_1_y_b), size = 3))
+
+
+
+        p <- p + geom_segment(aes(x=unlist(feature_1_x_a), y=unlist(feature_1_y_a), xend=unlist(feature_2_x_a), yend=unlist(feature_2_y_a), size = 0.1, color="red"))
+        p <- p + geom_segment(aes(x=unlist(feature_1_x_b), y=unlist(feature_1_y_b), xend=unlist(feature_2_x_b), yend=unlist(feature_2_y_b), size = 0.1, color="red"))
+        
+        p <- p + xlim(-1.0,1.0)
+        p <- p + ylim(-1.0,1.0)
+
+        p <- p + xlab(feature_1_name) + ylab(feature_2_name)
+        p <- p + theme(aspect.ratio=3/3)
+        p <- p + geom_point(color = "black", size = input$marker_size_corr) 
+        #p <- p + theme_minimal(panel.background = element_blank(), base_size = text_size)
+        p <- p + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
+        #p <- ggplot()
+        #p <- p + geom_point(aes(x = feature_2_values_deg, y = 1, size = 3))
+        #p <- p + geom_point(aes(x = feature_1_values_deg, y = 0.5, size = 3))
+        
+        #p <- p + geom_segment(aes(x=feature_1_values_deg, y=0.5, xend=feature_2_values_deg, yend=1.0, size = 0.1, color="red"))
+        
+#        p <- p + ggtitle("spoke_plot") +
+#            theme(plot.title = element_text(size = 18, face = "bold")) +
+#            theme(axis.text.x = element_text(size = 18)) +
+#            coord_polar(start = -pi/2.0, direction = -1) +
+#            scale_x_continuous(limits = c(0, 180),
+#                       breaks = (c(0, 45, 90, 135))) +
+#            scale_x_continuous(limits = c(0, 360),
+#                       breaks = (c(0, 90, 180, 270))) +
+#            scale_y_continuous(limits = c(0, 1.1)) +
+#            theme_minimal(base_size = text_size) 
+        p   
+    })
+    
+    output$spoke_plot <- renderPlot({
+      
+      p <- spoke_plot_correlation()
+      p
+
+    })
+
+    output$downloadPlotPDF <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
+        },
+        content <- function(file) {
+            pdf(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/pdf" # MIME type of the image
+    )
+
+    output$downloadPlotSVG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
+        },
+        content <- function(file) {
+            svg(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/svg" # MIME type of the image
+    )
+
+    output$downloadPlotEPS <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
+        },
+        content <- function(file) {
+            cairo_ps(file, width = input$plot_width_corr/72, height = input$plot_height_corr/72)
+            plot(plot_correlation())
+            dev.off()
+        },
+        contentType = "application/eps" # MIME type of the image
+    )
+
+    output$downloadPlotPNG <- downloadHandler(
+        filename <- function() {
+            paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
+        },
+        content <- function(file) {
+        png(file, width = input$plot_width_corr*4, height = input$plot_height_corr*4, res=300)
+        #if (input$data_form != "dataaspixel") plot(plot_data())
+        #else plot(plot_map())
+        plot(plot_correlation())
+        dev.off()
+        },
+        contentType = "application/png" # MIME type of the image
+    )
+  
     
     
     ### Panel C
@@ -1056,7 +1511,7 @@ server <- function(input, output, session) {
       p <- ggplot() +
         geom_histogram(aes(cond1_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "black",
+                       color = "black",
                        fill = "green", alpha = 0.2) +
         ggtitle("cellular orientation") +
         theme(axis.text.x = element_text(size = 18)) +
@@ -1071,19 +1526,19 @@ server <- function(input, output, session) {
       
       p <- p + geom_histogram(aes(cond2_data$angle_deg),
                               breaks = seq(0, 360, bin_size),
-                              colour = "black",
+                              color = "black",
                               fill = "red", alpha = 0.2)
       
       
       p1 <- ggplot() +
         geom_histogram(aes(cond1_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "white",
+                       color = "white",
                        fill = "blue",
                        alpha = 0.5) +
         geom_histogram(aes(cond2_data$angle_deg),
                        breaks = seq(0, 360, bin_size),
-                       colour = "white",
+                       color = "white",
                        fill = "red",
                        alpha = 0.5) +
         ggtitle(paste0(" ")) +
