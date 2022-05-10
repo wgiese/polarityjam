@@ -519,7 +519,7 @@ def shared_edges(rag, node):
 
 # todo: nowhere used, include in the feature analysis, fix import errors
 # dependency issues should be resolved
-# Not sure if this implimentation is able to handle non/grid lattice graphs
+# fails when all values are 0
 def morans_I(G,feature):
     "do morans i with less dependencies"
     "To do this you need a feature name associated with graph feature"
