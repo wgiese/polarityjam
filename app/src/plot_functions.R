@@ -468,7 +468,7 @@ compare_plot_2_axial <- function(parameters, input, statistics, feature_circular
   
 }
 
-linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, plot_nr = 0, text_size = 24) {
+linear_histogram <- function(parameters, input, statistics, feature_linear, plot_title, plot_nr = 0, text_size = 24, x_start = 0, x_end = 1.0) {
   
     
     bin_size = max(feature_linear)/input$bins
@@ -510,6 +510,7 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
         xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
  
     p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
+    p <- p + xlim(c(x_start,x_end))
     return(p)
   
 }

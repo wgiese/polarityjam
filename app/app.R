@@ -839,7 +839,7 @@ server <- function(input, output, session) {
         x_data <- unlist(results_all_df[feature])
         statistics <- compute_linear_statistics(results_all_df, feature, parameters)
         plot_title <- parameters[input$feature_select][[1]][3]
-        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, 0, text_size)
+        p <- linear_histogram(parameters, input, statistics, x_data, plot_title, 0, text_size, min(x_data), max(x_data))
     }
     
     p
@@ -905,27 +905,39 @@ server <- function(input, output, session) {
     print(plist)
     print("list of unique entries")
     print(unlist(unique(results_all_df[condition_col])))
- 
+
+    x_lim <- c(min(results_all_df[feature]),max(results_all_df[feature]))
     #for(file_name in unique(results_all_df$filename)) {
     #  results_df <- subset(results_all_df, results_all_df$filename == file_name )
     for(file_name in condition_list) {
+        
         results_df <- subset(results_all_df, results_all_df[condition_col] == file_name )
       
-      #values <- compute_polarity_index(results_df)
+        #values <- compute_polarity_index(results_df)
       
       
-      #print(values)
-      #polarity_index <- values[["polarity_index"]]
-      #angle_mean_deg <- values[["angle_mean_deg"]]
+        #print(values)
+        #polarity_index <- values[["polarity_index"]]
+        #angle_mean_deg <- values[["angle_mean_deg"]]
       
-      x <- unlist(results_df[feature])
-      angle_dists[[i]] <- x
+        x <- unlist(results_df[feature])
+        angle_dists[[i]] <- x
 
-      file_names[[i]] <- file_name
+
+        #if (parameters[input$feature_select][[1]][2] == "linear") {
+        #    
+        #    if (x_lim[0] > min(x)) 
+        #        x_lim[0] <- min(x)
+        #    if (x_lim[1] < max(x)) 
+        #        x_lim[1] <- max(x)
+ #
+ #       }
+
+        file_names[[i]] <- file_name
          
-      #polarity_indices[[i]] <- polarity_index
-      #angle_mean_degs[[i]] <- angle_mean_deg
-      i <- i+1
+        #polarity_indices[[i]] <- polarity_index
+        #angle_mean_degs[[i]] <- angle_mean_deg
+        i <- i+1
       
     }
     
@@ -988,7 +1000,8 @@ server <- function(input, output, session) {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
         #plot_title <- file_name
-        p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size)
+        #p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size, x_lim[0], x_lim[1])
+        p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size, min(results_all_df[feature]), max(results_all_df[feature]))
       }
       
       
