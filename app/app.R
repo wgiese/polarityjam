@@ -50,7 +50,13 @@ library(CircStats)
 library(readxl)
 library(fs)
 library(rjson)
+library(optparse)
 #library(DescTools)
+
+option_list <- list(
+  make_option(c("-p","--port"), type="integer", default=8888)
+)
+opt = parse_args(OptionParser(option_list = option_list))
 
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
@@ -1742,4 +1748,4 @@ server <- function(input, output, session) {
 }
 
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, options=list(port=opt$p, host="127.0.0.1"))
