@@ -21,6 +21,7 @@ dependencies:
   - r-FNN=1.1.3
   - r-CircStats=0.2.6
   - r-rjson=0.2.20
+  - r-shinycssloaders-0.2.0
   - pip:
     - GitPython==3.1
   
