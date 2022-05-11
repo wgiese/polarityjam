@@ -1,6 +1,6 @@
 # Polarityjam-app
 
-Polarityjam is a web app to study vascular cell dynamics and more.
+Polarityjam is a web app to study endothelial cell behaviour and more.
 First, most important features from at least one input image are extracted via the [feature extraction pipeline](polarityjam/README.md) 
 also provided within this repository.
 The result of the extraction process is a csv file which can then be analysed in the browser with the help
