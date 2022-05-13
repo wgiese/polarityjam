@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
-import pysal.explore as pysalexp
-import pysal.lib as pysallib
+#import pysal.explore as pysalexp
+#import pysal.lib as pysallib
 import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
