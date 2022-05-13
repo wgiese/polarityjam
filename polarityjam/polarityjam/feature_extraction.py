@@ -512,6 +512,8 @@ def second_neighbors(rag, node):
 
 
 # todo: nowhere used, include in the feature analysis
+# returns a list of labels that correspond to nodes and pixel
+# values of neighbor cells in the instance segmentaiton / rag
 def shared_edges(rag, node):
     """return ind labels of neighbours but its a function """
     first_nearest = list(set(rag.neighbors(node)))
@@ -519,10 +521,12 @@ def shared_edges(rag, node):
 
 # todo: nowhere used, include in the feature analysis, fix import errors
 # dependency issues should be resolved
-# fails when all values are 0
+# fails when all values are the same....seems like a pretty extreme edge case IMO
+# Can be swapped out with regular morans to give same results. will fail the test for morans of 1
+# as all values are the SAME
 def morans_I(G,feature):
     "do morans i with less dependencies"
-    "To do this you need a feature name associated with graph feature"
+    "To do this you need a feature string associated with graph feature"
     "and a graph - G"
     
     morans_features = [G.nodes[nodes_idx][feature] for nodes_idx in list(G.nodes)]
@@ -531,6 +535,8 @@ def morans_I(G,feature):
     weightMatrix = nx.to_numpy_matrix(G)
 
     meanValue = np.mean(value)
+    return(mi)
+
     valueDifFromMean = value - meanValue
     numberOfValues = len(value)
     sumOfWeightMatrix = np.sum(weightMatrix)
