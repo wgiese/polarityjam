@@ -274,7 +274,12 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     # morans I analysis
     fill_morans_i(properties_dataset, rag)
-
+    #neighborhood feature analysis
+    foi_n = "area"
+    
+    second_neighbor_dif(rag, foi_n, rag.nodes(),properties_dataset)
+    neighbor_dif(rag, foi_n, rag.nodes(),properties_dataset)
+    
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
@@ -285,6 +290,76 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     return properties_dataset
 
+#function that iterates through nodes in a graph
+#for each node n in all nodes of graph 
+#focal_node n - second nearest neighbors
+#for a list of second nearest nieghbor focal node diffs
+#mean, median, variance and range are calculated for dif
+#list of these diffs are returned
+def second_neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
+    mean_dif_ar =[]
+    median_dif_ar =[]
+    var_dif_ar =[]
+    range_dif_ar = []
+    for n in ordered_list_of_nodes(:
+        focal_foi = (graph.nodes[n][foi])
+        second_nbrs = second_neighbors(graph,n)
+        val_ar = []
+        for once_removed in second_nbrs:
+            second_n = (graph.nodes[once_removed][foi])
+            diff_val = (second_n - focal_foi)
+            val_ar.append(diff_val)
+
+        mean_dif_focal = np.mean(val_ar)
+        median_dif_focal = np.median(val_ar)
+        var_dif_focal = np.var(val_ar)
+        range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
+
+        mean_dif_ar.append(mean_dif_focal)
+        median_dif_ar.append(median_dif_focal)
+        var_dif_ar.append(var_dif_focal)
+        range_dif_ar.append(range_focal_dif)
+
+        properties_dataset["mean_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["median_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["variance_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["range_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
+
+    #return(mean_dif_ar,median_dif_ar,var_dif_ar,range_dif_ar)
+#function that iterates through nodes in a graph
+#for each node n in all nodes of graph 
+#focal_node n - nearest neighbors
+#for a list of nearest nieghbor focal node diffs
+#mean, median, variance and range are calculated for dif
+#list of these diffs are returned
+def neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
+    mean_dif_ar =[]
+    median_dif_ar =[]
+    var_dif_ar =[]
+    range_dif_ar = []
+    for n in ordered_list_of_nodes:
+        focal_foi = (graph.nodes[n][foi])
+        second_nbrs = shared_edges(graph,n)
+        val_ar = []
+        for once_removed in second_nbrs:
+            second_n = (graph.nodes[once_removed][foi])
+            diff_val = (second_n - focal_foi)
+            val_ar.append(diff_val)
+
+        mean_dif_focal = np.mean(val_ar)
+        median_dif_focal = np.median(val_ar)
+        var_dif_focal = np.var(val_ar)
+        range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
+
+        mean_dif_ar.append(mean_dif_focal)
+        median_dif_ar.append(median_dif_focal)
+        var_dif_ar.append(var_dif_focal)
+        range_dif_ar.append(range_focal_dif)
+        
+        properties_dataset["mean_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["median_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["variance_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["range_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
 
 def fill_morans_i(properties_dataset, rag):
     get_logger().info("Performing morans I group statistic...")
