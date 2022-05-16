@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
-#import pysal.explore as pysalexp
-#import pysal.lib as pysallib
+import pysal.explore as pysalexp
+import pysal.lib as pysallib
 import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
@@ -320,10 +320,10 @@ def second_neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
         var_dif_ar.append(var_dif_focal)
         range_dif_ar.append(range_focal_dif)
 
-        properties_dataset["mean_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["median_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["variance_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["range_dif_2nd_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_ar
+        properties_dataset["median_dif_2nd_neighbors"] = median_dif_ar
+        properties_dataset["variance_dif_2nd_neighbors"] = var_dif_ar
+        properties_dataset["range_dif_2nd_neighbors"] = range_dif_ar
 
     #return(mean_dif_ar,median_dif_ar,var_dif_ar,range_dif_ar)
 #function that iterates through nodes in a graph
@@ -356,10 +356,10 @@ def neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
         var_dif_ar.append(var_dif_focal)
         range_dif_ar.append(range_focal_dif)
         
-        properties_dataset["mean_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["median_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["variance_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
-        properties_dataset["range_dif_1st_neighbors"] = [morans_i.I] * len(properties_dataset)
+        properties_dataset["mean_dif_1st_neighbors"] = mean_dif_ar
+        properties_dataset["median_dif_1st_neighbors"] = median_dif_ar
+        properties_dataset["variance_dif_1st_neighbors"] = var_dif_ar
+        properties_dataset["range_dif_1st_neighbors"] = range_dif_ar
 
 def fill_morans_i(properties_dataset, rag):
     get_logger().info("Performing morans I group statistic...")
@@ -599,98 +599,30 @@ def shared_edges(rag, node):
 # fails when all values are the same....seems like a pretty extreme edge case IMO
 # Can be swapped out with regular morans to give same results. will fail the test for morans of 1
 # as all values are the SAME
-def morans_I(G,feature):
-    "do morans i with less dependencies"
-    "To do this you need a feature string associated with graph feature"
-    "and a graph - G"
+# def morans_I(G,feature):
+#     "do morans i with less dependencies"
+#     "To do this you need a feature string associated with graph feature"
+#     "and a graph - G"
     
-    morans_features = [G.nodes[nodes_idx][feature] for nodes_idx in list(G.nodes)]
+#     morans_features = [G.nodes[nodes_idx][feature] for nodes_idx in list(G.nodes)]
 
-    value = morans_features
-    weightMatrix = nx.to_numpy_matrix(G)
+#     value = morans_features
+#     weightMatrix = nx.to_numpy_matrix(G)
 
-    meanValue = np.mean(value)
-    return(mi)
+#     meanValue = np.mean(value)
+#     return(mi)
 
-    valueDifFromMean = value - meanValue
-    numberOfValues = len(value)
-    sumOfWeightMatrix = np.sum(weightMatrix)
-    summedVariance = np.sum((value - meanValue)**2)
+#     valueDifFromMean = value - meanValue
+#     numberOfValues = len(value)
+#     sumOfWeightMatrix = np.sum(weightMatrix)
+#     summedVariance = np.sum((value - meanValue)**2)
 
-    weightedCov = 0
-    for i in range(weightMatrix.shape[0]):
-        for j in range(weightMatrix.shape[1]):
-            weightedCov += weightMatrix[i, j] * valueDifFromMean[i] * valueDifFromMean[j]
+#     weightedCov = 0
+#     for i in range(weightMatrix.shape[0]):
+#         for j in range(weightMatrix.shape[1]):
+#             weightedCov += weightMatrix[i, j] * valueDifFromMean[i] * valueDifFromMean[j]
 
-    weightedCovariance = weightedCov
-    moransI = (numberOfValues * weightedCovariance) / (sumOfWeightMatrix * summedVariance)
-    return(moransI)
-# Foi = "area" this could be area or perimeter or something else continous
-# Graph = the current region adjacency matrix
-# ordered list of nodes, the order that the nodes have been iterated thru before
-# to populate the image properties area
-# In my mind this would be : np.unique(cell_mask_rem_island) from line 217 
-# could would be run after morans has been done, need a rag with nodes features.
-# Make these compatible with periodic measurements
-
-#function that iterates through nodes in a graph
-#for each node n in all nodes of graph 
-#focal_node n - second nearest neighbors
-#for a list of second nearest nieghbor focal node diffs
-#mean, median, variance and range are calculated for dif
-#list of these diffs are returned
-def second_neighbor_dif(graph, foi, ordered_list_of_nodes):
-    mean_dif_ar =[]
-    median_dif_ar =[]
-    var_dif_ar =[]
-    range_dif_ar = []
-    for n in graph.nodes():
-        focal_foi = (graph.nodes[n][foi])
-        second_nbrs = second_neighbors(graph,n)
-        val_ar = []
-        for once_removed in second_nbrs:
-            second_n = (graph.nodes[once_removed][foi])
-            diff_val = (second_n - focal_foi)
-            val_ar.append(diff_val)
-
-        mean_dif_focal = np.mean(val_ar)
-        median_dif_focal = np.median(val_ar)
-        var_dif_focal = np.var(val_ar)
-        range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
-
-        mean_dif_ar.append(mean_dif_focal)
-        median_dif_ar.append(median_dif_focal)
-        var_dif_ar.append(var_dif_focal)
-        range_dif_ar.append(range_focal_dif)
-    return(mean_dif_ar,median_dif_ar,var_dif_ar,range_dif_ar)
-
-#function that iterates through nodes in a graph
-#for each node n in all nodes of graph 
-#focal_node n - nearest neighbors
-#for a list of nearest nieghbor focal node diffs
-#mean, median, variance and range are calculated for dif
-#list of these diffs are returned
-def neighbor_dif(graph, foi, ordered_list_of_nodes):
-    mean_dif_ar =[]
-    median_dif_ar =[]
-    var_dif_ar =[]
-    range_dif_ar = []
-    for n in graph.nodes():
-        focal_foi = (graph.nodes[n][foi])
-        second_nbrs = shared_edges(graph,n)
-        val_ar = []
-        for once_removed in second_nbrs:
-            second_n = (graph.nodes[once_removed][foi])
-            diff_val = (second_n - focal_foi)
-            val_ar.append(diff_val)
-
-        mean_dif_focal = np.mean(val_ar)
-        median_dif_focal = np.median(val_ar)
-        var_dif_focal = np.var(val_ar)
-        range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
-
-        mean_dif_ar.append(mean_dif_focal)
-        median_dif_ar.append(median_dif_focal)
-        var_dif_ar.append(var_dif_focal)
-        range_dif_ar.append(range_focal_dif)
-    return(mean_dif_ar,median_dif_ar,var_dif_ar,range_dif_ar)
+#     weightedCovariance = weightedCov
+#     moransI = (numberOfValues * weightedCovariance) / (sumOfWeightMatrix * summedVariance)
+#     return(moransI)
+# # 
