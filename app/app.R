@@ -181,7 +181,6 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             "Conditional mean direction", value = 180),
                     NULL
                 ),    
-                textInput("exp_condition", "Exp. condition", "condition A"),
  
                 checkboxInput("ci_plot", "Confidence interval (CI)", TRUE),
                 conditionalPanel(

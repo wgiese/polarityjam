@@ -141,10 +141,10 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     
 
     if (input$stats_method != "None") {
-        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) 
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s", length(feature_circular), polarity_index, p_value)) 
     }
     else {
-        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s \n condition: %s", length(feature_circular), polarity_index, input$exp_condition)) 
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s", length(feature_circular), polarity_index)) 
     } 
 
 
@@ -237,7 +237,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
         scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
         theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s", length(feature_circular_1), polarity_index, p_value, input$exp_condition)) +
+        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s", length(feature_circular_1), polarity_index, p_value)) +
         ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
@@ -312,10 +312,10 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
   #theme(axis.text.y=element_blank()) +
  
     if (input$stats_method != "None") {
-        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s \n condition: %s", length(feature_circular), polarity_index, p_value, input$exp_condition)) 
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s, %s", length(feature_circular), polarity_index, p_value)) 
     }
     else {
-        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s \n condition: %s", length(feature_circular), polarity_index, input$exp_condition)) 
+        p<- p + xlab(sprintf("number of cells = : %s \n polarity index: %s", length(feature_circular), polarity_index)) 
     } 
 
 
@@ -447,7 +447,7 @@ compare_plot_2_axial <- function(parameters, input, statistics, feature_circular
         scale_x_continuous(limits = c(0, 360),
                        breaks = (c(0, 90, 180, 270))) +
         theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s, \n condition: %s" , length(feature_circular), polarity_index, p_value, input$exp_condition)) +
+        xlab(sprintf("number of cells = : %s \n polarity index: %s, %s" , length(feature_circular), polarity_index, p_value)) +
         ylab("polarity index") 
   #theme(axis.text.y=element_blank()) +
   
@@ -507,7 +507,7 @@ linear_histogram <- function(parameters, input, statistics, feature_linear, plot
     p <- p + ggtitle(plot_title) +
         theme(axis.text.x = element_text(size = 18)) +
         theme_minimal(base_size = text_size) +
-        xlab(sprintf("number of cells = : %s \n condition: %s", length(feature_linear), input$exp_condition)) 
+        xlab(sprintf("number of cells = : %s", length(feature_linear))) 
  
     p <- p + geom_vline(data = statistics, aes(xintercept=mean),  col="red", size = 2) 
     p <- p + xlim(c(x_start,x_end))
