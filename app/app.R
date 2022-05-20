@@ -305,30 +305,34 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Compare",                    
         sidebarLayout(
             sidebarPanel(
-                fileInput("condition_1", "Condition 1",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv")),    
-                tags$hr(),
-                checkboxInput("header_cond1", "File upload", TRUE),
-                fileInput("condition_2", "Condition 2",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv")), 
-                tags$hr(),
-                checkboxInput("header_cond2", "File upload", TRUE),
-                sliderInput("bins_comparison",
-                            "Number of bins:",
-                            min = 1,
-                            max = 30,
-                            value = 12),
+#                fileInput("control_condition", "Control condition",
+#                            accept = c( "text/csv",
+#                            "text/comma-separated-values,text/plain",
+#                            ".csv")),    
+#                tags$hr(),
+#                checkboxInput("header_cond1", "File upload", TRUE),
+                
+#                fileInput("condition_2", "Condition 2",
+#                            accept = c( "text/csv",
+#                            "text/comma-separated-values,text/plain",
+#                            ".csv")), 
+#                tags$hr(),
+#                checkboxInput("header_cond2", "File upload", TRUE),
+#                sliderInput("bins_comparison",
+#                            "Number of bins:",
+#                            min = 1,
+#                            max = 30,
+#                            value = 12),
+
+                
+                selectInput("control_condition", "control condition", choices = ""),
                 selectInput("feature_comparison", "Choose a feature:",
                             choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 checkboxInput("kde_comparison", "KDE plot", FALSE),
                 checkboxInput("histogram_comparison", "Histogram plot", TRUE),
-                checkboxInput("split_view_comparison", "Split view", TRUE),
+#                checkboxInput("split_view_comparison", "Split view", TRUE),
             ),
             mainPanel(
                 #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
@@ -1494,200 +1498,201 @@ server <- function(input, output, session) {
     
     
     ### Panel C
+ 
+    observe({
+
+
+        condition_col <- input$condition_col
+        condition_col <- "filename"
+
+        data <- mergedStack()
+        
+       # if (is.data.frame(data)) {
+        if (length(colnames(data)) > 3) {
+            print("Unique condition names: ")
+            #print(data[condition_col])
+            condition_list <- unique(data[condition_col])
+            print(condition_list)
+            updateSelectInput(session, "control_condition", choices = condition_list, selected="filename")
+        }
+
+       
+    })
+
+
+   
+    comparison_plot <- reactive({
     
-    output$comparison_plot <- renderPlot({
-      
         source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
         source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     
         parameters <- fromJSON(file = "parameters/parameters.json")
-        text_size <- as.integer(parameters["text_size_merged_plot"])
+        text_size <- 12
+
+       
+        datapath <- stack_data_info$datapath
+        print(datapath)
+    
+        file_list <- list.files(datapath)
+        print(file_list)
+    
+        i <- 1
+        angle_dists <- list()
+        file_names <- list()
+        polarity_indices <- list()
+        angle_mean_degs <- list()
+    
+        results_all_df <- mergedStack()
+    
+        for(row_nr in 1:nrow(results_all_df)) {
+            row <- results_all_df[row_nr,]
+      a <- row$major_axis_length
+      b <- row$minor_axis_length
+      
+      eccentricity <- sqrt(1.0 - b*b/(a*a))
+      results_all_df[row_nr,"eccentricity"] = eccentricity 
+    }
+    
+    threshold <- input$min_eccentricity
+    if ("eccentricity" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+    }
+    threshold <- input$min_nuclei_golgi_dist
+    if ("distance" %in% colnames(results_all_df)){
+      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+    }
+    
+    feature <- parameters[input$feature_select][[1]][1]
+    condition_col <- input$condition_col   
+
+    condition_list <- unlist(unique(results_all_df[condition_col]))
+    #plist <- vector('list', length(unique(results_all_df$filename)))
+    plist <- vector('list', length(condition_list))
+    print("length of plot list")
+    print(plist)
+    print("list of unique entries")
+    print(unlist(unique(results_all_df[condition_col])))
+
+    x_lim <- c(min(results_all_df[feature]),max(results_all_df[feature]))
+    #for(file_name in unique(results_all_df$filename)) {
+    #  results_df <- subset(results_all_df, results_all_df$filename == file_name )
+    for(file_name in condition_list) {
         
-        inFileCondition_1 <- input$condition_1
-        inFileCondition_2 <- input$condition_2
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name )
       
-        if (is.null(inFileCondition_1))
-            return(NULL)
-        if (is.null(inFileCondition_2))
-            return(NULL)
+        #values <- compute_polarity_index(results_df)
       
-        print(inFileCondition_1$datapath)
-        print(inFileCondition_2$datapath)
-        cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
-        cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
       
-        feature <- parameters[input$feature_select][[1]][1]
+        #print(values)
+        #polarity_index <- values[["polarity_index"]]
+        #angle_mean_deg <- values[["angle_mean_deg"]]
+      
+        x <- unlist(results_df[feature])
+        angle_dists[[i]] <- x
 
-        bin_size <- 360.0/input$bins_comparison
-      #bin_size <- 20.0
-      
-      p <- ggplot() +
-        geom_histogram(aes(cond1_data$angle_deg),
-                       breaks = seq(0, 360, bin_size),
-                       color = "black",
-                       fill = "green", alpha = 0.2) +
-        ggtitle("cellular orientation") +
-        theme(axis.text.x = element_text(size = 18)) +
-        coord_polar(start = -pi/2.0, direction = -1) +
-        scale_x_continuous(limits = c(0, 360),
-                           breaks = (c(0, 90, 180, 270))) +
-        theme_minimal(base_size = 14) +
-        xlab(paste0("n = ", length(cond1_data$angle_deg))) +
-        ylab("") +
-        theme(axis.text.y=element_blank()) +
-        scale_y_sqrt()
-      
-      p <- p + geom_histogram(aes(cond2_data$angle_deg),
-                              breaks = seq(0, 360, bin_size),
-                              color = "black",
-                              fill = "red", alpha = 0.2)
-      
-      
-      p1 <- ggplot() +
-        geom_histogram(aes(cond1_data$angle_deg),
-                       breaks = seq(0, 360, bin_size),
-                       color = "white",
-                       fill = "blue",
-                       alpha = 0.5) +
-        geom_histogram(aes(cond2_data$angle_deg),
-                       breaks = seq(0, 360, bin_size),
-                       color = "white",
-                       fill = "red",
-                       alpha = 0.5) +
-        ggtitle(paste0(" ")) +
-        theme(axis.text.x = element_text(size = 18)) +
-        coord_polar(start = -pi/2.0, direction = -1) +
-        scale_x_continuous(limits = c(0, 360),
-                           breaks = (c(0, 90, 180, 270))) +
-        theme_minimal(base_size = 14) +
-        xlab("") +
-        ylab("") +
-        theme(axis.text.y=element_blank())+
-        scale_y_sqrt()
-      
-      #print(wilcox.test(cond1_data$angle_rad, cond2_data$angle_rad, paired=FALSE)$p.value)
 
-        p2 <- ggplot()
-        feature <- parameters[input$feature_comparison][[1]][1]
+        #if (parameters[input$feature_select][[1]][2] == "linear") {
+        #    
+        #    if (x_lim[0] > min(x)) 
+        #        x_lim[0] <- min(x)
+        #    if (x_lim[1] < max(x)) 
+        #        x_lim[1] <- max(x)
+ #
+ #       }
+
+        file_names[[i]] <- file_name
+         
+        #polarity_indices[[i]] <- polarity_index
+        #angle_mean_degs[[i]] <- angle_mean_deg
+        i <- i+1
+      
+    }
+    
+    
+    
+    n <- length(angle_dists)
+    nCol <- floor(sqrt(n))
+    
+    bin_size = 360/input$bins
+    
+    plotseries <- function(i){
         
-        if (parameters[input$feature_comparison][[1]][2] == "axial") {
+        angle_dist <- angle_dists[[i]]
+        file_name <- file_names[[i]]
+        #polarity_index <- polarity_indices[[i]]
+        #angle_mean_deg <- angle_mean_degs[[i]]
       
-            cond1_feature <- unlist(cond1_data[feature])*180.0/pi
-            cond2_feature <- unlist(cond2_data[feature])*180.0/pi
-            x_data <- list(cond1_feature, cond2_feature)            
-            condition_data <- list()
-            condition_data[[1]] <- cond1_data
-            condition_data[[2]] <- cond2_data
-            #condition_data <- list(cond1_data, cond2_data)            
-
-            if (input$split_view_comparison) 
-            { 
-                
-                plotseries <- function(i){
-                   
-                    #print(x_data)
-                    #print(x_data[[i]]) 
-                    
-                    statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-                    plot_title <- parameters[input$feature_select][[1]][3]
-                    p <- rose_plot_circular(parameters, input, statistics, x_data[[i]], plot_title, text_size)
-                    
-                    #cond_data <- condition_data[[i]]
-                    #x_data <- cond_data[feature]
-                    #statistics <- compute_circular_statistics(cond_data, feature, parameters)
-                    #plot_title <- parameters[input$feature_select][[1]][3]
-                    #p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, text_size)
-
-                }
-                myplots <- lapply(1:2, plotseries)
-                p2 <- grid.arrange(grobs = myplots, ncol = 2) #, widths = list(10,10))
-            }
-            else {
-                statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-                plot_title <- parameters[input$feature_select][[1]][3]
-                p2 <- compare_plot_circular(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
-            }
-        }
-        else if (parameters[input$feature_comparison][[1]][2] == "2-axial") {
-            
-            cond1_feature <- unlist(cond1_data[feature])
-            cond2_feature <- unlist(cond2_data[feature])
-            
-            #if (input$left_axial) {
-            cond1_feature <- unlist(transform_2_axial(input, cond1_feature))*180.0/pi
-            cond2_feature <- unlist(transform_2_axial(input, cond2_feature))*180.0/pi
-            #} else {
-            #    cond1_feature <- unlist(cond1_data[feature])*180.0/pi
-            #    cond2_feature <- unlist(cond2_data[feature])*180.0/pi
-            #}
-
-            # x_data <- list(cond1_feature, cond2_feature)            
-            
-            plotseries <- function(i) {
-                
-                ## print(x_data)
-                # print(x_data[[i]]) 
-                # x_data <- unlist(cond1_data[feature])*180.0/pi
-                # statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-                # plot_title <- parameters[input$feature_select][[1]][3]
-                # p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
-              
-                plot_title <- parameters[input$feature_select][[1]][3]
-                
-                if (i==1) {
-                    statistics <- compute_2_axial_statistics(cond1_data, feature, parameters)
-                    p <- rose_plot_2_axial(parameters, input, statistics, cond1_feature, plot_title, text_size)
-                } else {
-                    statistics <- compute_2_axial_statistics(cond2_data, feature, parameters)
-                    p <- rose_plot_2_axial(parameters, input, statistics, cond2_feature, plot_title, text_size)
-
-                }  
-                # x_data <- unlist(cond1_data[feature])*180.0/pi
-                # statistics <- compute_circular_statistics(cond1_data, feature, parameters)
-                # plot_title <- parameters[input$feature_select][[1]][3]
-                # p <- rose_plot_2_axial(parameters, input, statistics, x_data[[i]], plot_title, text_size)
-            }
-            myplots <- lapply(1:2, plotseries)
-            p2 <- grid.arrange(grobs = myplots, ncol = 2) 
-
-        }
-        else if (parameters[input$feature_comparison][[1]][2] == "linear") {
+        #results_df <- subset(results_all_df, results_all_df$filename == file_name)
+        results_df <- subset(results_all_df, results_all_df[condition_col] == file_name)
       
-            cond1_feature <- unlist(cond1_data[feature])
-            cond2_feature <- unlist(cond2_data[feature])
-            
-            if (input$split_view_comparison) 
-            {
-                
-                plot_title <- parameters[input$feature_select][[1]][3]
-                plotseries <- function(i) {
-                
-                    if (i==1) {
-                        statistics <- compute_linear_statistics(cond1_data, feature, parameters)
-                        p <- linear_histogram(parameters, input, statistics, cond1_feature, plot_title, text_size)
-                    } else {
-                        statistics <- compute_linear_statistics(cond2_data, feature, parameters)
-                        p <- linear_histogram(parameters, input, statistics, cond2_feature, plot_title, text_size)
-                    }  
-            }
-            myplots <- lapply(1:2, plotseries)
-            p2 <- grid.arrange(grobs = myplots, ncol = 2) 
- 
-            
-            } else {   
-
-                statistics <- compute_linear_statistics(cond1_data, feature, parameters)
-                plot_title <- parameters[input$feature_select][[1]][3]
-                p2 <- compare_plot_linear(parameters, input, statistics, cond1_feature, cond2_feature, plot_title)
-            }
-
+        plot_title <- file_name
+        
+        if (nchar(file_name) > 37) {
+            max_fl <- 17
+            file_name_end <- substr(file_name, nchar(file_name) - max_fl + 1, nchar(file_name))
+            file_name_start <- substr(file_name, 1, max_fl)
+            plot_title <-paste0(file_name_start, "...", file_name_end)
         }
+        #if (nchar(file_name) > 15) {
+        #    plot_title <- paste0("image #",toString(i))
+        #    print(paste0("filename: ",file_name," too long, will be replaced by",plot_title))
+        #}        
 
 
+      if (parameters[input$feature_select][[1]][2] == "axial") {
+        
+        statistics <- compute_circular_statistics(results_df, feature, parameters)
+        #statistics <- compute_polarity_index(unlist(results_df[feature]))
+        x_data <- unlist(results_df[feature])*180.0/pi
+        print(paste0("Length of filename", toString(i)))
+        
+                p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
+        
+      }
+      else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+        
+        x_data <- results_df[feature]        
+        #print(x_data)
+        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+        #if (input$left_axial) {
+        x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+        #} else {
+        #  x_data <- unlist(results_df[feature])*180.0/pi
+        #}
+        #plot_title <- file_name
+        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
+        
+      } else {
+        
+        x_data <- unlist(results_df[feature])
+        statistics <- compute_linear_statistics(results_df, feature, parameters)
+        #plot_title <- file_name
+        #p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size, x_lim[0], x_lim[1])
+        p <- linear_histogram(parameters, input, statistics, x_data,  plot_title, i, text_size, min(results_all_df[feature]), max(results_all_df[feature]))
+      }
+      
+      
 
-      p2
-      #print(as.circular(cond1_data$angle_rad,type=radians))
-      #circ.plot(cond1_data$angle_rad, cex =2.0)
+    }
+    
+    
+    myplots <- lapply(1:length(angle_dists), plotseries)
+    
+    #print(myplots)
+    grid.arrange(grobs = myplots, nrow = nCol) #, widths = list(10,10))
+    
+    })
+    
+    
+    output$comparison_plot <- renderPlot({
+      
+        #source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        #source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
+    
+        #parameters <- fromJSON(file = "parameters/parameters.json")
+        #text_size <- as.integer(parameters["text_size_merged_plot"])
+        comparison_plot()
+        
     }) 
     
     
