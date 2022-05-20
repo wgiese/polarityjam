@@ -26,7 +26,7 @@ select_color <- function(parameters, input, plot_nr) {
         if (plot_nr == 0)
             color_n <- input$select_color %% length(Okabe_Ito)
         else
-            color_n <- (plot_nr + input$select_color) %% length(Okabe_Ito)
+            color_n <- 1 + (plot_nr + input$select_color) %% length(Okabe_Ito)
 
         print("color number")
         print(color_n)
@@ -41,21 +41,21 @@ select_color <- function(parameters, input, plot_nr) {
         if (plot_nr == 0)
             color_n <- input$select_color %% length(Tol_bright)
         else
-            color_n <- (plot_nr + input$select_color) %% length(Tol_bright)
+            color_n <- 1 + (plot_nr + input$select_color) %% length(Tol_bright)
 
         color <- Tol_bright[color_n]
     } else if (input$select_colormap == "Tol_muted") {
         if (plot_nr == 0)
             color_n <- input$select_color %% length(Tol_muted)
         else
-            color_n <- (plot_nr + input$select_color) %% length(Tol_muted)
+            color_n <- 1 + (plot_nr + input$select_color) %% length(Tol_muted)
 
         color <- Tol_muted[color_n]
     } else if (input$select_colormap == "Tol_light") {
         if (plot_nr == 0)
             color_n <- input$select_color %% length(Tol_light)
         else
-            color_n <- (plot_nr + input$select_color) %% length(Tol_light)
+            color_n <- 1 + (plot_nr + input$select_color) %% length(Tol_light)
 
         color <- Tol_light[color_n]
     }
@@ -95,6 +95,9 @@ rose_plot_circular <- function(parameters, input, statistics, feature_circular, 
     p <- ggplot()
 
     color_fill <- select_color(parameters, input, plot_nr)
+    print("using color: ")
+    print(color_fill)
+
     color <- color_fill
     
     alpha <- 0.5
