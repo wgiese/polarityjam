@@ -1697,33 +1697,60 @@ server <- function(input, output, session) {
     
     
     comparisonStatistics <- reactive({
-      "
-      reactive function that reads a stack of spreadsheet and returns a data frame 
-      with descriptive statistics including circular mean, circular standard deviation 
-      and nearest neighbours for the merged stack of data
-      "
+        "
+        reactive function that reads a stack of spreadsheet and returns a data frame 
+        with descriptive statistics including circular mean, circular standard deviation 
+        and nearest neighbours for the merged stack of data
+        "
+        
+        data <- mergedStack()
+        
+        condition_col <- input$condition_col
+        control_condition <- input$control_condition
+        condition_list <- unlist(unique(data[condition_col]))
+    
+        
+        for (condition in condition_list) {
+
+            if (condition == control_condition)
+                next
+            
+            print("Control condition:")
+            print(control_condition)
+            print("Condition:")
+            print(condition)
+
+
+            condition_data <- subset(data, data[condition_col] == condition )
+            control_data <- subset(data, data[condition_col] == control_condition )
+            print(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE))
+            print(str(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE)))
+        
+        }
+
+        #inFileCondition_1 <- input$condition_1
+        #inFileCondition_2 <- input$condition_2
+ 
+        #if (is.null(inFileCondition_1))
+        #    return(NULL)
+        #if (is.null(inFileCondition_2))
+        #    return(NULL)
       
-      inFileCondition_1 <- input$condition_1
-      inFileCondition_2 <- input$condition_2
+        #print(inFileCondition_1$datapath)
+        #print(inFileCondition_2$datapath)
+        #cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
+        #cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
       
-      if (is.null(inFileCondition_1))
-        return(NULL)
-      if (is.null(inFileCondition_2))
-        return(NULL)
+        #print(watson.two(cond1_data$angle_rad, cond2_data$angle_rad, alpha=0.05, plot=TRUE))
       
-      print(inFileCondition_1$datapath)
-      print(inFileCondition_2$datapath)
-      cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
-      cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
+        #watson.two(data1, data2)
+        #watson.two(cond1_data$angle_rad, cond2_data$angle_rad)
       
-      print(watson.two(cond1_data$angle_rad, cond2_data$angle_rad, alpha=0.05, plot=TRUE))
-      #watson.two(data1, data2)
-      watson.two(cond1_data$angle_rad, cond2_data$angle_rad)
-      #print("Structure")
-      #print(str(watson.two(cond1_data$angle_rad, cond2_data$angle_rad)))
+        #print("Structure")
+        #print(str(watson.two(cond1_data$angle_rad, cond2_data$angle_rad)))
       
-      #statistics_df <- data.frame()
-      #statistics_df
+        #statistics_df <- data.frame()
+        #statistics_df
       
     })
     
