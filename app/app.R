@@ -105,7 +105,13 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     checkboxInput("header_correlation_key", "File upload", TRUE),
                 ),
 
+                checkboxInput("subsample_data", "Subsample data", FALSE),
    
+                conditionalPanel(
+                    condition = "input.subsample_data == true",
+                    numericInput ("subsample_n", "Select every n-th row:", value=1, min = 1, max = 50, step = 1)
+                ),
+
                 #conditionalPanel(
                 #    condition = "input.data_upload_form == 'folder'",
                 #    shinyDirButton("dir", "Input directory", "Upload"),
@@ -220,8 +226,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     selectInput ("outline", "choose outline style:", choice = c("color","white","black"))
                 ),
                 
-                numericInput ("plot_height_A", "Height (# pixels): ", value = 600),
-                numericInput ("plot_width_A", "Width (# pixels):", value = 800),
+                numericInput ("plot_height_A", "Height (# pixels): ", value = 720),
+                numericInput ("plot_width_A", "Width (# pixels):", value = 1280),
 
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
@@ -534,6 +540,14 @@ server <- function(input, output, session) {
         #results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     }
 
+    if (input$subsample_data) {
+        N <- nrow(results_all_df) %/% input$subsample_n
+        if (nrow(results_all_df) > N){
+            results_all_df <- results_all_df[sample(nrow(results_all_df), N), ]
+        }
+    }
+
+    
 
     #if (is.null(inFileStackData)) {
     #    datapath <- stack_data_info$datapath 
