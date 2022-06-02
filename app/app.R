@@ -1737,9 +1737,18 @@ server <- function(input, output, session) {
 
             condition_data <- subset(data, data[condition_col] == condition )
             control_data <- subset(data, data[condition_col] == control_condition )
+            print("Output Watson test object")
             print(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE))
+            
+            print("Struct of Watson test object")
             print(str(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE)))
         
+            watson1 <- watson.two.test(condition_data$angle_rad, control_data$angle_rad)
+            watson1 <- array(as.matrix(unlist(watson1)), dim=c(5, 1))
+            res <- if (watson1[1,]>0.187) (0.04) else (0.06)  # Critical Value: 0.187 #this is just to have number higher and one lower than 0.05 (see coding below)
+            print("Extract")
+            print(watson1)
+            print(res)
         }
 
         #inFileCondition_1 <- input$condition_1
