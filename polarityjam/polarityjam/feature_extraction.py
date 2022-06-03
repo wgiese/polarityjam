@@ -1,8 +1,5 @@
 import numpy as np
 import pandas as pd
-import networkx as nx
-import pysal.explore as pysalexp
-import pysal.lib as pysallib
 import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
@@ -10,9 +7,11 @@ import skimage.measure
 import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
+from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
 from polarityjam.utils.seg import get_outline_from_mask
+from polarityjam.utils.weights import W
 
 
 def get_image_for_segmentation(parameters, img):
@@ -485,9 +484,9 @@ def remove_islands(frame_graph, mask):
 
 
 def morans_data_prep(rag, feature):
-    """Takes a region adjacency graph and a list of cell features"""
-    """propogates features to graph so morans I can be performed."""
-    weights = pysallib.weights.W.from_networkx(rag)
+    """Takes a region adjacency graph and a list of cell features.
+    Propogates features to graph so morans I can be performed."""
+    weights = W.from_networkx(rag)
     # extract the feature of interest from the rag
     morans_features = [rag.nodes[nodes_idx][feature] for nodes_idx in list(rag.nodes)]
 
@@ -496,7 +495,7 @@ def morans_data_prep(rag, feature):
 
 def run_morans(morans_features, weihgts):
     """run morans I, measure of spatial correlation and significance respectively:  mr_i.I,  mr_i.p_norm."""
-    mi = pysalexp.esda.Moran(morans_features, weihgts, two_tailed=False)
+    mi = Moran(morans_features, weihgts, two_tailed=False)
 
     return mi
 
