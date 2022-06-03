@@ -272,16 +272,17 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             )
         )
 
-    # morans I analysis
-    fill_morans_i(properties_dataset, rag)
-    #neighborhood feature analysis
-    foi_n = "area"
-    
-    second_neighbor_dif(rag, foi_n, rag.nodes(),properties_dataset)
-    neighbor_dif(rag, foi_n, rag.nodes(),properties_dataset)
-    
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
+
+    # feature of interest
+    foi_n = "area"
+
+    # morans I analysis
+    fill_morans_i(properties_dataset, rag, foi_n)
+
+    # neighborhood feature analysis
+    k_neighbor_dif(rag, foi_n, properties_dataset)
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
@@ -290,94 +291,12 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     return properties_dataset
 
-#function that iterates through nodes in a graph
-#for each node n in all nodes of graph 
-#focal_node n - second nearest neighbors
-#for a list of second nearest nieghbor focal node diffs
-#mean, median, variance and range are calculated for dif
-#list of these diffs are returned
-def second_neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
-    mean_dif_ar =[]
-    median_dif_ar =[]
-    var_dif_ar =[]
-    range_dif_ar = []
-    for n in ordered_list_of_nodes:
-        focal_foi = (graph.nodes[n][foi])
-        second_nbrs = second_neighbors(graph,n)
-        val_ar = []
-        for once_removed in second_nbrs:
-            second_n = (graph.nodes[once_removed][foi])
-            diff_val = (second_n - focal_foi)
-            val_ar.append(diff_val)
 
-        if len(val_ar) > 0:
-            mean_dif_focal = np.mean(val_ar)
-            median_dif_focal = np.median(val_ar)
-            var_dif_focal = np.std(val_ar)
-            range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
-
-            mean_dif_ar.append(mean_dif_focal)
-            median_dif_ar.append(median_dif_focal)
-            var_dif_ar.append(var_dif_focal)
-            range_dif_ar.append(range_focal_dif)
-        else:
-            mean_dif_ar.append(0)
-            median_dif_ar.append(0)
-            var_dif_ar.append(0)
-            range_dif_ar.append(0)
-
-    properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_ar
-    properties_dataset["median_dif_2nd_neighbors"] = median_dif_ar
-    properties_dataset["stddev_dif_2nd_neighbors"] = var_dif_ar
-    properties_dataset["range_dif_2nd_neighbors"] = range_dif_ar
-
-    #return(mean_dif_ar,median_dif_ar,var_dif_ar,range_dif_ar)
-#function that iterates through nodes in a graph
-#for each node n in all nodes of graph 
-#focal_node n - nearest neighbors
-#for a list of nearest nieghbor focal node diffs
-#mean, median, variance and range are calculated for dif
-#list of these diffs are returned
-def neighbor_dif(graph, foi, ordered_list_of_nodes,properties_dataset):
-    mean_dif_ar =[]
-    median_dif_ar =[]
-    var_dif_ar =[]
-    range_dif_ar = []
-    for n in ordered_list_of_nodes:
-        focal_foi = (graph.nodes[n][foi])
-        second_nbrs = shared_edges(graph,n)
-        val_ar = []
-        for once_removed in second_nbrs:
-            second_n = (graph.nodes[once_removed][foi])
-            diff_val = (second_n - focal_foi)
-            val_ar.append(diff_val)
-
-        if len(val_ar) > 0:
-            mean_dif_focal = np.mean(val_ar)
-            median_dif_focal = np.median(val_ar)
-            var_dif_focal = np.std(val_ar)
-            range_focal_dif = abs(np.min(val_ar) - np.max(val_ar))
-
-            mean_dif_ar.append(mean_dif_focal)
-            median_dif_ar.append(median_dif_focal)
-            var_dif_ar.append(var_dif_focal)
-            range_dif_ar.append(range_focal_dif)
-        else:
-            mean_dif_ar.append(0)
-            median_dif_ar.append(0)
-            var_dif_ar.append(0)
-            range_dif_ar.append(0)
-        
-    properties_dataset["mean_dif_1st_neighbors"] = mean_dif_ar
-    properties_dataset["median_dif_1st_neighbors"] = median_dif_ar
-    properties_dataset["stddev_dif_1st_neighbors"] = var_dif_ar
-    properties_dataset["range_dif_1st_neighbors"] = range_dif_ar
-
-def fill_morans_i(properties_dataset, rag):
+def fill_morans_i(properties_dataset, rag, foi):
     get_logger().info("Performing morans I group statistic...")
 
     # extract FOI and weights
-    morans_feature, morans_weights = morans_data_prep(rag, "area")
+    morans_feature, morans_weights = morans_data_prep(rag, foi)
     morans_i = run_morans(morans_feature, morans_weights)
 
     get_logger().info("Morans I value: %s " % morans_i.I)
@@ -582,59 +501,89 @@ def run_morans(morans_features, weihgts):
     return mi
 
 
-# todo: nowhere used, include in the feature analysis
+def k_neighbor_dif(graph, foi, properties_dataset):
+    """Extracts neighborhood statics from graph."""
+    get_logger().info("Performing first and second nearest neighbor statistic...")
+
+    mean_dif_first_neighbors = []
+    median_dif_first_neighbors = []
+    var_dif_first_neighbors = []
+    range_dif_first_neighbors = []
+
+    mean_dif_second_neighbors = []
+    median_dif_second_neighbors = []
+    var_dif_second_neighbors = []
+    range_dif_second_neighbors = []
+    for node in graph.nodes():
+
+        # feature of interest, first and second_nearest_neighbors
+        node_foi = graph.nodes[node][foi]
+        first_nearest_neighbors, second_nearest_neighbors = second_neighbors(graph, node)
+
+        # feature of interest in comparison with first_nearest neighbor nodes
+        foi_first_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in first_nearest_neighbors]
+
+        # feature of interest in comparison to second nearest neighbor nodes
+        foi_second_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in second_nearest_neighbors]
+
+        # append first nearest neighbors statistics
+        if len(foi_first_nearest_diff) > 0:
+            mean_dif_first_neighbors.append(np.mean(foi_first_nearest_diff))
+            median_dif_first_neighbors.append(np.median(foi_first_nearest_diff))
+            var_dif_first_neighbors.append(np.std(foi_first_nearest_diff))
+            range_dif_first_neighbors.append(abs(np.min(foi_first_nearest_diff) - np.max(foi_first_nearest_diff)))
+        else:
+            mean_dif_first_neighbors.append(0)
+            median_dif_first_neighbors.append(0)
+            var_dif_first_neighbors.append(0)
+            range_dif_first_neighbors.append(0)
+
+        # append second nearest neighbors statistics
+        if len(foi_second_nearest_diff) > 0:
+            mean_dif_second_neighbors.append(np.mean(foi_second_nearest_diff))
+            median_dif_second_neighbors.append(np.median(foi_second_nearest_diff))
+            var_dif_second_neighbors.append(np.std(foi_second_nearest_diff))
+            range_dif_second_neighbors.append(abs(np.min(foi_second_nearest_diff) - np.max(foi_second_nearest_diff)))
+        else:
+            mean_dif_second_neighbors.append(0)
+            median_dif_second_neighbors.append(0)
+            var_dif_second_neighbors.append(0)
+            range_dif_second_neighbors.append(0)
+
+    # fill properties for first nearest neighbors
+    properties_dataset["mean_dif_1st_neighbors"] = mean_dif_first_neighbors
+    properties_dataset["median_dif_1st_neighbors"] = median_dif_first_neighbors
+    properties_dataset["stddev_dif_1st_neighbors"] = var_dif_first_neighbors
+    properties_dataset["range_dif_1st_neighbors"] = range_dif_first_neighbors
+
+    # fill properties for second nearest neighbors
+    properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_second_neighbors
+    properties_dataset["median_dif_2nd_neighbors"] = median_dif_second_neighbors
+    properties_dataset["stddev_dif_2nd_neighbors"] = var_dif_second_neighbors
+    properties_dataset["range_dif_2nd_neighbors"] = range_dif_second_neighbors
+
+
 def second_neighbors(rag, node):
-    """return ind labels of second nearest neighbors of rag"""
-    second_nearest = []
-    first_nearest = (list(rag.neighbors(node)))
-    for element in first_nearest:
-        k_nearest = (list(rag.neighbors(element)))
-        second_nearest = second_nearest + k_nearest
-    set1nd = set(first_nearest)
-    set2nd = set(second_nearest)
-    twond_heybrs = list(set2nd.difference(set1nd))
-    twond_heybrs = list(filter(lambda a: a != node, twond_heybrs))
+    """return all second and first nearest neighbor nodes of a given node in a rag"""
+    first_nearest_list = shared_edges(rag, node)
 
-    return twond_heybrs
+    # get list of second nearest neighbors
+    k_nearest_list_unfiltered = []
+    for first_nearest in first_nearest_list:
+        k_nearest = (list(rag.neighbors(first_nearest)))
+        k_nearest_list_unfiltered += k_nearest
+
+    first_nearest_set = set(first_nearest_list)
+    k_nearest_set = set(k_nearest_list_unfiltered)
+
+    # get the difference of both sets and remove the node of interest from the final set
+    second_nearest_list = list(k_nearest_set.difference(first_nearest_set))
+    second_nearest_list = list(filter(lambda n: n != node, second_nearest_list))
+
+    return first_nearest_list, second_nearest_list
 
 
-# todo: nowhere used, include in the feature analysis
-# returns a list of labels that correspond to nodes and pixel
-# values of neighbor cells in the instance segmentaiton / rag
 def shared_edges(rag, node):
-    """return ind labels of neighbours but its a function """
+    """return all first nearest neighbor nodes of a given node in a rag"""
     first_nearest = list(set(rag.neighbors(node)))
     return first_nearest
-
-# todo: nowhere used, include in the feature analysis, fix import errors
-# dependency issues should be resolved
-# fails when all values are the same....seems like a pretty extreme edge case IMO
-# Can be swapped out with regular morans to give same results. will fail the test for morans of 1
-# as all values are the SAME
-# def morans_I(G,feature):
-#     "do morans i with less dependencies"
-#     "To do this you need a feature string associated with graph feature"
-#     "and a graph - G"
-    
-#     morans_features = [G.nodes[nodes_idx][feature] for nodes_idx in list(G.nodes)]
-
-#     value = morans_features
-#     weightMatrix = nx.to_numpy_matrix(G)
-
-#     meanValue = np.mean(value)
-#     return(mi)
-
-#     valueDifFromMean = value - meanValue
-#     numberOfValues = len(value)
-#     sumOfWeightMatrix = np.sum(weightMatrix)
-#     summedVariance = np.sum((value - meanValue)**2)
-
-#     weightedCov = 0
-#     for i in range(weightMatrix.shape[0]):
-#         for j in range(weightMatrix.shape[1]):
-#             weightedCov += weightMatrix[i, j] * valueDifFromMean[i] * valueDifFromMean[j]
-
-#     weightedCovariance = weightedCov
-#     moransI = (numberOfValues * weightedCovariance) / (sumOfWeightMatrix * summedVariance)
-#     return(moransI)
-# # 
