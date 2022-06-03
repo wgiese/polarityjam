@@ -1722,8 +1722,29 @@ server <- function(input, output, session) {
         condition_col <- input$condition_col
         control_condition <- input$control_condition
         condition_list <- unlist(unique(data[condition_col]))
-    
         
+        res <- data.frame(matrix(ncol = length(condition_list) + 1, nrow = 0))
+        cols <- c("Test","Control")
+
+        for (condition in condition_list) {
+            if (condition == control_condition)
+                next
+            cols <- c(cols,condition)
+            
+        }
+        #cols <- append(c("Test"),condition_list)
+
+        colnames(res) <- cols 
+        res[1,"Test"] <- "WatsonU2"
+        res[1,"Control"] <- control_condition
+
+        print("data frame")
+        print(res)
+        #colnames(res) <- append(c("Test"),condition_list) 
+
+        #res[1,"Test"] <- "WatsonU2"
+        
+
         for (condition in condition_list) {
 
             if (condition == control_condition)
@@ -1738,17 +1759,23 @@ server <- function(input, output, session) {
             condition_data <- subset(data, data[condition_col] == condition )
             control_data <- subset(data, data[condition_col] == control_condition )
             print("Output Watson test object")
-            print(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE))
+            #print(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE))
             
-            print("Struct of Watson test object")
-            print(str(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE)))
+            #print("Struct of Watson test object")
+            #print(str(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE)))
         
             watson1 <- watson.two.test(condition_data$angle_rad, control_data$angle_rad)
-            watson1 <- array(as.matrix(unlist(watson1)), dim=c(5, 1))
-            res <- if (watson1[1,]>0.187) (0.04) else (0.06)  # Critical Value: 0.187 #this is just to have number higher and one lower than 0.05 (see coding below)
-            print("Extract")
-            print(watson1)
+            out <- capture.output(watson.two.test(condition_data$angle_rad, control_data$angle_rad))
+            print(out)
+            p_value <- out[5]
+            res[1,condition] <- p_value
+            print("The resulting data frame:")
             print(res)
+            #watson1 <- array(as.matrix(unlist(watson1)), dim=c(5, 1))
+            #res <- if (watson1[1,]>0.187) (0.04) else (0.06)  # Critical Value: 0.187 #this is just to have number higher and one lower than 0.05 (see coding below)
+            #print("Extract")
+            #print(watson1)
+            #print(res)
         }
 
         #inFileCondition_1 <- input$condition_1
@@ -1774,6 +1801,7 @@ server <- function(input, output, session) {
       
         #statistics_df <- data.frame()
         #statistics_df
+        res
       
     })
     
@@ -1798,7 +1826,7 @@ server <- function(input, output, session) {
     })
     
     
-    output$comparison_statistics <- renderText({
+    output$comparison_statistics <- renderTable({
       "
     function that shows the descriptive statistics in table format
     "
