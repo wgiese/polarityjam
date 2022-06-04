@@ -139,6 +139,7 @@ def run_key(args):
 
     # convert
     output_path_base = Path(output_path_base)
+    create_path_recursively(output_path_base)
     in_path = Path(in_path)
 
     # process
