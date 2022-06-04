@@ -65,7 +65,7 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     get_logger().info("Look up cellpose segmentation...")
     segmentation, _ = get_segmentation_file_name(parameters, filepath)
 
-    if segmentation.exists():
+    if segmentation.exists() and parameters["use_given_mask"]:
         get_logger().info("Load cellpose segmentation...")
 
         # in case an annotated mask is available

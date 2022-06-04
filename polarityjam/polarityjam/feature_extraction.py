@@ -274,15 +274,11 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
-    # feature of interest
-    # todo: extract in parameter file
-    foi_n = "area"
-
     # morans I analysis
-    fill_morans_i(properties_dataset, rag, foi_n)
+    fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
 
     # neighborhood feature analysis
-    k_neighbor_dif(rag, foi_n, properties_dataset)
+    k_neighbor_dif(rag, parameters["feature_of_interest"], properties_dataset)
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
