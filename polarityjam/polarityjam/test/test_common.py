@@ -7,8 +7,8 @@ import yaml
 from pyunpack import Archive
 
 import polarityjam.test.test_config as config
-from polarityjam.utils.io import list_files_recursively
 from polarityjam.polarityjam_logging import close_logger
+from polarityjam.utils.io import list_files_recursively
 
 
 class TestCommon(unittest.TestCase):
@@ -16,27 +16,26 @@ class TestCommon(unittest.TestCase):
 
     def setUp(self) -> None:
         if config._TARGET_DIR:
-            self.tmp_dir = Path(config._TARGET_DIR)
+            self.tmp_dir_ = Path(config._TARGET_DIR)
+            self.tmp_dir = self.tmp_dir_
             self.output_path = self.tmp_dir.joinpath("output")
             self.data_path = self.tmp_dir.joinpath("data")
         else:
-            self.tmp_dir = tempfile.TemporaryDirectory()
-            self.output_path = Path(self.tmp_dir.name).joinpath("output")
-            self.data_path = Path(self.tmp_dir.name).joinpath("data")
+            self.tmp_dir_ = tempfile.TemporaryDirectory()
+            self.tmp_dir = self.tmp_dir_.name
+            self.output_path = Path(self.tmp_dir).joinpath("output")
+            self.data_path = Path(self.tmp_dir).joinpath("data")
 
         self.current_path = Path(os.path.dirname(os.path.realpath(__file__)))
         self.parameters, self.param_base_file = self.load_parameters()
 
     def tearDown(self) -> None:
         close_logger()
-        if isinstance(self.tmp_dir, tempfile.TemporaryDirectory):
-            self.tmp_dir.cleanup()
+        if isinstance(self.tmp_dir_, tempfile.TemporaryDirectory):
+            self.tmp_dir_.cleanup()
 
     def extract_test_data(self):
-        if isinstance(self.tmp_dir, tempfile.TemporaryDirectory):
-            target = str(self.tmp_dir.name)
-        else:
-            target = str(self.tmp_dir)
+        target = str(self.tmp_dir)
         Archive(str(self.current_path.joinpath("resources", "data.zip"))).extractall(str(target))
 
     def get_test_image_path(self, image_name):
