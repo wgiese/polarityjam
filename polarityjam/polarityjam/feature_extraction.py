@@ -275,6 +275,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
     # feature of interest
+    # todo: extract in parameter file
     foi_n = "area"
 
     # morans I analysis
@@ -292,7 +293,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
 
 def fill_morans_i(properties_dataset, rag, foi):
-    get_logger().info("Performing morans I group statistic...")
+    get_logger().info("Calculating morans I group statistic...")
 
     # extract FOI and weights
     morans_feature, morans_weights = morans_data_prep(rag, foi)
@@ -502,7 +503,7 @@ def run_morans(morans_features, weihgts):
 
 def k_neighbor_dif(graph, foi, properties_dataset):
     """Extracts neighborhood statics from graph."""
-    get_logger().info("Performing first and second nearest neighbor statistic...")
+    get_logger().info("Calculating first and second nearest neighbor statistic...")
 
     mean_dif_first_neighbors = []
     median_dif_first_neighbors = []
@@ -569,7 +570,7 @@ def second_neighbors(rag, node):
     # get list of second nearest neighbors
     k_nearest_list_unfiltered = []
     for first_nearest in first_nearest_list:
-        k_nearest = (list(rag.neighbors(first_nearest)))
+        k_nearest = list(rag.neighbors(first_nearest))
         k_nearest_list_unfiltered += k_nearest
 
     first_nearest_set = set(first_nearest_list)
