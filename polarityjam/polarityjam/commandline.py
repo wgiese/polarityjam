@@ -74,8 +74,9 @@ def _run(infile, parameters, output_path, fileout_name):
 
     # write output
     fileout_base, _ = os.path.splitext(fileout_name)
-    get_logger().info("Writing features to disk: %s" % fileout_base + ".csv")
-    properties_df.to_csv(str(Path(output_path).joinpath(fileout_base + ".csv")), index=False)
+    fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
+    get_logger().info("Writing features to disk: %s" % fileout_path)
+    properties_df.to_csv(str(fileout_path), index=False)
 
     return properties_df, cellpose_mask
 
@@ -172,7 +173,7 @@ def run_key(args):
                 continue
 
             get_logger().info(
-                "Processing fil with: file stem  %s and file extension: %s" % (filepath.stem, filepath.suffix)
+                "Processing file with: file stem  %s and file extension: %s" % (filepath.stem, filepath.suffix)
             )
 
             # single run
@@ -196,10 +197,12 @@ def run_key(args):
         get_logger().info("Writing merged features to disk: %s" % merged_file)
         merged_properties_df.to_csv(merged_file, index=False)
 
-    get_logger().info("Writing summary table to disk: %s" % "summary_table" + ".csv")
-    summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")), index=False)
+    summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
+    get_logger().info("Writing summary table to disk: %s" % summary_df_path)
+    summary_df.to_csv(str(summary_df_path), index=False)
 
-    get_logger().info("Writing key file to disk: %s" % "key_file" + ".csv")
-    key_file.to_csv(str(output_path_base.joinpath("key_file" + ".csv")), index=False)
+    keyfile_path = output_path_base.joinpath("key_file" + ".csv")
+    get_logger().info("Writing key file to disk: %s" % keyfile_path)
+    key_file.to_csv(str(keyfile_path), index=False)
 
     _finish(parameters, output_path_base)

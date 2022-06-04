@@ -3,7 +3,8 @@
 ## cellpose/segmentation parameters
 
 #in case a manually annotated cellpose mask exists
-manually_annotated_mask: "" 
+manually_annotated_mask: ""
+store_segmentation: False
 use_given_mask: False
 
 cp_model_type : "cyto" # "cyto", "cyto2", "custom"

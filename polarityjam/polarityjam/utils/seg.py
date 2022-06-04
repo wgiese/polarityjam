@@ -1,3 +1,4 @@
+import pickle
 from pathlib import Path
 
 import cellpose.models
@@ -21,7 +22,7 @@ def get_cellpose_model(parameters):
     return model
 
 
-def get_cellpose_segmentation(parameters, im_seg):
+def get_cellpose_segmentation(parameters, im_seg, filepath):
     """Gets the cellpose segmentation"""
     get_logger().info("Calculate cellpose segmentation. This might take some time...")
 
@@ -39,13 +40,30 @@ def get_cellpose_segmentation(parameters, im_seg):
         masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"],
                                                  channels=channels)
 
+    if parameters["store_segmentation"]:
+        segmentation_list = {"masks": masks}
+        segmentation, _ = get_segmentation_file_name(parameters, filepath)
+
+        get_logger().info("Storing cellpose segmentation: %s" % segmentation)
+        np.save(segmentation, segmentation_list, allow_pickle=True)
+
     return masks
+
+
+def get_segmentation_file_name(parameters, filepath):
+    stem = Path(filepath).stem
+
+    suffix = "_seg.npy"
+    if parameters["manually_annotated_mask"]:
+        suffix = parameters["manually_annotated_mask"]
+    segmentation = Path(filepath).parent.joinpath(stem + suffix)
+
+    return segmentation, stem
 
 
 def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     get_logger().info("Look up cellpose segmentation...")
-    stem = Path(filepath).stem
-    segmentation = Path(filepath).parent.joinpath(stem + "_seg.npy")
+    segmentation, _ = get_segmentation_file_name(parameters, filepath)
 
     if segmentation.exists():
         get_logger().info("Load cellpose segmentation...")
@@ -55,7 +73,7 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
         cellpose_mask = cellpose_seg.item()['masks']
 
     else:
-        cellpose_mask = get_cellpose_segmentation(parameters, img_seg)
+        cellpose_mask = get_cellpose_segmentation(parameters, img_seg, filepath)
 
     if parameters["clear_border"]:
         cellpose_mask_clear_border = skimage.segmentation.clear_border(cellpose_mask)

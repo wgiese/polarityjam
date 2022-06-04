@@ -115,7 +115,7 @@ class TestIntegration(TestCommon):
     def test_run_stack_no_nuclei(self):
         in_path = str(self.get_test_image_folder("n"))
         param_file = str(self.get_test_parameter_file("parameters_no_nuclei.yml"))
-        out_path = str(self.output_path.joinpath("run_steack_no_nuclei"))
+        out_path = str(self.output_path.joinpath("run_stack_no_nuclei"))
 
         # build arguments
         sys.argv = [sys.argv[0]] + ['run-stack', param_file, in_path, out_path]
