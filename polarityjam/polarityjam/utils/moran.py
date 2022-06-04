@@ -135,7 +135,10 @@ class Moran(object):
             self.EI_sim = sim.sum() / permutations
             self.seI_sim = np.array(sim).std()
             self.VI_sim = self.seI_sim ** 2
-            self.z_sim = (self.I - self.EI_sim) / self.seI_sim
+            if self.seI_sim != 0:
+                self.z_sim = (self.I - self.EI_sim) / self.seI_sim
+            else:
+                self.z_sim = (self.I - self.EI_sim) / np.finfo(float).eps
             if self.z_sim > 0:
                 self.p_z_sim = 1 - stats.norm.cdf(self.z_sim)
             else:
