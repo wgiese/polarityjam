@@ -49,7 +49,7 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df.shape[0], 97, delta=10)
 
         # number of features should not change
-        self.assertEqual(df.shape[1], 39)
+        self.assertEqual(df.shape[1], 41)
 
         # only one csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -76,8 +76,8 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df2.shape[0], 99, delta=10)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 39)
-        self.assertEqual(df2.shape[1], 39)
+        self.assertEqual(df1.shape[1], 41)
+        self.assertEqual(df2.shape[1], 41)
 
         # two csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -106,9 +106,9 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df3.shape[0], 58, delta=7)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 44)
-        self.assertEqual(df2.shape[1], 44)
-        self.assertEqual(df3.shape[1], 44)
+        self.assertEqual(df1.shape[1], 46)
+        self.assertEqual(df2.shape[1], 46)
+        self.assertEqual(df3.shape[1], 46)
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
