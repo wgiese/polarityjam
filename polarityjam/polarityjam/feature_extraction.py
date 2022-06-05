@@ -383,8 +383,8 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     dataset.at[index, "flow_shape_alignment_nuc"] = np.sin(np.pi / 2.0 - props.orientation)
     dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length
     dataset.at[index, "minor_axis_length_nuc"] = props.minor_axis_length
-    dataset.at[index, "area"] = props.area
-    dataset.at[index, "perimeter"] = props.perimeter
+    dataset.at[index, "area_nuc"] = props.area
+    dataset.at[index, "perimeter_nuc"] = props.perimeter
     dataset.at[index, "eccentricity_nuc"] = props.eccentricity
     dataset.at[index, "major_to_minor_ratio_nuc"] = props.major_axis_length / props.minor_axis_length
 
