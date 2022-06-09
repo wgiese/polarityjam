@@ -6,14 +6,12 @@ import numpy as np
 import pandas as pd
 
 from polarityjam.feature_extraction import get_image_for_segmentation, get_features_from_cellpose_seg_multi_channel
+from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
 from polarityjam.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
 from polarityjam.utils.seg import load_or_get_cellpose_segmentation
-from polarityjam.polarityjam_logging import get_logger
 
-
-# todo: run the app on a server? Ask for resources! Missing features?
 
 def run(args):
     set_figure_dpi()
@@ -47,6 +45,7 @@ def run(args):
 def _finish(parameters, output_path):
     # write parameters to disk
     out_param = Path(output_path).joinpath("%s_param%s" % (get_doc_file_prefix(), ".yml"))
+    get_logger().info("Writing parameter to disk: %s" % out_param)
     write_dict_to_yml(out_param, parameters)
 
 
@@ -67,14 +66,17 @@ def _run(infile, parameters, output_path, fileout_name):
     plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
-    properties_df = get_features_from_cellpose_seg_multi_channel(parameters, img, cellpose_mask, fileout_name,
-                                                                 output_path)
+    properties_df = get_features_from_cellpose_seg_multi_channel(
+        parameters, img, cellpose_mask, fileout_name, output_path
+    )
 
     get_logger().info("Head of created dataset: \n %s" % properties_df.head())
 
     # write output
     fileout_base, _ = os.path.splitext(fileout_name)
-    properties_df.to_csv(str(Path(output_path).joinpath(fileout_base + ".csv")), index=False)
+    fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
+    get_logger().info("Writing features to disk: %s" % fileout_path)
+    properties_df.to_csv(str(fileout_path), index=False)
 
     return properties_df, cellpose_mask
 
@@ -137,6 +139,7 @@ def run_key(args):
 
     # convert
     output_path_base = Path(output_path_base)
+    create_path_recursively(output_path_base)
     in_path = Path(in_path)
 
     # process
@@ -171,7 +174,7 @@ def run_key(args):
                 continue
 
             get_logger().info(
-                "Processing fil with: file stem  %s and file extension: %s" % (filepath.stem, filepath.suffix)
+                "Processing file with: file stem  %s and file extension: %s" % (filepath.stem, filepath.suffix)
             )
 
             # single run
@@ -192,10 +195,15 @@ def run_key(args):
 
         offset = offset + len(file_list)
         merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
-        merged_properties_df.to_csv(merged_file, index = False)
-        key_file.at[k, "feature_table"] = merged_file
+        get_logger().info("Writing merged features to disk: %s" % merged_file)
+        merged_properties_df.to_csv(merged_file, index=False)
 
-    summary_df.to_csv(str(output_path_base.joinpath("summary_table" + ".csv")), index = False)
-    key_file.to_csv(str(output_path_base.joinpath("key_file" + ".csv")), index = False)
+    summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
+    get_logger().info("Writing summary table to disk: %s" % summary_df_path)
+    summary_df.to_csv(str(summary_df_path), index=False)
+
+    keyfile_path = output_path_base.joinpath("key_file" + ".csv")
+    get_logger().info("Writing key file to disk: %s" % keyfile_path)
+    key_file.to_csv(str(keyfile_path), index=False)
 
     _finish(parameters, output_path_base)

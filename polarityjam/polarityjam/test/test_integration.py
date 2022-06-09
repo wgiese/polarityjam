@@ -1,5 +1,7 @@
 import glob
+import platform
 import sys
+import unittest
 from pathlib import Path
 
 import pandas as pd
@@ -47,7 +49,7 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df.shape[0], 97, delta=10)
 
         # number of features should not change
-        self.assertEqual(df.shape[1], 31)
+        self.assertEqual(df.shape[1], 41)
 
         # only one csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -74,8 +76,8 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df2.shape[0], 99, delta=10)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 31)
-        self.assertEqual(df2.shape[1], 31)
+        self.assertEqual(df1.shape[1], 41)
+        self.assertEqual(df2.shape[1], 41)
 
         # two csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -104,18 +106,19 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df3.shape[0], 58, delta=7)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 36)
-        self.assertEqual(df2.shape[1], 36)
-        self.assertEqual(df3.shape[1], 36)
+        self.assertEqual(df1.shape[1], 46)
+        self.assertEqual(df2.shape[1], 46)
+        self.assertEqual(df3.shape[1], 46)
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(3, num_csv)
 
+    @unittest.skipIf(platform.system().lower() == 'windows', "Memory issues. Skipping test!")
     def test_run_stack_no_nuclei(self):
         in_path = str(self.get_test_image_folder("n"))
         param_file = str(self.get_test_parameter_file("parameters_no_nuclei.yml"))
-        out_path = str(self.output_path.joinpath("run_steack_no_nuclei"))
+        out_path = str(self.output_path.joinpath("run_stack_no_nuclei"))
 
         # build arguments
         sys.argv = [sys.argv[0]] + ['run-stack', param_file, in_path, out_path]
@@ -137,9 +140,9 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df3.shape[0], 29, delta=4)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 24)
-        self.assertEqual(df2.shape[1], 24)
-        self.assertEqual(df3.shape[1], 24)
+        self.assertEqual(df1.shape[1], 32)
+        self.assertEqual(df2.shape[1], 32)
+        self.assertEqual(df3.shape[1], 32)
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))

@@ -22,7 +22,7 @@ class TestFunctions(TestCommon):
             "channel_nucleus": 1,
             "channel_golgi": 2
         }
-        local_parameter_file_path = Path(self.tmp_dir.name).joinpath("local_parameter_file.yml")
+        local_parameter_file_path = Path(self.tmp_dir).joinpath("local_parameter_file.yml")
 
         with open(local_parameter_file_path, "w+") as file:
             file.write(yaml.dump(local_parameter_file, Dumper=yaml.Dumper))

@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import pysal.explore as pysalexp
-import pysal.lib as pysallib
 import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
@@ -9,9 +7,11 @@ import skimage.measure
 import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
+from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
 from polarityjam.utils.seg import get_outline_from_mask
+from polarityjam.utils.weights import W
 
 
 def get_image_for_segmentation(parameters, img):
@@ -271,11 +271,14 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             )
         )
 
-    # morans I analysis
-    fill_morans_i(properties_dataset, rag)
-
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
+
+    # morans I analysis
+    fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
+
+    # neighborhood feature analysis
+    k_neighbor_dif(rag, parameters["feature_of_interest"], properties_dataset)
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
@@ -285,11 +288,11 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     return properties_dataset
 
 
-def fill_morans_i(properties_dataset, rag):
-    get_logger().info("Performing morans I group statistic...")
+def fill_morans_i(properties_dataset, rag, foi):
+    get_logger().info("Calculating morans I group statistic...")
 
     # extract FOI and weights
-    morans_feature, morans_weights = morans_data_prep(rag, "area")
+    morans_feature, morans_weights = morans_data_prep(rag, foi)
     morans_i = run_morans(morans_feature, morans_weights)
 
     get_logger().info("Morans I value: %s " % morans_i.I)
@@ -380,8 +383,8 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     dataset.at[index, "flow_shape_alignment_nuc"] = np.sin(np.pi / 2.0 - props.orientation)
     dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length
     dataset.at[index, "minor_axis_length_nuc"] = props.minor_axis_length
-    dataset.at[index, "area"] = props.area
-    dataset.at[index, "perimeter"] = props.perimeter
+    dataset.at[index, "area_nuc"] = props.area
+    dataset.at[index, "perimeter_nuc"] = props.perimeter
     dataset.at[index, "eccentricity_nuc"] = props.eccentricity
     dataset.at[index, "major_to_minor_ratio_nuc"] = props.major_axis_length / props.minor_axis_length
 
@@ -478,9 +481,9 @@ def remove_islands(frame_graph, mask):
 
 
 def morans_data_prep(rag, feature):
-    """Takes a region adjacency graph and a list of cell features"""
-    """propogates features to graph so morans I can be performed."""
-    weights = pysallib.weights.W.from_networkx(rag)
+    """Takes a region adjacency graph and a list of cell features.
+    Propogates features to graph so morans I can be performed."""
+    weights = W.from_networkx(rag)
     # extract the feature of interest from the rag
     morans_features = [rag.nodes[nodes_idx][feature] for nodes_idx in list(rag.nodes)]
 
@@ -489,52 +492,94 @@ def morans_data_prep(rag, feature):
 
 def run_morans(morans_features, weihgts):
     """run morans I, measure of spatial correlation and significance respectively:  mr_i.I,  mr_i.p_norm."""
-    mi = pysalexp.esda.Moran(morans_features, weihgts, two_tailed=False)
+    mi = Moran(morans_features, weihgts, two_tailed=False)
 
     return mi
 
 
-# todo: nowhere used, include in the feature analysis
+def k_neighbor_dif(graph, foi, properties_dataset):
+    """Extracts neighborhood statics from graph."""
+    get_logger().info("Calculating first and second nearest neighbor statistic...")
+
+    mean_dif_first_neighbors = []
+    median_dif_first_neighbors = []
+    var_dif_first_neighbors = []
+    range_dif_first_neighbors = []
+
+    mean_dif_second_neighbors = []
+    median_dif_second_neighbors = []
+    var_dif_second_neighbors = []
+    range_dif_second_neighbors = []
+    for node in graph.nodes():
+
+        # feature of interest, first and second_nearest_neighbors
+        node_foi = graph.nodes[node][foi]
+        first_nearest_neighbors, second_nearest_neighbors = second_neighbors(graph, node)
+
+        # feature of interest in comparison with first_nearest neighbor nodes
+        foi_first_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in first_nearest_neighbors]
+
+        # feature of interest in comparison to second nearest neighbor nodes
+        foi_second_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in second_nearest_neighbors]
+
+        # append first nearest neighbors statistics
+        if len(foi_first_nearest_diff) > 0:
+            mean_dif_first_neighbors.append(np.mean(foi_first_nearest_diff))
+            median_dif_first_neighbors.append(np.median(foi_first_nearest_diff))
+            var_dif_first_neighbors.append(np.std(foi_first_nearest_diff))
+            range_dif_first_neighbors.append(abs(np.min(foi_first_nearest_diff) - np.max(foi_first_nearest_diff)))
+        else:
+            mean_dif_first_neighbors.append(0)
+            median_dif_first_neighbors.append(0)
+            var_dif_first_neighbors.append(0)
+            range_dif_first_neighbors.append(0)
+
+        # append second nearest neighbors statistics
+        if len(foi_second_nearest_diff) > 0:
+            mean_dif_second_neighbors.append(np.mean(foi_second_nearest_diff))
+            median_dif_second_neighbors.append(np.median(foi_second_nearest_diff))
+            var_dif_second_neighbors.append(np.std(foi_second_nearest_diff))
+            range_dif_second_neighbors.append(abs(np.min(foi_second_nearest_diff) - np.max(foi_second_nearest_diff)))
+        else:
+            mean_dif_second_neighbors.append(0)
+            median_dif_second_neighbors.append(0)
+            var_dif_second_neighbors.append(0)
+            range_dif_second_neighbors.append(0)
+
+    # fill properties for first nearest neighbors
+    properties_dataset["mean_dif_1st_neighbors"] = mean_dif_first_neighbors
+    properties_dataset["median_dif_1st_neighbors"] = median_dif_first_neighbors
+    properties_dataset["stddev_dif_1st_neighbors"] = var_dif_first_neighbors
+    properties_dataset["range_dif_1st_neighbors"] = range_dif_first_neighbors
+
+    # fill properties for second nearest neighbors
+    properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_second_neighbors
+    properties_dataset["median_dif_2nd_neighbors"] = median_dif_second_neighbors
+    properties_dataset["stddev_dif_2nd_neighbors"] = var_dif_second_neighbors
+    properties_dataset["range_dif_2nd_neighbors"] = range_dif_second_neighbors
+
+
 def second_neighbors(rag, node):
-    """return ind labels of second nearest neighbors of rag"""
-    second_nearest = []
-    first_nearest = (list(rag.neighbors(node)))
-    for element in first_nearest:
-        k_nearest = (list(rag.neighbors(element)))
-        second_nearest = second_nearest + k_nearest
-    set1nd = set(first_nearest)
-    set2nd = set(second_nearest)
-    twond_heybrs = list(set2nd.difference(set1nd))
-    twond_heybrs = list(filter(lambda a: a != node, twond_heybrs))
+    """return all second and first nearest neighbor nodes of a given node in a rag"""
+    first_nearest_list = shared_edges(rag, node)
 
-    return twond_heybrs
+    # get list of second nearest neighbors
+    k_nearest_list_unfiltered = []
+    for first_nearest in first_nearest_list:
+        k_nearest = list(rag.neighbors(first_nearest))
+        k_nearest_list_unfiltered += k_nearest
+
+    first_nearest_set = set(first_nearest_list)
+    k_nearest_set = set(k_nearest_list_unfiltered)
+
+    # get the difference of both sets and remove the node of interest from the final set
+    second_nearest_list = list(k_nearest_set.difference(first_nearest_set))
+    second_nearest_list = list(filter(lambda n: n != node, second_nearest_list))
+
+    return first_nearest_list, second_nearest_list
 
 
-# todo: nowhere used, include in the feature analysis
 def shared_edges(rag, node):
-    """return ind labels of neighbours but its a function """
+    """return all first nearest neighbor nodes of a given node in a rag"""
     first_nearest = list(set(rag.neighbors(node)))
     return first_nearest
-
-# todo: nowhere used, include in the feature analysis, fix import errors
-def morans_I(G,feature_list):
-    "do morans i with less dependencies"
-    "To do this you need a feature list - u get this from the data prep function"
-    "and a graph - G"
-    value = feature_list
-    weightMatrix = nx.to_numpy_matrix(G)
-
-    meanValue = np.mean(value)
-    valueDifFromMean = value - meanValue
-    numberOfValues = len(value)
-    sumOfWeightMatrix = np.sum(weightMatrix)
-    summedVariance = np.sum((value - meanValue)**2)
-
-    weightedCov = 0
-    for i in range(weightMatrix.shape[0]):
-        for j in range(weightMatrix.shape[1]):
-            weightedCov += weightMatrix[i, j] * valueDifFromMean[i] * valueDifFromMean[j]
-
-    weightedCovariance = weightedCov
-    moransI = (numberOfValues * weightedCovariance) / (sumOfWeightMatrix * summedVariance)
-    return(moransI)

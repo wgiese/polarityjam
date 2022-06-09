@@ -1,12 +1,9 @@
-#input_path : "/path/to/image/folder/"
-
 ## cellpose/segmentation parameters
+manually_annotated_mask: ""  # in case a manually annotated cellpose mask exists specify suffix here
+store_segmentation: False
+use_given_mask: True
 
-#in case a manually annotated cellpose mask exists
-manually_annotated_mask: "" 
-use_given_mask: False
-
-cp_model_type : "cyto" # "cyto", "cyto2", "custom"
+cp_model_type : "cyto"  # "cyto", "cyto2", "custom"
 cp_model_path : ""
 estimated_cell_diameter : 100
 
@@ -17,16 +14,14 @@ min_nucleus_size: 10
 min_golgi_size: 10
 
 ## spatial statistics
-
 feature_of_interest: "area"
 
 ## plot options
-
 plot_polarity: True
 plot_alignment: True
-feature_color_scale: ["angle_deg","cyclic"] 
-# feature_color_scale: ["eccentricity","cyclic"] 
+feature_color_scale: ["angle_deg","cyclic"]
 
+# feature_color_scale: ["eccentricity","cyclic"] 
 plot_marker: True
 plot_ratio_method: False
 plot_cyclic_orientation: False
@@ -46,7 +41,5 @@ channel_expression_marker : -1
 channel_focal_adhesions: -1
 mask_focal_adhesion: -1
 mask_junction: -1
-
-
 membrane_thickness : 5
 

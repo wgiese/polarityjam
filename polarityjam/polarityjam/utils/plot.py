@@ -3,21 +3,21 @@ from pathlib import Path
 
 import cmocean as cm
 import matplotlib as mpl
-import tifffile
 import numpy as np
+import tifffile
 from matplotlib import pyplot as plt
 from skimage.future import graph
-from skimage.measure import label, regionprops
 
+from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.rag import orientation_graph_nf
 from polarityjam.utils.seg import get_outline_from_mask
-from polarityjam.polarityjam_logging import get_logger
 
 # for figure plot resolution
 FIGURE_DPI = 300
 FONTSIZE_TEXT_ANNOTATIONS = 3
 MARKERSIZE = 2
 ALPHA_MASKS = 0.5
+
 
 def set_figure_dpi():
     mpl.rcParams['figure.dpi'] = FIGURE_DPI
@@ -65,8 +65,9 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         plt.close(fig)
 
 
-def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props, base_filename,
-                  output_path):
+def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props,
+                            base_filename,
+                            output_path):
     """ function to plot nuclei-golgi polarity vectors 
     
     parameters  :   dict
@@ -107,11 +108,11 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     )
     color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
     color_bar.set_label("polarity angle")
-    color_bar.ax.set_yticks([0,90,180,270,360])    
+    color_bar.ax.set_yticks([0, 90, 180, 270, 360])
 
     zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
-    rgb_golgi = np.dstack((golgi_mask.astype(int)*256,zero,zero,golgi_mask.astype(float)*0.5))
-    rgb_nuclei = np.dstack((zero,zero,nuclei_mask.astype(int)*256,nuclei_mask.astype(float)*0.5))
+    rgb_golgi = np.dstack((golgi_mask.astype(int) * 256, zero, zero, golgi_mask.astype(float) * 0.5))
+    rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
 
     ax.imshow(rgb_nuclei)
     ax.imshow(rgb_golgi)
@@ -138,7 +139,8 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     plt.close(fig)
 
     if "tif" in parameters["graphics_output_format"]:
-        tifffile.imsave(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_polarity.tif")), np.ma.masked_where(cell_mask == 0, cell_angle))
+        tifffile.imsave(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_polarity.tif")),
+                        np.ma.masked_where(cell_mask == 0, cell_angle))
 
 
 def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
@@ -254,7 +256,8 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
     plt.close(fig)
 
 
-def plot_shape_props(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot, nuclei_mask=None):
+def plot_shape_props(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot,
+                     nuclei_mask=None):
     """ function to plot cell (and optionally nuclei) orientation/alignment 
     
     parameters  :   dict
@@ -264,8 +267,7 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
     masks       :   numpy.array (2-dim), int
                     same dimension as im_junction, contains cell masks
     """
-
-    print("Plot: ", feature_to_plot)
+    get_logger().info("Prepare plotting: %s" % feature_to_plot)
 
     number_sub_figs = 1
 
@@ -275,21 +277,20 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
 
     fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
 
-
     if feature_to_plot == 'shape_orientation':
-        v_min = 0.0         
+        v_min = 0.0
         v_max = 180.0
-        yticks = [0.0,45.0,90.0,135.0,180.0]
+        yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
         plot_title_1 = "cell shape orientation"
         plot_title_2 = "nuclei shape orientation"
-        color_bar_label = "shape orientation (degree)"    
+        color_bar_label = "shape orientation (degree)"
     else:
         v_min = 0.0
         v_max = 1.0
-        yticks = [0.0,0.5,1.0]
+        yticks = [0.0, 0.5, 1.0]
         plot_title_1 = "cell elongation"
         plot_title_2 = "nuclei elongation"
-        color_bar_label = "eccentricity"    
+        color_bar_label = "eccentricity"
 
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
 
@@ -297,8 +298,8 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        if feature_to_plot == 'shape_orientation':     
-            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['shape_orientation']*180.0/np.pi
+        if feature_to_plot == 'shape_orientation':
+            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['shape_orientation'] * 180.0 / np.pi
         else:
             single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['eccentricity']
         cell_eccentricity += single_cell_mask
@@ -306,22 +307,21 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
     if nuclei_mask is not None:
         ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
-        if feature_to_plot == 'shape_orientation':   
+        if feature_to_plot == 'shape_orientation':
             cax_0 = ax[0].imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.5
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
+                alpha=0.5
             )
         else:
             cax_0 = ax[0].imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max,
+                alpha=0.5
             )
-        
+
         color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)  # , extend='both')
         color_bar.set_label(color_bar_label)
         color_bar.ax.set_yticks(yticks)
 
-        #color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)
-        #color_bar.set_label('eccentricity')
- 
         ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
         get_logger().info("Calculating nuclei eccentricity...")
@@ -333,13 +333,14 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
             if row_label == 0:
                 continue
 
-            single_cell_mask = np.where(cell_mask == row_label, True, 0) 
+            single_cell_mask = np.where(cell_mask == row_label, True, 0)
             single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-            if feature_to_plot == 'shape_orientation':     
-                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['shape_orientation_nuc']*180.0/np.pi
+            if feature_to_plot == 'shape_orientation':
+                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row[
+                    'shape_orientation_nuc'] * 180.0 / np.pi
             else:
                 single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
-            #single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+            # single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
             nuclei_eccentricity += single_nuclei_mask
 
         get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
@@ -347,17 +348,15 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
 
         nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: threshold?
 
-        if feature_to_plot == 'shape_orientation': 
+        if feature_to_plot == 'shape_orientation':
             cax_1 = ax[1].imshow(np.ma.masked_where(
-                nuclei_mask_ == 0, nuclei_eccentricity), cmap =cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+                nuclei_mask_ == 0, nuclei_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
             )
-        else:  
+        else:
             cax_1 = ax[1].imshow(np.ma.masked_where(
-                nuclei_mask_ == 0, nuclei_eccentricity), cmap =plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
+                nuclei_mask_ == 0, nuclei_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
             )
 
-        #color_bar = fig.colorbar(cax_1, ax=ax[1], shrink=0.3)  # , extend='both')
-        #color_bar.set_label('eccentricity')
         color_bar = fig.colorbar(cax_1, ax=ax[1], shrink=0.3)  # , extend='both')
         color_bar.set_label(color_bar_label)
         color_bar.ax.set_yticks(yticks)
@@ -367,25 +366,27 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
         ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
         if feature_to_plot == 'shape_orientation':
-            v_min = 0.0         
+            v_min = 0.0
             v_max = 180.0
-            yticks = [0.0,45.0,90.0,135.0,180.0]
+            yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
         else:
             v_min = 0.0
             v_max = 1.0
-            yticks = [0.0,0.5,1.0]
-        
-        if feature_to_plot == 'shape_orientation':   
+            yticks = [0.0, 0.5, 1.0]
+
+        if feature_to_plot == 'shape_orientation':
             cax = ax.imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
+                alpha=0.75
             )
         else:
             cax = ax.imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.75
+                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max,
+                alpha=0.75
             )
 
-        #ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha=0.25)
-        
+        # ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha=0.25)
+
         color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
         color_bar.set_label(color_bar_label)
         color_bar.ax.set_yticks(yticks)
@@ -411,7 +412,8 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
             ax[0].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax[0].plot(y0, x0, '.b', markersize=MARKERSIZE)
             orientation_degree = 180.0 * orientation / np.pi
-            ax[0].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+            ax[0].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
+                       fontsize=FONTSIZE_TEXT_ANNOTATIONS)
 
             # plot orientation degree nucleus
             orientation = row['shape_orientation_nuc']
@@ -432,16 +434,19 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
             ax[1].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax[1].plot(y0, x0, '.b', markersize=MARKERSIZE)
             orientation_degree = 180.0 * orientation / np.pi
-            ax[1].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+            ax[1].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
+                       fontsize=FONTSIZE_TEXT_ANNOTATIONS)
         else:
             ax.plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
             ax.plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
             ax.plot(y0, x0, '.b', markersize=MARKERSIZE)
             if feature_to_plot == "shape_orientation":
                 orientation_degree = 180.0 * orientation / np.pi
-                ax.text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+                ax.text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
+                        fontsize=FONTSIZE_TEXT_ANNOTATIONS)
             else:
-                ax.text(y0, x0, str(np.round(row["eccentricity"], 2)), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+                ax.text(y0, x0, str(np.round(row["eccentricity"], 2)), color="yellow",
+                        fontsize=FONTSIZE_TEXT_ANNOTATIONS)
 
     # set title and ax limits
     if nuclei_mask is not None:
@@ -450,7 +455,7 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
         ax[0].set_ylim(0, im_junction.shape[0])
         ax[0].invert_yaxis()
         ax[0].axis('off')
-        
+
         ax[1].set_title(plot_title_2)
         ax[1].set_xlim(0, im_junction.shape[1])
         ax[1].set_ylim(0, im_junction.shape[0])
@@ -465,7 +470,7 @@ def plot_shape_props(parameters, im_junction, single_cell_props, filename, outpu
 
     # save to disk
     plt.tight_layout()
-    
+
     if "pdf" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".pdf")))
     if "svg" in parameters["graphics_output_format"]:
@@ -524,7 +529,7 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
         ax.set_ylim(0, im_junction.shape[1])
 
     plt.tight_layout()
-    
+
     if "pdf" in parameters["graphics_output_format"]:
         plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
     if "svg" in parameters["graphics_output_format"]:
@@ -534,8 +539,9 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
 
     plt.close(fig)
 
+
 ## TODO: remove this function, has been integrated in plot_shape_props
-#def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
+# def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
 #
 #
 #    get_logger().info("Plotting shape orientation on a cyclic scale")
@@ -579,7 +585,7 @@ def plot_adjacency_matrix(label_image, intensity_image):
 def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
                  golgi_mask, im_marker):
     """Plots the properties dataset"""
-    get_logger().info("Plotting data...")
+    get_logger().info("Plotting...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
     # TODO: adapt name plot polarity in parameter files
@@ -633,11 +639,3 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
             "shape_orientation",
             nuclei_mask=nuclei_mask,
         )
-
-        #plot_cyclical(
-        #    parameters,
-        #    im_junction,
-        #    cell_mask_rem_island,
-        #    filename,
-        #    output_path
-        #)
