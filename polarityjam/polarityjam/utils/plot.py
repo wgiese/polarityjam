@@ -258,7 +258,7 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
     plt.close(fig)
 
 
-def _add_single_cell_eccentricity(
+def _add_single_cell_eccentricity_axis(
         ax, y0, x0, orientation, major_axis_length, minor_axis_length, eccentricity
 ):
     x1_ma, x1_mi, x2_ma, x2_mi, y1_ma, y1_mi, y2_ma, y2_mi = _calc_single_cell_axis_orientation_vector(
@@ -403,7 +403,7 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, filename, outp
     for index, row in single_cell_props.iterrows():
         if nuclei_mask is not None:
             # plot orientation degree
-            _add_single_cell_eccentricity(
+            _add_single_cell_eccentricity_axis(
                 ax[0],
                 row['Y_cell'],
                 row['X_cell'],
@@ -414,7 +414,7 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, filename, outp
             )
 
             # plot orientation degree nucleus
-            _add_single_cell_eccentricity(
+            _add_single_cell_eccentricity_axis(
                 ax[1],
                 row['Y_nuc'],
                 row['X_nuc'],
@@ -424,8 +424,8 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, filename, outp
                 row["eccentricity_nuc"]
             )
         else:
-            _add_single_cell_eccentricity(
-                ax[0],
+            _add_single_cell_eccentricity_axis(
+                ax,
                 row['Y_cell'],
                 row['X_cell'],
                 row['shape_orientation'],
@@ -523,7 +523,7 @@ def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientatio
     color_bar.ax.set_yticks(yticks)
 
 
-def _add_single_cell_orientation_degree(
+def _add_single_cell_orientation_degree_axis(
         ax, y0, x0, orientation, major_axis_length, minor_axis_length,
 ):
     x1_ma, x1_mi, x2_ma, x2_mi, y1_ma, y1_mi, y2_ma, y2_mi = _calc_single_cell_axis_orientation_vector(
@@ -575,7 +575,7 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
     for index, row in single_cell_props.iterrows():
         if nuclei_mask is not None:
             # plot orientation degree
-            _add_single_cell_orientation_degree(
+            _add_single_cell_orientation_degree_axis(
                 ax[0],
                 row['Y_cell'],
                 row['X_cell'],
@@ -585,7 +585,7 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
             )
 
             # plot orientation degree nucleus
-            _add_single_cell_orientation_degree(
+            _add_single_cell_orientation_degree_axis(
                 ax[1],
                 row['Y_nuc'],
                 row['X_nuc'],
@@ -594,8 +594,8 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
                 row['minor_axis_length_nuc']
             )
         else:
-            _add_single_cell_orientation_degree(
-                ax[0],
+            _add_single_cell_orientation_degree_axis(
+                ax,
                 row['Y_cell'],
                 row['X_cell'],
                 row['shape_orientation'],
