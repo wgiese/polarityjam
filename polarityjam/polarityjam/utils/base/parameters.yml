@@ -31,8 +31,8 @@ show_polarity_angles: True
 
 graphics_output_format: ['png', 'pdf'] # 'png', 'pdf', 'svg'
 dpi: 300
-graphics_width: 7 # figure width in inches
-
+graphics_width: 5 # figure width in inches
+graphics_height: 5 # figure height in inches
 # channel parameters
 channel_junction: 0
 channel_nucleus : 1

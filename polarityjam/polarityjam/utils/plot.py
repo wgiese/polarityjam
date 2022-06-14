@@ -85,13 +85,15 @@ def plot_seg_channels(seg_img, output_path, filename):
     plt.close(fig)
 
 
-def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
+def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename, parameters):
     """Plots the cellpose segmentation output, together with the separate channels from the input image."""
     output_path = Path(output_path)
     filename_out = str(output_path.joinpath(filename + "_cellpose_seg.png"))
 
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+
     if len(seg_img.shape) > 2:
-        fig, ax = plt.subplots(1, 3)
+        fig, ax = plt.subplots(1, 3, figsize=(3 * w, h))
         ax[0].imshow(seg_img[0, :, :])
         ax[0].set_title("junction channel")
         ax[1].imshow(seg_img[1, :, :])
@@ -100,7 +102,7 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         ax[2].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
         ax[2].set_title("cellpose segmentation")
     else:
-        fig, ax = plt.subplots(1, 2)
+        fig, ax = plt.subplots(1, 2, figsize=(2 * w, h))
         ax[0].imshow(seg_img[:, :])
         ax[0].set_title("junction channel")
         ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
@@ -130,8 +132,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
                     output path for plots 
     """
     # figure and axes
-    width = parameters["graphics_width"]
-    fig, ax = plt.subplots(figsize=(width, width))
+    fig, ax = plt.subplots(figsize=(parameters["graphics_width"], parameters["graphics_height"]))
 
     # base image
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
@@ -187,7 +188,8 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
         nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 3  # (optional) mean intensity nucleus
 
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(10 * number_sub_figs, 10))
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(w * number_sub_figs, h))
 
     # plot marker intensity for all subplots
     for i in range(number_sub_figs):
@@ -231,7 +233,8 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
 
 def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, filename, output_path):
-    fig, ax = plt.subplots(1, figsize=(10, 10))
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, figsize=(w, h))
     ax.imshow(im_marker, cmap=plt.cm.gray, alpha=1.0)
 
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
@@ -384,7 +387,9 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, filename, outp
     if nuclei_mask is not None:
         nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 2
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
+
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * w, h))
 
     # get cell_eccentricity
     cell_eccentricity = _calc_cell_eccentricity(single_cell_props, cell_mask)
@@ -556,7 +561,9 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
     if nuclei_mask is not None:
         nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 2
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
+
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * w, h))
 
     # get cell_orientation
     cell_orientation = _calc_cell_orientation(single_cell_props, cell_mask)
@@ -617,22 +624,9 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
     plt.close(fig)
 
 
-def plot_shape_props(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot,
-                     nuclei_mask=None):
-    """ function to plot cell (and optionally nuclei) orientation/alignment
-
-    parameters  :   dict
-                    user defined parameters
-    im_junction :   numpy.array (2-dim), float
-                    channel containing the junction staining (used for segmentation)
-    masks       :   numpy.array (2-dim), int
-                    same dimension as im_junction, contains cell masks
-    """
-    get_logger().info("Prepare plotting: %s" % feature_to_plot)
-
-
 def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, filename, output_path):
-    fig, ax = plt.subplots(1, 1)
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, 1, figsize=(w, h))
 
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
     ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
