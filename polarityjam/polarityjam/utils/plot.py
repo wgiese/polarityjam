@@ -17,6 +17,7 @@ FIGURE_DPI = 300
 FONTSIZE_TEXT_ANNOTATIONS = 3
 MARKERSIZE = 2
 ALPHA_MASKS = 0.5
+CELL_OUTLINE_INTENSITY = 30
 
 
 def save_current_fig(graphics_output_format, output_path, filename, filename_suffix, image=None):
@@ -48,7 +49,7 @@ def _add_single_cell_polarity_vector(ax, x_pos_p1, y_pos_p1, x_pos_p2, y_pos_p2)
 
 def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
     outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
-    outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+    outlines_mem_accumulated = np.zeros((im_marker.shape[0], im_marker.shape[1]))
 
     for cell_label in np.unique(cell_mask):
         # exclude background
@@ -57,14 +58,14 @@ def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
 
         single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
-        outline_cell_ = np.where(outline_cell == True, 30, 0)  # todo: magic number 30?
+        outline_cell_ = np.where(outline_cell == True, 1, 0)
         outlines_cell += outline_cell_
 
         outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
-        outline_mem_ = np.where(outline_mem == True, 30, 0)  # todo: magic number 30?
-        outlines_mem += outline_mem_
+        outline_mem_ = np.where(outline_mem == True, 1, 0)
+        outlines_mem_accumulated += outline_mem_
 
-    return [outlines_cell, outlines_mem]
+    return [outlines_cell, outlines_mem_accumulated]
 
 
 def plot_seg_channels(seg_img, output_path, filename):
@@ -195,16 +196,16 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
     outlines_cell, outlines_mem = _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters)
 
     # cell and membrane outline
-    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)  # todo: what is that threshold?
+    outlines_cell_ = np.where(outlines_cell > 0, CELL_OUTLINE_INTENSITY, 0)
     ax[0].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
-    outlines_mem_ = np.where(outlines_mem > 0, 30, 0)  # todo: what is that threshold?
+    outlines_mem_ = np.where(outlines_mem > 0, CELL_OUTLINE_INTENSITY, 0)
     ax[1].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
     # nuclei marker intensity
     if nuclei_mask is not None:
         outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
-        outline_nuc_ = np.where(outline_nuc == True, 30, 0)  # todo: 30 ?
+        outline_nuc_ = np.where(outline_nuc == True, CELL_OUTLINE_INTENSITY, 0)
         ax[2].imshow(
             np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.75
         )  # always last axis
@@ -298,7 +299,7 @@ def _add_nuclei_eccentricity(fig, ax, im_junction, nuclei_mask, nuclei_eccentric
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
     # show nuclei eccentricity everywhere but background label
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: threshold?
+    nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
     cax_1 = ax.imshow(np.ma.masked_where(
         nuclei_mask_ == 0, nuclei_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
     )
@@ -318,7 +319,6 @@ def _add_title(ax, plot_title, im_junction):
 
 
 def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
-    get_logger().info("Calculating nuclei eccentricity...")
     nuclei_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
     for index, row in single_cell_props.iterrows():
         row_label = int(row['label'])
@@ -337,7 +337,6 @@ def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
 
 
 def _calc_cell_eccentricity(single_cell_props, cell_mask):
-    get_logger().info("Calculating cell eccentricity...")
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
     for index, row in single_cell_props.iterrows():
         row_label = int(row['label'])
@@ -383,7 +382,7 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, filename, outp
     # figure
     number_sub_figs = 1
     if nuclei_mask is not None:
-        nuclei_mask = nuclei_mask.astype(bool)  # todo ?
+        nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 2
     fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
 
@@ -512,7 +511,7 @@ def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientatio
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
     # show nuclei eccentricity everywhere but background label
-    nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: threshold?
+    nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
     cax_1 = ax.imshow(np.ma.masked_where(
         nuclei_mask_ == 0, nuclei_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
     )
@@ -555,7 +554,7 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
     # figure
     number_sub_figs = 1
     if nuclei_mask is not None:
-        nuclei_mask = nuclei_mask.astype(bool)  # todo ?
+        nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 2
     fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
 
@@ -638,7 +637,7 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
     ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
 
-    cell_outlines = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+    cell_outlines_accumulated = np.zeros((im_junction.shape[0], im_junction.shape[1]))
 
     for cell_label in np.unique(cell_mask):
         # exclude background
@@ -647,10 +646,12 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
 
         single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
         cell_outline = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
-        cell_outlines += np.where(cell_outline == True, 30, 0)
+        # accumulates cell outlines. overlapping outlines have a higher value
+        cell_outlines_accumulated += np.where(cell_outline == True, 1, 0)
 
-    outlines_cell_ = np.where(cell_outlines > 0, 30, 0)
-    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.bwr, vmin=0, vmax=100, alpha=0.5)
+    # overlapping accumulated outlines are ignored and set to 1.
+    cell_outlines = np.where(cell_outlines_accumulated > 0, CELL_OUTLINE_INTENSITY, 0)
+    ax.imshow(np.ma.masked_where(cell_outlines == 0, cell_outlines), plt.cm.bwr, vmin=0, vmax=100, alpha=0.5)
 
     for index, row in single_cell_props.iterrows():
         x0 = row['X_cell']
