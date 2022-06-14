@@ -2,7 +2,8 @@
 
 plot_polarity: True
 plot_marker: True
-plot_alignment: True
+plot_orientation: True
+plot_cyclic_orientation: True
 
 outline_width : 2
 show_polarity_angles: True

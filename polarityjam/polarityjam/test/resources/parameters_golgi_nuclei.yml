@@ -19,7 +19,7 @@ min_cell_size: 50
 min_golgi_size: 10
 min_nucleus_size: 10
 outline_width: 2
-plot_alignment: true
+plot_orientation: true
 plot_marker: true
 plot_polarity: true
 plot_ratio_method: true
