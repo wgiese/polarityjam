@@ -59,9 +59,8 @@ def get_image_marker(parameters, img):
 
 def set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, graph_nf):
     single_cell_props = get_single_cell_prop(single_cell_mask)
-    neighbours = len(list(graph_nf.neighbors(connected_component_label)))
     fill_single_cell_general_data_frame(
-        properties_dataset, index, filename, connected_component_label, single_cell_props, neighbours
+        properties_dataset, index, filename, connected_component_label, single_cell_props
     )
 
     return single_cell_props
@@ -187,7 +186,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker)
             set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker)
 
-            # marker nuclei properties
+            # properties for marker nuclei
             if nuclei_mask is not None:
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
@@ -209,8 +208,8 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     # morans I analysis based on FOI
     fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
 
-    # neighborhood feature analysis
-    k_neighbor_dif(rag, parameters["feature_of_interest"], properties_dataset)
+    # neighborhood feature analysis based on FOI
+    k_neighbor_dif(properties_dataset, rag, parameters["feature_of_interest"])
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, organelle_mask,
@@ -283,7 +282,7 @@ def fill_single_cell_organelle_data_frame(dataset, index, organelle_props, nucle
     dataset.at[index, "organelle_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
-def fill_single_cell_general_data_frame(dataset, index, filename, connected_component_label, props, neighbours):
+def fill_single_cell_general_data_frame(dataset, index, filename, connected_component_label, props):
     """Fills the dataset with the general single cell properties."""
     dataset.at[index, "filename"] = filename
     dataset.at[index, "label"] = connected_component_label
@@ -298,7 +297,6 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     dataset.at[index, "cell_major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
     dataset.at[index, "cell_area"] = props.area
     dataset.at[index, "cell_perimeter"] = props.perimeter
-    dataset.at[index, "cell_neighbors"] = neighbours
 
 
 def fill_single_nucleus_data_frame(dataset, index, props):
@@ -416,10 +414,11 @@ def run_morans(morans_features, weihgts):
     return mi
 
 
-def k_neighbor_dif(graph, foi, properties_dataset):
+def k_neighbor_dif(properties_dataset, graph, foi):
     """Extracts neighborhood statics from graph."""
     get_logger().info("Calculating first and second nearest neighbor statistic...")
 
+    num_neighbours = []
     mean_dif_first_neighbors = []
     median_dif_first_neighbors = []
     var_dif_first_neighbors = []
@@ -430,10 +429,12 @@ def k_neighbor_dif(graph, foi, properties_dataset):
     var_dif_second_neighbors = []
     range_dif_second_neighbors = []
     for node in graph.nodes():
+        neighbours = len(list(graph.neighbors(int(node))))
+        num_neighbours.append(neighbours)
 
         # feature of interest, first and second_nearest_neighbors
         node_foi = graph.nodes[node][foi]
-        first_nearest_neighbors, second_nearest_neighbors = second_neighbors(graph, node)
+        first_nearest_neighbors, second_nearest_neighbors = n_neighbors(graph, node)
 
         # feature of interest in comparison with first_nearest neighbor nodes
         foi_first_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in first_nearest_neighbors]
@@ -465,20 +466,22 @@ def k_neighbor_dif(graph, foi, properties_dataset):
             var_dif_second_neighbors.append(0)
             range_dif_second_neighbors.append(0)
 
+    properties_dataset["neighbors_cell"] = num_neighbours
+
     # fill properties for first nearest neighbors
-    properties_dataset["mean_dif_1st_neighbors"] = mean_dif_first_neighbors
-    properties_dataset["median_dif_1st_neighbors"] = median_dif_first_neighbors
-    properties_dataset["stddev_dif_1st_neighbors"] = var_dif_first_neighbors
-    properties_dataset["range_dif_1st_neighbors"] = range_dif_first_neighbors
+    properties_dataset["neighbors_mean_dif_1st"] = mean_dif_first_neighbors
+    properties_dataset["neighbors_median_dif_1st"] = median_dif_first_neighbors
+    properties_dataset["neighbors_stddev_dif_1st"] = var_dif_first_neighbors
+    properties_dataset["neighbors_range_dif_1st"] = range_dif_first_neighbors
 
     # fill properties for second nearest neighbors
-    properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_second_neighbors
-    properties_dataset["median_dif_2nd_neighbors"] = median_dif_second_neighbors
-    properties_dataset["stddev_dif_2nd_neighbors"] = var_dif_second_neighbors
-    properties_dataset["range_dif_2nd_neighbors"] = range_dif_second_neighbors
+    properties_dataset["neighbors_mean_dif_2nd"] = mean_dif_second_neighbors
+    properties_dataset["neighbors_median_dif_2nd"] = median_dif_second_neighbors
+    properties_dataset["neighbors_stddev_dif_2nd"] = var_dif_second_neighbors
+    properties_dataset["neighbors_range_dif_2nd"] = range_dif_second_neighbors
 
 
-def second_neighbors(rag, node):
+def n_neighbors(rag, node):
     """Return all second and first nearest neighbor nodes of a given node in a rag"""
     first_nearest_list = shared_edges(rag, node)
 
