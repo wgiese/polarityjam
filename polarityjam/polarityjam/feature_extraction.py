@@ -261,15 +261,25 @@ def fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index,
 
 def fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props):
     """Fills the dataset with the single cell marker nuclei properties."""
+    # compute marker nucleus orientation
+    marker_nucleus_orientation_rad = compute_reference_target_orientation_rad(
+        properties_dataset["nuc_X"][index],
+        properties_dataset["nuc_Y"][index],
+        properties_dataset["marker_centroid_X"][index],
+        properties_dataset["marker_centroid_Y"][index]
+    )
+
     properties_dataset.at[index, "marker_mean_expression_nuc"] = marker_nuc_props.mean_intensity
     properties_dataset.at[
         index, "marker_sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
+    properties_dataset.at[index, "marker_nucleus_orientation_rad"] = marker_nucleus_orientation_rad
+    properties_dataset.at[index, "marker_nucleus_orientation_deg"] = 180.0 * marker_nucleus_orientation_rad / np.pi
 
 
 def fill_single_cell_organelle_data_frame(dataset, index, organelle_props, nucleus_props):
     """Fills the dataset with the single cell organelle properties."""
     x_organelle, y_organelle = organelle_props.centroid
-    angle_rad = compute_marker_centroid_orientation_rad(
+    angle_rad = compute_reference_target_orientation_rad(
         nucleus_props.centroid[0], nucleus_props.centroid[1], x_organelle, y_organelle
     )
     dataset.at[index, "organelle_X"] = x_organelle
@@ -303,6 +313,12 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     """Fills the dataset with the single cell nucleus properties."""
     dataset.at[index, "nuc_X"] = props.centroid[0]
     dataset.at[index, "nuc_Y"] = props.centroid[1]
+    # compute nucleus displacement
+    nucleus_displacement_orientation_rad = compute_reference_target_orientation_rad(
+        dataset["cell_X"][index], dataset["cell_Y"][index], props.centroid[0], props.centroid[1],
+    )
+    dataset.at[index, "nuc_displacement_orientation_rad"] = nucleus_displacement_orientation_rad
+    dataset.at[index, "nuc_displacement_orientation_deg"] = 180.0 * nucleus_displacement_orientation_rad / np.pi
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
     dataset.at[index, "nuc_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
@@ -318,12 +334,12 @@ def fill_single_cell_marker_polarity(dataset, index, props):
     """Fills the dataset with the single cell marker properties."""
     marker_centroid_x, marker_centroid_y = props.weighted_centroid
     cell_x, cell_y = props.centroid
-    angle_rad = compute_marker_centroid_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y)
+    angle_rad = compute_reference_target_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y)
     dataset.at[index, "marker_mean_expr"] = props.mean_intensity
     dataset.at[index, "marker_sum_expression"] = props.mean_intensity * props.area
     dataset.at[index, "marker_centroid_X"] = props.weighted_centroid[0]
     dataset.at[index, "marker_centroid_Y"] = props.weighted_centroid[1]
-    dataset.at[index, "marker_centroid_orientation_rad"] = angle_rad  # FIXME: no sign correct?
+    dataset.at[index, "marker_centroid_orientation_rad"] = angle_rad
     dataset.at[index, "marker_centroid_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
@@ -335,10 +351,10 @@ def compute_marker_vector_norm(cell_x, cell_y, marker_centroid_x, marker_centroi
     return np.sqrt(distance2)
 
 
-def compute_marker_centroid_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y):
+def compute_reference_target_orientation_rad(ref_x, ref_y, target_x, target_y):
     """Computes the marker polarity radius"""
-    vec_x = cell_x - marker_centroid_x
-    vec_y = cell_y - marker_centroid_y
+    vec_x = ref_x - target_x
+    vec_y = ref_y - target_y
     organelle_orientation_rad = np.pi - np.arctan2(vec_x, vec_y)
 
     return organelle_orientation_rad
