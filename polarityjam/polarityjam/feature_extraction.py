@@ -270,7 +270,7 @@ def fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_
 def fill_single_cell_golgi_data_frame(dataset, index, golgi_props, nucleus_props):
     """Fills the dataset with the single cell golgi properties."""
     x_golgi, y_golgi = golgi_props.centroid
-    angle_rad, vec_x, vec_y = compute_marker_polarity_rad(
+    angle_rad = compute_marker_polarity_rad(
         nucleus_props.centroid[0], nucleus_props.centroid[1], x_golgi, y_golgi
     )
     dataset.at[index, "X_golgi"] = x_golgi
@@ -279,10 +279,7 @@ def fill_single_cell_golgi_data_frame(dataset, index, golgi_props, nucleus_props
     dataset.at[index, "distance"] = compute_marker_vector_norm(
         x_golgi, y_golgi, nucleus_props.centroid[0], nucleus_props.centroid[1]
     )
-    dataset.at[index, "vec_X"] = vec_x
-    dataset.at[index, "vec_Y"] = vec_y
     dataset.at[index, "angle_rad"] = angle_rad
-    dataset.at[index, "flow_alignment"] = np.sin(angle_rad)
     dataset.at[index, "angle_deg"] = 180.0 * angle_rad / np.pi
 
 
@@ -295,7 +292,6 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
     dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "flow_shape_alignment"] = np.sin(props.orientation)
     dataset.at[index, "major_axis_length"] = props.major_axis_length
     dataset.at[index, "minor_axis_length"] = props.minor_axis_length
     dataset.at[index, "eccentricity"] = props.eccentricity
@@ -312,7 +308,6 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
     dataset.at[index, "shape_orientation_nuc"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "flow_shape_alignment_nuc"] = np.sin(np.pi / 2.0 - props.orientation)
     dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length
     dataset.at[index, "minor_axis_length_nuc"] = props.minor_axis_length
     dataset.at[index, "area_nuc"] = props.area
@@ -330,7 +325,6 @@ def fill_single_cell_marker_polarity(dataset, index, props):
     dataset.at[index, "sum_expression"] = props.mean_intensity * props.area
     dataset.at[index, "X_weighted"] = props.weighted_centroid[0]
     dataset.at[index, "Y_weighted"] = props.weighted_centroid[1]
-    dataset.at[index, "maker_vec_norm"] = compute_marker_vector_norm(x_cell, y_cell, x_weighted, y_weighted)
     dataset.at[index, "marker_polarity_rad"] = angle_rad  # FIXME: no sign correct?
     dataset.at[index, "marker_polarity_deg"] = 180.0 * angle_rad / np.pi
 
@@ -349,7 +343,7 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
     vec_y = y_cell - y_weighted
     angle_rad = np.pi - np.arctan2(vec_x, vec_y)
 
-    return angle_rad, vec_x, vec_y
+    return angle_rad
 
 
 def remove_edges(mask):
