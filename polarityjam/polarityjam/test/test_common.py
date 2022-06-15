@@ -76,6 +76,6 @@ class TestCommon(unittest.TestCase):
 
         parameters["channel_junction"] = 3
         parameters["channel_nucleus"] = 2
-        parameters["channel_golgi"] = 0
+        parameters["channel_organelle"] = 0
 
         return parameters, param_base_file

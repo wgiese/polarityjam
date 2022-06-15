@@ -119,9 +119,9 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename, parameter
     plt.close(fig)
 
 
-def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props,
+def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, organelle_mask, single_cell_props,
                             base_filename, output_path):
-    """ function to plot nuclei-golgi polarity vectors 
+    """ function to plot nuclei-organelle polarity vectors
     
     parameters  :   dict
                     user defined parameters
@@ -131,8 +131,8 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
                     same dimension as im_junction, contains cell masks
     nuclei_mask :   numpy.array (2-dim), int
                     same dimension as im_junction, contains nuclei masks
-    golgi_mask  :   numpy.array (2-dim), int
-                    same dimension as im_junction, contains golgi masks
+    organelle_mask  :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains organelle masks
     single_cell_props : pandas data frame
     base_filename : string 
                     base_filename for plots
@@ -163,16 +163,16 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     color_bar.set_label("polarity angle")
     color_bar.ax.set_yticks([0, 90, 180, 270, 360])
 
-    # plot differently colored golgi (red) and nuclei (blue)
+    # plot differently colored organelle (red) and nuclei (blue)
     zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
-    rgb_golgi = np.dstack((golgi_mask.astype(int) * 256, zero, zero, golgi_mask.astype(float) * 0.5))
+    rgb_organelle = np.dstack((organelle_mask.astype(int) * 256, zero, zero, organelle_mask.astype(float) * 0.5))
     rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
     ax.imshow(rgb_nuclei)
-    ax.imshow(rgb_golgi)
+    ax.imshow(rgb_organelle)
 
     # plot polarity vector
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_nuc"], row["Y_nuc"], row["X_golgi"], row["Y_golgi"])
+        _add_single_cell_polarity_vector(ax, row["X_nuc"], row["Y_nuc"], row["organelle_X"], row["organelle_Y"])
         if parameters["show_polarity_angles"]:
             ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
 
@@ -186,7 +186,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     save_current_fig(
         parameters["graphics_output_format"],
         output_path, base_filename,
-        "_nuclei_golgi_vector",
+        "_nuclei_organelle_vector",
         image=polarity_angle
     )
     plt.close(fig)
@@ -711,19 +711,21 @@ def plot_adjacency_matrix(label_image, intensity_image):
     return out
 
 
-def plot_dataset(parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, golgi_mask, im_marker):
+def plot_dataset(
+        parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, organelle_mask, im_marker
+):
     """Plots the properties dataset"""
     get_logger().info("Plotting...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
     # TODO: adapt name plot polarity in parameter files
-    if parameters["plot_polarity"] and nuclei_mask is not None and golgi_mask is not None:
+    if parameters["plot_polarity"] and nuclei_mask is not None and organelle_mask is not None:
         plot_organelle_polarity(
             parameters,
             im_junction,
             cell_mask,
             nuclei_mask,
-            golgi_mask,
+            organelle_mask,
             properties_ds,
             filename, output_path,
         )

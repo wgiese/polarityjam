@@ -6,8 +6,8 @@ import skimage.measure
 import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_golgi_mask, \
-    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_golgi_mask, get_nuclei_mask
+from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
+    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask
 from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
@@ -34,7 +34,7 @@ def get_image_for_segmentation(parameters, img):
     return im_seg
 
 
-def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_golgi_mask=None):
+def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
     """Thresholds given single_cell_mask. Returns True if falls under threshold."""
     # TODO: check if this can be removed, we already remove small objects from the cellpose mask
     if len(single_cell_mask[single_cell_mask == 1]) < parameters["min_cell_size"]:
@@ -44,8 +44,8 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_gol
         if len(single_nucleus_mask[single_nucleus_mask == 1]) < parameters["min_nucleus_size"]:
             return True
 
-    if single_golgi_mask is not None:
-        if len(single_golgi_mask[single_golgi_mask == 1]) < parameters["min_golgi_size"]:
+    if single_organelle_mask is not None:
+        if len(single_organelle_mask[single_organelle_mask == 1]) < parameters["min_organelle_size"]:
             return True
 
     return False
@@ -77,14 +77,14 @@ def set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask
     return nucleus_props
 
 
-def set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props):
-    regions = skimage.measure.regionprops(single_golgi_mask)
-    golgi_props = None
+def set_single_cell_organelle_props(properties_dataset, index, single_organelle_mask, nucleus_props):
+    regions = skimage.measure.regionprops(single_organelle_mask)
+    organelle_props = None
     if regions:
-        golgi_props = regions[-1]
-        fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
+        organelle_props = regions[-1]
+        fill_single_cell_organelle_data_frame(properties_dataset, index, organelle_props, nucleus_props)
 
-    return golgi_props
+    return organelle_props
 
 
 def set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker):
@@ -138,7 +138,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     # get masks
     nuclei_mask = get_nuclei_mask(parameters, img, cell_mask_rem_island)
-    golgi_mask = get_golgi_mask(parameters, img, cell_mask_rem_island)
+    organelle_mask = get_organelle_mask(parameters, img, cell_mask_rem_island)
     im_marker = get_image_marker(parameters, img)
 
     properties_dataset = pd.DataFrame()
@@ -153,7 +153,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         # get single cell masks
         single_cell_mask = get_single_cell_mask(connected_component_label, cell_mask_rem_island)
         single_nucleus_mask = get_single_cell_nucleus_mask(connected_component_label, nuclei_mask)  # can be None
-        single_golgi_mask = get_single_cell_golgi_mask(connected_component_label, golgi_mask)  # can be None
+        single_organelle_mask = get_single_cell_organelle_mask(connected_component_label, organelle_mask)  # can be None
         single_membrane_mask = get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask)  # can be None
         single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker,
                                                            single_nucleus_mask)  # can be None
@@ -163,7 +163,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                 parameters,
                 single_cell_mask,
                 single_nucleus_mask=single_nucleus_mask,
-                single_golgi_mask=single_golgi_mask
+                single_organelle_mask=single_organelle_mask
         ):
             get_logger().info("Cell \"%s\" falls under threshold! Removed from RAG..." % connected_component_label)
             excluded += 1
@@ -178,9 +178,9 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         if single_nucleus_mask is not None:
             nucleus_props = set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask)
 
-            # properties for golgi
-            if nucleus_props and single_golgi_mask is not None:
-                set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props)
+            # properties for organelle
+            if nucleus_props and single_organelle_mask is not None:
+                set_single_cell_organelle_props(properties_dataset, index, single_organelle_mask, nucleus_props)
 
         # properties for marker
         if im_marker is not None:
@@ -213,7 +213,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     k_neighbor_dif(rag, parameters["feature_of_interest"], properties_dataset)
 
     plot_dataset(
-        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
+        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, organelle_mask,
         im_marker
     )
 
@@ -267,20 +267,20 @@ def fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_
         index, "sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
 
 
-def fill_single_cell_golgi_data_frame(dataset, index, golgi_props, nucleus_props):
-    """Fills the dataset with the single cell golgi properties."""
-    x_golgi, y_golgi = golgi_props.centroid
+def fill_single_cell_organelle_data_frame(dataset, index, organelle_props, nucleus_props):
+    """Fills the dataset with the single cell organelle properties."""
+    x_organelle, y_organelle = organelle_props.centroid
     angle_rad = compute_marker_polarity_rad(
-        nucleus_props.centroid[0], nucleus_props.centroid[1], x_golgi, y_golgi
+        nucleus_props.centroid[0], nucleus_props.centroid[1], x_organelle, y_organelle
     )
-    dataset.at[index, "X_golgi"] = x_golgi
-    dataset.at[index, "Y_golgi"] = y_golgi
+    dataset.at[index, "organelle_X"] = x_organelle
+    dataset.at[index, "organelle_Y"] = y_organelle
 
-    dataset.at[index, "distance"] = compute_marker_vector_norm(
-        x_golgi, y_golgi, nucleus_props.centroid[0], nucleus_props.centroid[1]
+    dataset.at[index, "organelle_distance"] = compute_marker_vector_norm(
+        x_organelle, y_organelle, nucleus_props.centroid[0], nucleus_props.centroid[1]
     )
-    dataset.at[index, "angle_rad"] = angle_rad
-    dataset.at[index, "angle_deg"] = 180.0 * angle_rad / np.pi
+    dataset.at[index, "organelle_orientation_rad"] = angle_rad
+    dataset.at[index, "organelle_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
 def fill_single_cell_general_data_frame(dataset, index, filename, connected_component_label, props, neighbours):

@@ -20,7 +20,7 @@ class TestFunctions(TestCommon):
         local_parameter_file = {
             "channel_junction": 0,
             "channel_nucleus": 1,
-            "channel_golgi": 2
+            "channel_organelle": 2
         }
         local_parameter_file_path = Path(self.tmp_dir).joinpath("local_parameter_file.yml")
 
@@ -29,7 +29,7 @@ class TestFunctions(TestCommon):
 
         self.parameters["channel_junction"] = 0
         self.parameters["channel_nucleus"] = 1
-        self.parameters["channel_golgi"] = 2
+        self.parameters["channel_organelle"] = 2
 
         # call
         r = read_parameters(local_parameter_file_path)

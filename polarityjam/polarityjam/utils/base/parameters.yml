@@ -11,7 +11,7 @@ use_gpu:  False
 clear_border: True
 min_cell_size: 50
 min_nucleus_size: 10
-min_golgi_size: 10
+min_organelle_size: 10
 
 ## spatial statistics
 feature_of_interest: "area"
@@ -36,7 +36,7 @@ graphics_height: 5 # figure height in inches
 # channel parameters
 channel_junction: 0
 channel_nucleus : 1
-channel_golgi : 2
+channel_organelle : 2
 channel_expression_marker : -1
 channel_focal_adhesions: -1
 mask_focal_adhesion: -1
