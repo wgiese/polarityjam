@@ -248,29 +248,29 @@ def get_single_cell_prop(single_cell_mask):
 
 def fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props):
     """Fills the dataset with the single cell marker membrane properties."""
-    properties_dataset.at[index, "mean_expression_mem"] = marker_membrane_props.mean_intensity
+    properties_dataset.at[index, "marker_mean_expression_mem"] = marker_membrane_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_mem"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
+        index, "marker_sum_expression_mem"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
 
 
 def fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props):
     """Fills the dataset with the single cell marker nuclei cytosol properties."""
-    properties_dataset.at[index, "mean_expression_cyt"] = marker_nuc_cyt_props.mean_intensity
+    properties_dataset.at[index, "marker_mean_expression_cyt"] = marker_nuc_cyt_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_cyt"] = marker_nuc_cyt_props.mean_intensity * marker_nuc_cyt_props.area
+        index, "marker_sum_expression_cyt"] = marker_nuc_cyt_props.mean_intensity * marker_nuc_cyt_props.area
 
 
 def fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props):
     """Fills the dataset with the single cell marker nuclei properties."""
-    properties_dataset.at[index, "mean_expression_nuc"] = marker_nuc_props.mean_intensity
+    properties_dataset.at[index, "marker_mean_expression_nuc"] = marker_nuc_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
+        index, "marker_sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
 
 
 def fill_single_cell_organelle_data_frame(dataset, index, organelle_props, nucleus_props):
     """Fills the dataset with the single cell organelle properties."""
     x_organelle, y_organelle = organelle_props.centroid
-    angle_rad = compute_marker_polarity_rad(
+    angle_rad = compute_marker_centroid_orientation_rad(
         nucleus_props.centroid[0], nucleus_props.centroid[1], x_organelle, y_organelle
     )
     dataset.at[index, "organelle_X"] = x_organelle
@@ -318,29 +318,29 @@ def fill_single_nucleus_data_frame(dataset, index, props):
 
 def fill_single_cell_marker_polarity(dataset, index, props):
     """Fills the dataset with the single cell marker properties."""
-    x_weighted, y_weighted = props.weighted_centroid
+    marker_centroid_x, marker_centroid_y = props.weighted_centroid
     x_cell, y_cell = props.centroid
-    angle_rad, _, _ = compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted)
-    dataset.at[index, "mean_expression"] = props.mean_intensity
-    dataset.at[index, "sum_expression"] = props.mean_intensity * props.area
-    dataset.at[index, "X_weighted"] = props.weighted_centroid[0]
-    dataset.at[index, "Y_weighted"] = props.weighted_centroid[1]
-    dataset.at[index, "marker_polarity_rad"] = angle_rad  # FIXME: no sign correct?
-    dataset.at[index, "marker_polarity_deg"] = 180.0 * angle_rad / np.pi
+    angle_rad = compute_marker_centroid_orientation_rad(x_cell, y_cell, marker_centroid_x, marker_centroid_y)
+    dataset.at[index, "marker_mean_expr"] = props.mean_intensity
+    dataset.at[index, "marker_sum_expression"] = props.mean_intensity * props.area
+    dataset.at[index, "marker_centroid_X"] = props.weighted_centroid[0]
+    dataset.at[index, "marker_centroid_Y"] = props.weighted_centroid[1]
+    dataset.at[index, "marker_centroid_orientation_rad"] = angle_rad  # FIXME: no sign correct?
+    dataset.at[index, "marker_centroid_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
-def compute_marker_vector_norm(x_cell, y_cell, x_weighted, y_weighted):
+def compute_marker_vector_norm(x_cell, y_cell, marker_centroid_x, marker_centroid_y):
     """Computes the marker vector norm"""
-    distance2 = (x_cell - x_weighted) ** 2
-    distance2 += (y_cell - y_weighted) ** 2
+    distance2 = (x_cell - marker_centroid_x) ** 2
+    distance2 += (y_cell - marker_centroid_y) ** 2
 
     return np.sqrt(distance2)
 
 
-def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
+def compute_marker_centroid_orientation_rad(x_cell, y_cell, marker_centroid_x, marker_centroid_y):
     """Computes the marker polarity radius"""
-    vec_x = x_cell - x_weighted
-    vec_y = y_cell - y_weighted
+    vec_x = x_cell - marker_centroid_x
+    vec_y = y_cell - marker_centroid_y
     angle_rad = np.pi - np.arctan2(vec_x, vec_y)
 
     return angle_rad

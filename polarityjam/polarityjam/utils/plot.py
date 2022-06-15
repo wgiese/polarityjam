@@ -227,11 +227,11 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
     # plot mean expression value of cell and membrane as text
     for index, row in single_cell_dataset.iterrows():
-        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"], 1)), color="w", fontsize=7)
-        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=7)
+        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["marker_mean_expr"], 1)), color="w", fontsize=7)
+        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["marker_mean_expression_mem"], 1)), color="w", fontsize=7)
         if nuclei_mask is not None:
             ax[2].text(
-                row["nuc_Y"], row["nuc_X"], str(np.round(row["mean_expression_nuc"], 1)), color="w", fontsize=7
+                row["nuc_Y"], row["nuc_X"], str(np.round(row["marker_mean_expression_nuc"], 1)), color="w", fontsize=7
             )
 
     # set title
@@ -272,7 +272,7 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
     # add all polarity vectors
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_cell"], row["Y_cell"], row["X_weighted"], row["Y_weighted"])
+        _add_single_cell_polarity_vector(ax, row["X_cell"], row["Y_cell"], row["marker_centroid_X"], row["marker_centroid_Y"])
 
     ax.set_title("marker polarity")
 
