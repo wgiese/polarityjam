@@ -167,8 +167,8 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, org
     zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
     rgb_organelle = np.dstack((organelle_mask.astype(int) * 256, zero, zero, organelle_mask.astype(float) * 0.5))
     rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
-    ax.imshow(rgb_nuclei)
-    ax.imshow(rgb_organelle)
+    ax.imshow(rgb_nuclei.astype(np.uint8))
+    ax.imshow(rgb_organelle.astype(np.uint8))
 
     # plot polarity vector
     for index, row in single_cell_props.iterrows():
