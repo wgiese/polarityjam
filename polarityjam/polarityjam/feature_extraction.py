@@ -303,17 +303,17 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
 
 def fill_single_nucleus_data_frame(dataset, index, props):
     """Fills the dataset with the single cell nucleus properties."""
-    dataset.at[index, "X_nuc"] = props.centroid[0]
-    dataset.at[index, "Y_nuc"] = props.centroid[1]
+    dataset.at[index, "nuc_X"] = props.centroid[0]
+    dataset.at[index, "nuc_Y"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation_nuc"] = np.pi / 2.0 + props.orientation
+    dataset.at[index, "nuc_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length
-    dataset.at[index, "minor_axis_length_nuc"] = props.minor_axis_length
-    dataset.at[index, "area_nuc"] = props.area
-    dataset.at[index, "perimeter_nuc"] = props.perimeter
-    dataset.at[index, "eccentricity_nuc"] = props.eccentricity
-    dataset.at[index, "major_to_minor_ratio_nuc"] = props.major_axis_length / props.minor_axis_length
+    dataset.at[index, "nuc_major_axis_length"] = props.major_axis_length
+    dataset.at[index, "nuc_minor_axis_length"] = props.minor_axis_length
+    dataset.at[index, "nuc_area"] = props.area
+    dataset.at[index, "nuc_perimeter"] = props.perimeter
+    dataset.at[index, "nuc_eccentricity"] = props.eccentricity
+    dataset.at[index, "nuc_major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
 
 
 def fill_single_cell_marker_polarity(dataset, index, props):

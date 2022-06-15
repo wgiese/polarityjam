@@ -172,7 +172,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, org
 
     # plot polarity vector
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_nuc"], row["Y_nuc"], row["organelle_X"], row["organelle_Y"])
+        _add_single_cell_polarity_vector(ax, row["nuc_X"], row["nuc_Y"], row["organelle_X"], row["organelle_Y"])
         if parameters["show_polarity_angles"]:
             ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
 
@@ -231,7 +231,7 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
         ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=7)
         if nuclei_mask is not None:
             ax[2].text(
-                row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"], 1)), color="w", fontsize=7
+                row["nuc_Y"], row["nuc_X"], str(np.round(row["mean_expression_nuc"], 1)), color="w", fontsize=7
             )
 
     # set title
@@ -352,7 +352,7 @@ def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
             continue
         single_cell_mask = np.where(cell_mask == row_label, True, 0)
         single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-        nuclei_eccentricity += np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+        nuclei_eccentricity += np.where(single_nuclei_mask_ == True, 1, 0) * row['nuc_eccentricity']
 
     get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
     get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
@@ -441,12 +441,12 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, fil
             # plot orientation degree nucleus
             _add_single_cell_eccentricity_axis(
                 ax[1],
-                row['Y_nuc'],
-                row['X_nuc'],
-                row['shape_orientation_nuc'],
-                row['major_axis_length_nuc'],
-                row['minor_axis_length_nuc'],
-                row["eccentricity_nuc"]
+                row['nuc_Y'],
+                row['nuc_X'],
+                row['nuc_shape_orientation'],
+                row['nuc_major_axis_length'],
+                row['nuc_minor_axis_length'],
+                row["nuc_eccentricity"]
             )
         else:
             _add_single_cell_eccentricity_axis(
@@ -485,7 +485,7 @@ def _calc_nuc_orientation(single_cell_props, cell_mask, nuclei_mask):
             continue
         single_cell_mask = np.where(cell_mask == row_label, True, 0)
         single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-        nuclei_orientation += np.where(single_nuclei_mask_ == True, 1, 0) * row['shape_orientation_nuc'] * 180.0 / np.pi
+        nuclei_orientation += np.where(single_nuclei_mask_ == True, 1, 0) * row['nuc_shape_orientation'] * 180.0 / np.pi
 
     get_logger().info("Maximal nuclei orientation: %s" % str(np.max(nuclei_orientation)))
     get_logger().info("Minimal nuclei orientation: %s" % str(np.min(nuclei_orientation)))
@@ -501,7 +501,7 @@ def _calc_cell_orientation(single_cell_props, cell_mask):
         if row_label == 0:
             continue
         cell_orientation += get_single_cell_mask(row_label, cell_mask) * row[
-            'shape_orientation_nuc'] * 180.0 / np.pi
+            'nuc_shape_orientation'] * 180.0 / np.pi
 
     get_logger().info("Maximal cell orientation: %s" % str(np.max(cell_orientation)))
     get_logger().info("Minimal cell orientation: %s" % str(np.min(cell_orientation)))
@@ -609,11 +609,11 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
             # plot orientation degree nucleus
             _add_single_cell_orientation_degree_axis(
                 ax[1],
-                row['Y_nuc'],
-                row['X_nuc'],
-                row['shape_orientation_nuc'],
-                row['major_axis_length_nuc'],
-                row['minor_axis_length_nuc']
+                row['nuc_Y'],
+                row['nuc_X'],
+                row['nuc_shape_orientation'],
+                row['nuc_major_axis_length'],
+                row['nuc_minor_axis_length']
             )
         else:
             # plot orientation degree
