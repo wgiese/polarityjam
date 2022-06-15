@@ -287,18 +287,18 @@ def fill_single_cell_general_data_frame(dataset, index, filename, connected_comp
     """Fills the dataset with the general single cell properties."""
     dataset.at[index, "filename"] = filename
     dataset.at[index, "label"] = connected_component_label
-    dataset.at[index, "X_cell"] = props.centroid[0]
-    dataset.at[index, "Y_cell"] = props.centroid[1]
+    dataset.at[index, "cell_X"] = props.centroid[0]
+    dataset.at[index, "cell_Y"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
+    dataset.at[index, "cell_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "major_axis_length"] = props.major_axis_length
-    dataset.at[index, "minor_axis_length"] = props.minor_axis_length
-    dataset.at[index, "eccentricity"] = props.eccentricity
-    dataset.at[index, "major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
-    dataset.at[index, "area"] = props.area
-    dataset.at[index, "perimeter"] = props.perimeter
-    dataset.at[index, "n_neighbors"] = neighbours
+    dataset.at[index, "cell_major_axis_length"] = props.major_axis_length
+    dataset.at[index, "cell_minor_axis_length"] = props.minor_axis_length
+    dataset.at[index, "cell_eccentricity"] = props.eccentricity
+    dataset.at[index, "cell_major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
+    dataset.at[index, "cell_area"] = props.area
+    dataset.at[index, "cell_perimeter"] = props.perimeter
+    dataset.at[index, "cell_neighbors"] = neighbours
 
 
 def fill_single_nucleus_data_frame(dataset, index, props):
@@ -319,8 +319,8 @@ def fill_single_nucleus_data_frame(dataset, index, props):
 def fill_single_cell_marker_polarity(dataset, index, props):
     """Fills the dataset with the single cell marker properties."""
     marker_centroid_x, marker_centroid_y = props.weighted_centroid
-    x_cell, y_cell = props.centroid
-    angle_rad = compute_marker_centroid_orientation_rad(x_cell, y_cell, marker_centroid_x, marker_centroid_y)
+    cell_x, cell_y = props.centroid
+    angle_rad = compute_marker_centroid_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y)
     dataset.at[index, "marker_mean_expr"] = props.mean_intensity
     dataset.at[index, "marker_sum_expression"] = props.mean_intensity * props.area
     dataset.at[index, "marker_centroid_X"] = props.weighted_centroid[0]
@@ -329,21 +329,21 @@ def fill_single_cell_marker_polarity(dataset, index, props):
     dataset.at[index, "marker_centroid_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
-def compute_marker_vector_norm(x_cell, y_cell, marker_centroid_x, marker_centroid_y):
+def compute_marker_vector_norm(cell_x, cell_y, marker_centroid_x, marker_centroid_y):
     """Computes the marker vector norm"""
-    distance2 = (x_cell - marker_centroid_x) ** 2
-    distance2 += (y_cell - marker_centroid_y) ** 2
+    distance2 = (cell_x - marker_centroid_x) ** 2
+    distance2 += (cell_y - marker_centroid_y) ** 2
 
     return np.sqrt(distance2)
 
 
-def compute_marker_centroid_orientation_rad(x_cell, y_cell, marker_centroid_x, marker_centroid_y):
+def compute_marker_centroid_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y):
     """Computes the marker polarity radius"""
-    vec_x = x_cell - marker_centroid_x
-    vec_y = y_cell - marker_centroid_y
-    angle_rad = np.pi - np.arctan2(vec_x, vec_y)
+    vec_x = cell_x - marker_centroid_x
+    vec_y = cell_y - marker_centroid_y
+    organelle_orientation_rad = np.pi - np.arctan2(vec_x, vec_y)
 
-    return angle_rad
+    return organelle_orientation_rad
 
 
 def remove_edges(mask):

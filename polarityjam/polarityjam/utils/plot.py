@@ -154,7 +154,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, org
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        cell_angle += get_single_cell_mask(row_label, cell_mask) * row['angle_deg']
+        cell_angle += get_single_cell_mask(row_label, cell_mask) * row['organelle_orientation_deg']
     polarity_angle = np.ma.masked_where(cell_mask == 0, cell_angle)
 
     # plot polarity angle
@@ -174,7 +174,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, org
     for index, row in single_cell_props.iterrows():
         _add_single_cell_polarity_vector(ax, row["nuc_X"], row["nuc_Y"], row["organelle_X"], row["organelle_Y"])
         if parameters["show_polarity_angles"]:
-            ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
+            ax.text(row["cell_Y"], row["cell_X"], str(int(np.round(row["organelle_orientation_deg"], 0))), color="yellow", fontsize=6)
 
     # set ax limits
     ax.set_xlim(0, im_junction.shape[1])
@@ -227,8 +227,8 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
     # plot mean expression value of cell and membrane as text
     for index, row in single_cell_dataset.iterrows():
-        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["marker_mean_expr"], 1)), color="w", fontsize=7)
-        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["marker_mean_expression_mem"], 1)), color="w", fontsize=7)
+        ax[0].text(row["cell_Y"], row["cell_X"], str(np.round(row["marker_mean_expr"], 1)), color="w", fontsize=7)
+        ax[1].text(row["cell_Y"], row["cell_X"], str(np.round(row["marker_mean_expression_mem"], 1)), color="w", fontsize=7)
         if nuclei_mask is not None:
             ax[2].text(
                 row["nuc_Y"], row["nuc_X"], str(np.round(row["marker_mean_expression_nuc"], 1)), color="w", fontsize=7
@@ -272,7 +272,7 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
     # add all polarity vectors
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_cell"], row["Y_cell"], row["marker_centroid_X"], row["marker_centroid_Y"])
+        _add_single_cell_polarity_vector(ax, row["cell_X"], row["cell_Y"], row["marker_centroid_X"], row["marker_centroid_Y"])
 
     ax.set_title("marker polarity")
 
@@ -366,7 +366,7 @@ def _calc_cell_eccentricity(single_cell_props, cell_mask):
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        cell_eccentricity += get_single_cell_mask(row_label, cell_mask) * row['eccentricity']
+        cell_eccentricity += get_single_cell_mask(row_label, cell_mask) * row['cell_eccentricity']
 
     get_logger().info("Maximal cell eccentricity: %s" % str(np.max(cell_eccentricity)))
     get_logger().info("Minimal cell eccentricity: %s" % str(np.min(cell_eccentricity)))
@@ -430,12 +430,12 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, fil
             # plot orientation degree
             _add_single_cell_eccentricity_axis(
                 ax[0],
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length'],
-                row["eccentricity"]
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length'],
+                row["cell_eccentricity"]
             )
 
             # plot orientation degree nucleus
@@ -451,12 +451,12 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, fil
         else:
             _add_single_cell_eccentricity_axis(
                 ax,
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length'],
-                row["eccentricity"]
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length'],
+                row["cell_eccentricity"]
             )
 
     # set title and ax limits
@@ -599,11 +599,11 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
             # plot orientation degree
             _add_single_cell_orientation_degree_axis(
                 ax[0],
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length']
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length']
             )
 
             # plot orientation degree nucleus
@@ -619,11 +619,11 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
             # plot orientation degree
             _add_single_cell_orientation_degree_axis(
                 ax,
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length']
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length']
             )
 
     # set title and ax limits
@@ -669,24 +669,24 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
 
     # plot major axis around coordinates of each cell
     for index, row in single_cell_props.iterrows():
-        x0 = row['X_cell']
-        y0 = row['Y_cell']
+        x0 = row['cell_X']
+        y0 = row['cell_Y']
 
         # upper
-        x1 = x0 + math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y1 = y0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        x2 = x0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y2 = y0 - math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
+        x1 = x0 + math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y1 = y0 + math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        x2 = x0 + math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y2 = y0 - math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
 
         ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax.plot(y0, x0, '.b', markersize=5)
 
         # lower
-        x1 = x0 - math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y1 = y0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        x2 = x0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y2 = y0 + math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
+        x1 = x0 - math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y1 = y0 - math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        x2 = x0 - math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y2 = y0 + math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
 
         ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)

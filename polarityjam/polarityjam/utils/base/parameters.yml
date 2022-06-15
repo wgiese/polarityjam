@@ -14,7 +14,7 @@ min_nucleus_size: 10
 min_organelle_size: 10
 
 ## spatial statistics
-feature_of_interest: "area"
+feature_of_interest: cell_area
 
 ## plot options
 plot_polarity: True
@@ -23,9 +23,6 @@ plot_marker: True
 plot_ratio_method: False
 plot_cyclic_orientation: False
 
-feature_color_scale: ["angle_deg","cyclic"]
-# feature_color_scale: ["eccentricity","cyclic"]
-
 outline_width : 2
 show_polarity_angles: True
 
@@ -33,6 +30,7 @@ graphics_output_format: ['png', 'pdf'] # 'png', 'pdf', 'svg'
 dpi: 300
 graphics_width: 5 # figure width in inches
 graphics_height: 5 # figure height in inches
+
 # channel parameters
 channel_junction: 0
 channel_nucleus : 1

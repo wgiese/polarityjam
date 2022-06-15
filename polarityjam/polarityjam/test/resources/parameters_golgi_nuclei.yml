@@ -6,7 +6,7 @@ channel_nucleus: 2
 clear_border: true
 dpi: 300
 estimated_cell_diameter: 100
-feature_of_interest: area
+feature_of_interest: cell_area
 graphics_output_format:
 - png
 - pdf
