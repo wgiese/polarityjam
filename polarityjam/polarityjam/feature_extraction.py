@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
-import scipy.ndimage as ndi
 import skimage.filters
 import skimage.io
 import skimage.measure
 import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
+from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_golgi_mask, \
+    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_golgi_mask, get_nuclei_mask
 from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
-from polarityjam.utils.seg import get_outline_from_mask
 from polarityjam.utils.weights import W
 
 
@@ -34,34 +34,6 @@ def get_image_for_segmentation(parameters, img):
     return im_seg
 
 
-def get_nuclei_mask(parameters, img, cellpose_mask):
-    """Gets the nuclei mask."""
-    if parameters["channel_nucleus"] >= 0:
-        img_nuclei_blur = ndi.gaussian_filter(img[:, :, parameters["channel_nucleus"]], sigma=3)
-
-        nuclei_mask = np.where(img_nuclei_blur > skimage.filters.threshold_otsu(img_nuclei_blur), True, False)
-
-        nuclei_label = nuclei_mask * cellpose_mask
-
-        return nuclei_label
-    else:
-        return None
-
-
-def get_golgi_mask(parameters, img, cellpose_mask):
-    """Gets the golgi mask."""
-    if parameters["channel_golgi"] >= 0:
-        img_golgi_blur = ndi.gaussian_filter(img[:, :, parameters["channel_golgi"]], sigma=3)
-
-        golgi_mask = np.where(img_golgi_blur > skimage.filters.threshold_otsu(img_golgi_blur), True, False)
-
-        golgi_label = golgi_mask * cellpose_mask
-
-        return golgi_label
-    else:
-        return None
-
-
 def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_golgi_mask=None):
     """Thresholds given single_cell_mask. Returns True if falls under threshold."""
     # TODO: check if this can be removed, we already remove small objects from the cellpose mask
@@ -77,46 +49,6 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_gol
             return True
 
     return False
-
-
-def get_single_cell_nucleus_mask(connected_component_label, nuclei_mask):
-    """Gets the single cell nucleus mask."""
-    if nuclei_mask is not None:
-        return np.where(nuclei_mask == connected_component_label, 1, 0)
-    else:
-        return None
-
-
-def get_single_cell_golgi_mask(connected_component_label, golgi_mask):
-    """Gets the single cell golgi mask."""
-    if golgi_mask is not None:
-        return np.where(golgi_mask == connected_component_label, 1, 0)
-    else:
-        return None
-
-
-def get_single_cell_mask(connected_component_label, cell_mask_rem_island):
-    """Gets the single cell mask."""
-    if cell_mask_rem_island is not None:
-        return np.where(cell_mask_rem_island == connected_component_label, 1, 0)
-    else:
-        return None
-
-
-def get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask):
-    """Gets the single cellmembrane mask."""
-    if im_marker is not None:
-        return get_outline_from_mask(single_cell_mask.astype(bool), parameters["membrane_thickness"])
-    else:
-        return None
-
-
-def get_single_cell_cytosol_mask(single_cell_mask, im_marker, single_nucleus_mask):
-    """Gets the cytosol mask."""
-    if single_nucleus_mask is not None and im_marker is not None:
-        return np.logical_xor(single_cell_mask.astype(bool), single_nucleus_mask.astype(bool))
-    else:
-        return None
 
 
 def get_image_marker(parameters, img):
@@ -260,7 +192,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
 
-        # append feature of interest to the RAG node for MAYBE being able to do further analysis
+        # append feature of interest to the RAG node for being able to do further analysis
         foi = properties_dataset.at[index, parameters["feature_of_interest"]]
         foi_name = str(parameters["feature_of_interest"])
         rag.nodes[connected_component_label.astype('int')][foi_name] = foi
@@ -274,7 +206,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     get_logger().info("Excluded cells: %s" % str(excluded))
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
-    # morans I analysis
+    # morans I analysis based on FOI
     fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
 
     # neighborhood feature analysis
@@ -415,15 +347,7 @@ def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
     """Computes the marker polarity radius"""
     vec_x = x_cell - x_weighted
     vec_y = y_cell - y_weighted
-    angle_rad_ = np.arctan2(vec_x, vec_y)
-    angle_rad = angle_rad_
-
-    angle_rad = np.pi - angle_rad_
-
-    # if angle_rad_ < 0.0:
-    #    angle_rad = np.pi - angle_rad_
-    # else:
-    #    angle_rad = angle_rad_ 
+    angle_rad = np.pi - np.arctan2(vec_x, vec_y)
 
     return angle_rad, vec_x, vec_y
 
@@ -435,20 +359,22 @@ def remove_edges(mask):
 
     start_1, start_2 = 0, 0
 
-    the_start = np.empty(mask.shape[0])
-    the_start.fill(int(start_1))
-    the_end = np.empty(mask.shape[0])
-    the_end.fill(int(end_1 - 1))
+    start = np.empty(mask.shape[0])
+    end = np.empty(mask.shape[0])
+
+    start.fill(int(start_1))
+    end.fill(int(end_1 - 1))
+
     lower_right_arr = np.asarray(range(start_1, end_1))
 
     # list of points with 0, 0 - max
-    roof = np.asarray([the_start, lower_right_arr])
+    roof = np.asarray([start, lower_right_arr])
     # list of of points with max 0-max
-    floor = np.asarray([the_end, lower_right_arr])
+    floor = np.asarray([end, lower_right_arr])
     # list of point 0-max, 0
-    left_wall = np.asarray([lower_right_arr, the_start])
+    left_wall = np.asarray([lower_right_arr, start])
     # list of point 0-max, max
-    right_wall = np.asarray([lower_right_arr, the_end])
+    right_wall = np.asarray([lower_right_arr, end])
 
     concat_arr = np.hstack([left_wall, right_wall, roof, floor]).astype("int")
     x_indexed = segments[(concat_arr[1, :]), (concat_arr[0, :])]
@@ -463,7 +389,7 @@ def remove_edges(mask):
 
 
 def remove_islands(frame_graph, mask):
-    """Remove unconnected cells (Cells without neighbours."""
+    """Remove unconnected cells (Cells without neighbours)."""
     # Get list of islands - nodes with no neighbours and remove them
     list_of_islands = []
     for nodes in frame_graph.nodes:
@@ -481,8 +407,7 @@ def remove_islands(frame_graph, mask):
 
 
 def morans_data_prep(rag, feature):
-    """Takes a region adjacency graph and a list of cell features.
-    Propogates features to graph so morans I can be performed."""
+    """Retrieves the Weights and the feature of interest from the rag."""
     weights = W.from_networkx(rag)
     # extract the feature of interest from the rag
     morans_features = [rag.nodes[nodes_idx][feature] for nodes_idx in list(rag.nodes)]
@@ -491,7 +416,7 @@ def morans_data_prep(rag, feature):
 
 
 def run_morans(morans_features, weihgts):
-    """run morans I, measure of spatial correlation and significance respectively:  mr_i.I,  mr_i.p_norm."""
+    """Run morans I, measure of spatial correlation and significance."""
     mi = Moran(morans_features, weihgts, two_tailed=False)
 
     return mi
@@ -560,7 +485,7 @@ def k_neighbor_dif(graph, foi, properties_dataset):
 
 
 def second_neighbors(rag, node):
-    """return all second and first nearest neighbor nodes of a given node in a rag"""
+    """Return all second and first nearest neighbor nodes of a given node in a rag"""
     first_nearest_list = shared_edges(rag, node)
 
     # get list of second nearest neighbors
@@ -580,6 +505,6 @@ def second_neighbors(rag, node):
 
 
 def shared_edges(rag, node):
-    """return all first nearest neighbor nodes of a given node in a rag"""
+    """Return all first nearest neighbor nodes of a given node in a rag"""
     first_nearest = list(set(rag.neighbors(node)))
     return first_nearest

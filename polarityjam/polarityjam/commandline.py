@@ -63,7 +63,7 @@ def _run(infile, parameters, output_path, fileout_name):
     cellpose_mask = load_or_get_cellpose_segmentation(parameters, img_seg, infile)
 
     # plot cellpose mask
-    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
+    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name, parameters)
 
     # feature extraction
     properties_df = get_features_from_cellpose_seg_multi_channel(

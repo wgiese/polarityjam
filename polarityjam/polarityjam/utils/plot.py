@@ -9,45 +9,93 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 
 from polarityjam.polarityjam_logging import get_logger
+from polarityjam.utils.masks import get_single_cell_mask, get_outline_from_mask
 from polarityjam.utils.rag import orientation_graph_nf
-from polarityjam.utils.seg import get_outline_from_mask
 
 # for figure plot resolution
 FIGURE_DPI = 300
 FONTSIZE_TEXT_ANNOTATIONS = 3
 MARKERSIZE = 2
 ALPHA_MASKS = 0.5
+CELL_OUTLINE_INTENSITY = 30
+
+
+def save_current_fig(graphics_output_format, output_path, filename, filename_suffix, image=None):
+    if "pdf" in graphics_output_format:
+        plt.savefig(str(Path(output_path).joinpath(filename + filename_suffix + ".pdf")))
+    if "svg" in graphics_output_format:
+        plt.savefig(str(Path(output_path).joinpath(filename + filename_suffix + ".svg")))
+    if "png" in graphics_output_format:
+        plt.savefig(str(Path(output_path).joinpath(filename + filename_suffix + ".png")))
+    if "tif" in graphics_output_format and image is not None:
+        tifffile.imwrite(str(Path(output_path).joinpath(filename + filename_suffix + ".tif")), image)
 
 
 def set_figure_dpi():
     mpl.rcParams['figure.dpi'] = FIGURE_DPI
 
 
-def plot_seg_channels(seg_img, output_path, filename):
-    """"""
-    output_path = Path(output_path)
+def _add_single_cell_polarity_vector(ax, x_pos_p1, y_pos_p1, x_pos_p2, y_pos_p2):
+    ax.plot(y_pos_p1, x_pos_p1, '.g', markersize=MARKERSIZE)
+    ax.plot(y_pos_p2, x_pos_p2, '.m', markersize=MARKERSIZE)
+    ax.arrow(
+        y_pos_p1,
+        x_pos_p1,
+        y_pos_p2 - y_pos_p1,
+        x_pos_p2 - x_pos_p1,
+        color='white', width=2
+    )
 
+
+def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
+    outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+    outlines_mem_accumulated = np.zeros((im_marker.shape[0], im_marker.shape[1]))
+
+    for cell_label in np.unique(cell_mask):
+        # exclude background
+        if cell_label == 0:
+            continue
+
+        single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
+        outline_cell_ = np.where(outline_cell == True, 1, 0)
+        outlines_cell += outline_cell_
+
+        outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
+        outline_mem_ = np.where(outline_mem == True, 1, 0)
+        outlines_mem_accumulated += outline_mem_
+
+    return [outlines_cell, outlines_mem_accumulated]
+
+
+def plot_seg_channels(seg_img, output_path, filename):
+    """Plots the separate channels from the input file given."""
+    get_logger().info("Plotting: input channels")
+
+    output_path = Path(output_path)
+    filename_out = str(output_path.joinpath(filename + "_seg.png"))
     if len(seg_img.shape) > 2:
         fig, ax = plt.subplots(1, 2)
         ax[0].imshow(seg_img[0, :, :])
         ax[0].set_title("junction channel")
         ax[1].imshow(seg_img[1, :, :])
         ax[1].set_title("nuclei channel")
-        plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
-        plt.close(fig)
     else:
         fig, ax = plt.subplots()
         ax.imshow(seg_img[:, :])
-        plt.savefig(str(output_path.joinpath(filename + "-seg.png")))
-        plt.close(fig)
+    plt.savefig(filename_out)
+    plt.close(fig)
 
 
-def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
-    """"""
-    output_path = Path(output_path)
+def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename, parameters):
+    """Plots the cellpose segmentation output, together with the separate channels from the input image."""
+    get_logger().info("Plotting: cellpose masks")
+
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
 
     if len(seg_img.shape) > 2:
-        fig, ax = plt.subplots(1, 3)
+        fig, ax = plt.subplots(1, 3, figsize=(3 * w, h))
         ax[0].imshow(seg_img[0, :, :])
         ax[0].set_title("junction channel")
         ax[1].imshow(seg_img[1, :, :])
@@ -55,19 +103,24 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename):
         ax[2].imshow(seg_img[0, :, :])
         ax[2].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
         ax[2].set_title("cellpose segmentation")
-        plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
-        plt.close(fig)
     else:
-        fig, ax = plt.subplots(1, 2)
+        fig, ax = plt.subplots(1, 2, figsize=(2 * w, h))
         ax[0].imshow(seg_img[:, :])
+        ax[0].set_title("junction channel")
         ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
-        plt.savefig(str(output_path.joinpath(filename + "-cellpose-seg.png")))
-        plt.close(fig)
+        ax[1].set_title("cellpose segmentation")
+
+    # save output & close
+    save_current_fig(
+        parameters["graphics_output_format"],
+        output_path, filename,
+        "_cellpose_seg",
+    )
+    plt.close(fig)
 
 
 def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props,
-                            base_filename,
-                            output_path):
+                            base_filename, output_path):
     """ function to plot nuclei-golgi polarity vectors 
     
     parameters  :   dict
@@ -86,92 +139,70 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     output_path :   string
                     output path for plots 
     """
+    get_logger().info("Plotting: organelle polarity")
 
-    width = parameters["graphics_width"]
-    fig, ax = plt.subplots(figsize=(width, width))
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(figsize=(w, h))
 
-    nuclei_mask = nuclei_mask.astype(bool)
-    golgi_mask = golgi_mask.astype(bool)
+    # base image
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
+    # determine polarity_angle
     cell_angle = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
-
     for index, row in single_cell_props.iterrows():
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['angle_deg']
-        cell_angle += single_cell_mask
+        cell_angle += get_single_cell_mask(row_label, cell_mask) * row['angle_deg']
+    polarity_angle = np.ma.masked_where(cell_mask == 0, cell_angle)
 
-    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
-    cax = ax.imshow(
-        np.ma.masked_where(cell_mask == 0, cell_angle), cmap=cm.cm.phase, vmin=0, vmax=360, alpha=0.5
-    )
+    # plot polarity angle
+    cax = ax.imshow(polarity_angle, cmap=cm.cm.phase, vmin=0, vmax=360, alpha=0.5)
     color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
     color_bar.set_label("polarity angle")
     color_bar.ax.set_yticks([0, 90, 180, 270, 360])
 
+    # plot differently colored golgi (red) and nuclei (blue)
     zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
     rgb_golgi = np.dstack((golgi_mask.astype(int) * 256, zero, zero, golgi_mask.astype(float) * 0.5))
     rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
-
     ax.imshow(rgb_nuclei)
     ax.imshow(rgb_golgi)
 
+    # plot polarity vector
     for index, row in single_cell_props.iterrows():
-        ax.plot(row["Y_nuc"], row["X_nuc"], '.g', markersize=MARKERSIZE)
-        ax.plot(row["Y_golgi"], row["X_golgi"], '.m', markersize=MARKERSIZE)
-        ax.arrow(row["Y_nuc"], row["X_nuc"], row["Y_golgi"] - row["Y_nuc"], row["X_golgi"] - row["X_nuc"],
-                 color='white', width=2)
+        _add_single_cell_polarity_vector(ax, row["X_nuc"], row["Y_nuc"], row["X_golgi"], row["Y_golgi"])
         if parameters["show_polarity_angles"]:
             ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
 
+    # set ax limits
     ax.set_xlim(0, im_junction.shape[1])
     ax.set_ylim(0, im_junction.shape[0])
     ax.invert_yaxis()
     ax.axis('off')
 
-    if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.pdf")))
-    if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.svg")))
-    if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_vector.png")))
+    # save output & close
+    save_current_fig(
+        parameters["graphics_output_format"],
+        output_path, base_filename,
+        "_nuclei_golgi_vector",
+        image=polarity_angle
+    )
     plt.close(fig)
-
-    if "tif" in parameters["graphics_output_format"]:
-        tifffile.imsave(str(Path(output_path).joinpath(base_filename + "_nuclei_golgi_polarity.tif")),
-                        np.ma.masked_where(cell_mask == 0, cell_angle))
-
-
-def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
-    outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
-    outlines_mem = np.zeros((im_marker.shape[0], im_marker.shape[1]))
-
-    for cell_label in np.unique(cell_mask):
-        # exclude background
-        if cell_label == 0:
-            continue
-
-        single_cell_mask = np.where(cell_mask == cell_label, 1, 0)
-        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
-        outline_cell_ = np.where(outline_cell == True, 30, 0)  # todo: magic number 30?
-        outlines_cell += outline_cell_
-
-        outline_mem = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
-        outline_mem_ = np.where(outline_mem == True, 30, 0)  # todo: magic number 30?
-        outlines_mem += outline_mem_
-
-    return [outlines_cell, outlines_mem]
 
 
 def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset, filename, output_path,
                            nuclei_mask=None):
+    get_logger().info("Plotting: marker expression")
+    # figure and axes
     number_sub_figs = 2  # mean intensity cell, mean intensity membrane
     if nuclei_mask is not None:
         nuclei_mask = nuclei_mask.astype(bool)
         number_sub_figs = 3  # (optional) mean intensity nucleus
 
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(10 * number_sub_figs, 10))
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(w * number_sub_figs, h))
 
     # plot marker intensity for all subplots
     for i in range(number_sub_figs):
@@ -180,16 +211,16 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
     outlines_cell, outlines_mem = _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters)
 
     # cell and membrane outline
-    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)  # todo: what is that threshold?
+    outlines_cell_ = np.where(outlines_cell > 0, CELL_OUTLINE_INTENSITY, 0)
     ax[0].imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
-    outlines_mem_ = np.where(outlines_mem > 0, 30, 0)  # todo: what is that threshold?
+    outlines_mem_ = np.where(outlines_mem > 0, CELL_OUTLINE_INTENSITY, 0)
     ax[1].imshow(np.ma.masked_where(outlines_mem_ == 0, outlines_mem_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
     # nuclei marker intensity
     if nuclei_mask is not None:
         outline_nuc = get_outline_from_mask(nuclei_mask, parameters["outline_width"])
-        outline_nuc_ = np.where(outline_nuc == True, 30, 0)  # todo: 30 ?
+        outline_nuc_ = np.where(outline_nuc == True, CELL_OUTLINE_INTENSITY, 0)
         ax[2].imshow(
             np.ma.masked_where(outline_nuc_ == 0, outline_nuc_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.75
         )  # always last axis
@@ -209,303 +240,439 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
     if nuclei_mask is not None:
         ax[2].set_title("mean intensity nucleus")
 
-    # save output
-    if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.pdf")))
-    if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.svg")))
-    if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_expression.png")))
-
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_marker_expression")
     plt.close(fig)
 
 
 def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, filename, output_path):
-    fig, ax = plt.subplots(1, figsize=(10, 10))
+    get_logger().info("Plotting: marker polarity")
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, figsize=(w, h))
+
+    # plot marker intensity
     ax.imshow(im_marker, cmap=plt.cm.gray, alpha=1.0)
 
-    outlines_cell = np.zeros((im_marker.shape[0], im_marker.shape[1]))
-
+    # cumulative cell outlines
+    outlines_cell_accumulated = np.zeros((im_marker.shape[0], im_marker.shape[1]))
     for cell_label in np.unique(cell_mask):
         # exclude background
         if cell_label == 0:
             continue
 
-        single_cell_mask = np.where(cell_mask == cell_label, 1, 0)
+        single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
         outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
         outline_cell_ = np.where(outline_cell == True, 30, 0)
-        outlines_cell += outline_cell_
+        outlines_cell_accumulated += outline_cell_
 
-    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
+    # plot non-cumulative cell outlines
+    outlines_cell_ = np.where(outlines_cell_accumulated > 0, CELL_OUTLINE_INTENSITY, 0)
     ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
 
+    # add all polarity vectors
     for index, row in single_cell_props.iterrows():
-        ax.plot(row["Y_cell"], row["X_cell"], '.m', markersize=1)
-        ax.plot(row["Y_weighted"], row["X_weighted"], '.m', markersize=1)
-        ax.arrow(row["Y_cell"], row["X_cell"], row["Y_weighted"] - row["Y_cell"], row["X_weighted"] - row["X_cell"],
-                 color='white', width=2)
+        _add_single_cell_polarity_vector(ax, row["X_cell"], row["Y_cell"], row["X_weighted"], row["Y_weighted"])
 
     ax.set_title("marker polarity")
-    if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.pdf")))
-    if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.svg")))
-    if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_marker_polarity.png")))
 
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_marker_polarity")
     plt.close(fig)
 
 
-def plot_shape_props(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, feature_to_plot,
-                     nuclei_mask=None):
-    """ function to plot cell (and optionally nuclei) orientation/alignment 
-    
-    parameters  :   dict
-                    user defined parameters
-    im_junction :   numpy.array (2-dim), float
-                    channel containing the junction staining (used for segmentation)
-    masks       :   numpy.array (2-dim), int
-                    same dimension as im_junction, contains cell masks
-    """
-    get_logger().info("Prepare plotting: %s" % feature_to_plot)
+def _add_single_cell_eccentricity_axis(
+        ax, y0, x0, orientation, major_axis_length, minor_axis_length, eccentricity
+):
+    x1_ma, x1_mi, x2_ma, x2_mi, y1_ma, y1_mi, y2_ma, y2_mi = _calc_single_cell_axis_orientation_vector(
+        x0, y0, orientation, major_axis_length, minor_axis_length
+    )
 
-    number_sub_figs = 1
+    ax.plot((y1_ma, y2_ma), (x1_ma, x2_ma), '--w', linewidth=0.5)
+    ax.plot((y1_mi, y2_mi), (x1_mi, x2_mi), '--w', linewidth=0.5)
+    ax.plot(y0, x0, '.b', markersize=MARKERSIZE)
+    ax.text(y0, x0, str(np.round(eccentricity, 2)), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
 
-    if nuclei_mask is not None:
-        nuclei_mask = nuclei_mask.astype(bool)
-        number_sub_figs = 2
 
-    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * 5, 5))
+def _add_colorbar(fig, cax, ax, yticks, label):
+    color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)
+    color_bar.set_label(label)
+    color_bar.ax.set_yticks(yticks)
 
-    if feature_to_plot == 'shape_orientation':
-        v_min = 0.0
-        v_max = 180.0
-        yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
-        plot_title_1 = "cell shape orientation"
-        plot_title_2 = "nuclei shape orientation"
-        color_bar_label = "shape orientation (degree)"
-    else:
-        v_min = 0.0
-        v_max = 1.0
-        yticks = [0.0, 0.5, 1.0]
-        plot_title_1 = "cell elongation"
-        plot_title_2 = "nuclei elongation"
-        color_bar_label = "eccentricity"
 
+def _add_cell_eccentricity(fig, ax, im_junction, cell_mask, cell_eccentricity):
+    v_min = 0.0
+    v_max = 1.0
+    yticks = [0.0, 0.5, 1.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show cell_eccentricity everywhere but background label
+    cax_0 = ax.imshow(
+        np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max,
+        alpha=0.5
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax_0, ax, yticks, "eccentricity")
+
+
+def _add_nuclei_eccentricity(fig, ax, im_junction, nuclei_mask, nuclei_eccentricity):
+    v_min = 0.0
+    v_max = 1.0
+    yticks = [0.0, 0.5, 1.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show nuclei eccentricity everywhere but background label
+    nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
+    cax_1 = ax.imshow(np.ma.masked_where(
+        nuclei_mask_ == 0, nuclei_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax_1, ax, yticks, "eccentricity")
+
+
+def _add_title(ax, plot_title, im_junction):
+    ax.set_title(plot_title)
+    ax.set_xlim(0, im_junction.shape[1])
+    ax.set_ylim(0, im_junction.shape[0])
+    ax.invert_yaxis()
+    ax.axis('off')
+
+
+def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
+    nuclei_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+
+        # exclude background
+        if row_label == 0:
+            continue
+        single_cell_mask = np.where(cell_mask == row_label, True, 0)
+        single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
+        nuclei_eccentricity += np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+
+    get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
+    get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
+
+    return nuclei_eccentricity
+
+
+def _calc_cell_eccentricity(single_cell_props, cell_mask):
     cell_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
-
     for index, row in single_cell_props.iterrows():
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        if feature_to_plot == 'shape_orientation':
-            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['shape_orientation'] * 180.0 / np.pi
-        else:
-            single_cell_mask = np.where(cell_mask == row_label, 1, 0) * row['eccentricity']
-        cell_eccentricity += single_cell_mask
+        cell_eccentricity += get_single_cell_mask(row_label, cell_mask) * row['eccentricity']
 
+    get_logger().info("Maximal cell eccentricity: %s" % str(np.max(cell_eccentricity)))
+    get_logger().info("Minimal cell eccentricity: %s" % str(np.min(cell_eccentricity)))
+
+    return cell_eccentricity
+
+
+def _calc_single_cell_axis_orientation_vector(x, y, orientation, major_axis_length, minor_axis_length):
+    x1_major = x + math.sin(orientation) * 0.5 * major_axis_length
+    y1_major = y - math.cos(orientation) * 0.5 * major_axis_length
+    x2_major = x - math.sin(orientation) * 0.5 * major_axis_length
+    y2_major = y + math.cos(orientation) * 0.5 * major_axis_length
+
+    x1_minor = x - math.cos(orientation) * 0.5 * minor_axis_length
+    y1_minor = y - math.sin(orientation) * 0.5 * minor_axis_length
+    x2_minor = x + math.cos(orientation) * 0.5 * minor_axis_length
+    y2_minor = y + math.sin(orientation) * 0.5 * minor_axis_length
+
+    return [x1_major, x1_minor, x2_major, x2_minor, y1_major, y1_minor, y2_major, y2_minor]
+
+
+def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, filename, output_path, nuclei_mask=None):
+    """ function to plot cell (and optionally nuclei) eccentricity
+
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    single_cell_props       :   pandas properties dataset
+    filename    :   base filename for the output file
+    output_path :   desired output path
+    cell_mask   :   cellpose cell mask
+    nuclei_mask :   cellpose nuclei mask
+    """
+    get_logger().info("Plotting: eccentricity")
+
+    # figure and axes
+    number_sub_figs = 1
     if nuclei_mask is not None:
-        ax[0].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+        nuclei_mask = nuclei_mask.astype(bool)
+        number_sub_figs = 2
 
-        if feature_to_plot == 'shape_orientation':
-            cax_0 = ax[0].imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
-                alpha=0.5
-            )
-        else:
-            cax_0 = ax[0].imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max,
-                alpha=0.5
-            )
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * w, h))
 
-        color_bar = fig.colorbar(cax_0, ax=ax[0], shrink=0.3)  # , extend='both')
-        color_bar.set_label(color_bar_label)
-        color_bar.ax.set_yticks(yticks)
+    # get cell_eccentricity
+    cell_eccentricity = _calc_cell_eccentricity(single_cell_props, cell_mask)
 
-        ax[1].imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
-
-        get_logger().info("Calculating nuclei eccentricity...")
-        nuclei_eccentricity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
-        for index, row in single_cell_props.iterrows():
-            row_label = int(row['label'])
-
-            # exclude background
-            if row_label == 0:
-                continue
-
-            single_cell_mask = np.where(cell_mask == row_label, True, 0)
-            single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-            if feature_to_plot == 'shape_orientation':
-                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row[
-                    'shape_orientation_nuc'] * 180.0 / np.pi
-            else:
-                single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
-            # single_nuclei_mask = np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
-            nuclei_eccentricity += single_nuclei_mask
-
-        get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
-        get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
-
-        nuclei_mask_ = np.where(nuclei_mask == True, 70, 0)  # todo: threshold?
-
-        if feature_to_plot == 'shape_orientation':
-            cax_1 = ax[1].imshow(np.ma.masked_where(
-                nuclei_mask_ == 0, nuclei_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
-            )
-        else:
-            cax_1 = ax[1].imshow(np.ma.masked_where(
-                nuclei_mask_ == 0, nuclei_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max, alpha=0.5
-            )
-
-        color_bar = fig.colorbar(cax_1, ax=ax[1], shrink=0.3)  # , extend='both')
-        color_bar.set_label(color_bar_label)
-        color_bar.ax.set_yticks(yticks)
-
-
+    # add cell (and nuclei) eccentricity to the figure
+    if nuclei_mask is not None:
+        _add_cell_eccentricity(fig, ax[0], im_junction, cell_mask, cell_eccentricity)
+        # get nuclei eccentricity
+        nuclei_eccentricity = _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask)
+        _add_nuclei_eccentricity(fig, ax[1], im_junction, nuclei_mask, nuclei_eccentricity)
     else:
-        ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+        _add_cell_eccentricity(fig, ax, im_junction, cell_mask, cell_eccentricity)
 
-        if feature_to_plot == 'shape_orientation':
-            v_min = 0.0
-            v_max = 180.0
-            yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
-        else:
-            v_min = 0.0
-            v_max = 1.0
-            yticks = [0.0, 0.5, 1.0]
-
-        if feature_to_plot == 'shape_orientation':
-            cax = ax.imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
-                alpha=0.75
-            )
-        else:
-            cax = ax.imshow(
-                np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, vmin=v_min, vmax=v_max,
-                alpha=0.75
-            )
-
-        # ax.imshow(np.ma.masked_where(cell_mask == 0, cell_eccentricity), cmap=plt.cm.bwr, alpha=0.25)
-
-        color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
-        color_bar.set_label(color_bar_label)
-        color_bar.ax.set_yticks(yticks)
-
+    # plot major and minor axis
     for index, row in single_cell_props.iterrows():
-        orientation = row['shape_orientation']
-        x0 = row['X_cell']
-        y0 = row['Y_cell']
-
-        x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length']
-        y1_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length']
-        x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length']
-        y2_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length']
-
-        x1_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length']
-        y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length']
-        x2_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length']
-        y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length']
-
         if nuclei_mask is not None:
             # plot orientation degree
-            ax[0].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
-            ax[0].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
-            ax[0].plot(y0, x0, '.b', markersize=MARKERSIZE)
-            orientation_degree = 180.0 * orientation / np.pi
-            ax[0].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
-                       fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+            _add_single_cell_eccentricity_axis(
+                ax[0],
+                row['Y_cell'],
+                row['X_cell'],
+                row['shape_orientation'],
+                row['major_axis_length'],
+                row['minor_axis_length'],
+                row["eccentricity"]
+            )
 
             # plot orientation degree nucleus
-            orientation = row['shape_orientation_nuc']
-            x0 = row['X_nuc']
-            y0 = row['Y_nuc']
-
-            x1_major = x0 + math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-            y1_major = y0 - math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-            x2_major = x0 - math.sin(orientation) * 0.5 * row['major_axis_length_nuc']
-            y2_major = y0 + math.cos(orientation) * 0.5 * row['major_axis_length_nuc']
-
-            x1_minor = x0 - math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
-            y1_minor = y0 - math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-            x2_minor = x0 + math.cos(orientation) * 0.5 * row['minor_axis_length_nuc']
-            y2_minor = y0 + math.sin(orientation) * 0.5 * row['minor_axis_length_nuc']
-
-            ax[1].plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
-            ax[1].plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
-            ax[1].plot(y0, x0, '.b', markersize=MARKERSIZE)
-            orientation_degree = 180.0 * orientation / np.pi
-            ax[1].text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
-                       fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+            _add_single_cell_eccentricity_axis(
+                ax[1],
+                row['Y_nuc'],
+                row['X_nuc'],
+                row['shape_orientation_nuc'],
+                row['major_axis_length_nuc'],
+                row['minor_axis_length_nuc'],
+                row["eccentricity_nuc"]
+            )
         else:
-            ax.plot((y1_major, y2_major), (x1_major, x2_major), '--w', linewidth=0.5)
-            ax.plot((y1_minor, y2_minor), (x1_minor, x2_minor), '--w', linewidth=0.5)
-            ax.plot(y0, x0, '.b', markersize=MARKERSIZE)
-            if feature_to_plot == "shape_orientation":
-                orientation_degree = 180.0 * orientation / np.pi
-                ax.text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow",
-                        fontsize=FONTSIZE_TEXT_ANNOTATIONS)
-            else:
-                ax.text(y0, x0, str(np.round(row["eccentricity"], 2)), color="yellow",
-                        fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+            _add_single_cell_eccentricity_axis(
+                ax,
+                row['Y_cell'],
+                row['X_cell'],
+                row['shape_orientation'],
+                row['major_axis_length'],
+                row['minor_axis_length'],
+                row["eccentricity"]
+            )
 
     # set title and ax limits
     if nuclei_mask is not None:
-        ax[0].set_title(plot_title_1)
-        ax[0].set_xlim(0, im_junction.shape[1])
-        ax[0].set_ylim(0, im_junction.shape[0])
-        ax[0].invert_yaxis()
-        ax[0].axis('off')
-
-        ax[1].set_title(plot_title_2)
-        ax[1].set_xlim(0, im_junction.shape[1])
-        ax[1].set_ylim(0, im_junction.shape[0])
-        ax[1].invert_yaxis()
-        ax[1].axis('off')
+        _add_title(ax[0], "cell elongation", im_junction)
+        _add_title(ax[1], "nuclei elongation", im_junction)
     else:
-        ax.set_title(plot_title_1)
-        ax.set_xlim(0, im_junction.shape[1])
-        ax.set_ylim(0, im_junction.shape[0])
-        ax.invert_yaxis()
-        ax.axis('off')
+        _add_title(ax, "cell elongation", im_junction)
 
     # save to disk
     plt.tight_layout()
 
-    if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".pdf")))
-    if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".svg")))
-    if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_" + feature_to_plot + ".png")))
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_eccentricity")
+    plt.close(fig)
+
+
+def _calc_nuc_orientation(single_cell_props, cell_mask, nuclei_mask):
+    get_logger().info("Calculating nuclei orientation...")
+    nuclei_orientation = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+
+        # exclude background
+        if row_label == 0:
+            continue
+        single_cell_mask = np.where(cell_mask == row_label, True, 0)
+        single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
+        nuclei_orientation += np.where(single_nuclei_mask_ == True, 1, 0) * row['shape_orientation_nuc'] * 180.0 / np.pi
+
+    get_logger().info("Maximal nuclei orientation: %s" % str(np.max(nuclei_orientation)))
+    get_logger().info("Minimal nuclei orientation: %s" % str(np.min(nuclei_orientation)))
+
+    return nuclei_orientation
+
+
+def _calc_cell_orientation(single_cell_props, cell_mask):
+    get_logger().info("Calculating cell orientation...")
+    cell_orientation = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+        if row_label == 0:
+            continue
+        cell_orientation += get_single_cell_mask(row_label, cell_mask) * row[
+            'shape_orientation_nuc'] * 180.0 / np.pi
+
+    get_logger().info("Maximal cell orientation: %s" % str(np.max(cell_orientation)))
+    get_logger().info("Minimal cell orientation: %s" % str(np.min(cell_orientation)))
+
+    return cell_orientation
+
+
+def _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation):
+    v_min = 0.0
+    v_max = 180.0
+    yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show cell_orientation everywhere but background label
+    cax = ax.imshow(
+        np.ma.masked_where(cell_mask == 0, cell_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
+        alpha=0.75
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax, ax, yticks, "shape orientation (degree)")
+
+
+def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientation):
+    v_min = 0.0
+    v_max = 180.0
+    yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show nuclei orientation everywhere but background label
+    nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
+    cax_1 = ax.imshow(np.ma.masked_where(
+        nuclei_mask_ == 0, nuclei_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax_1, ax, yticks, "shape orientation (degree)")
+
+
+def _add_single_cell_orientation_degree_axis(
+        ax, y0, x0, orientation, major_axis_length, minor_axis_length,
+):
+    x1_ma, x1_mi, x2_ma, x2_mi, y1_ma, y1_mi, y2_ma, y2_mi = _calc_single_cell_axis_orientation_vector(
+        x0, y0, orientation, major_axis_length, minor_axis_length
+    )
+    orientation_degree = 180.0 * orientation / np.pi
+
+    ax.plot((y1_ma, y2_ma), (x1_ma, x2_ma), '--w', linewidth=0.5)
+    ax.plot((y1_mi, y2_mi), (x1_mi, x2_mi), '--w', linewidth=0.5)
+    ax.plot(y0, x0, '.b', markersize=MARKERSIZE)
+    ax.text(y0, x0, str(int(np.round(orientation_degree, 0))), color="yellow", fontsize=FONTSIZE_TEXT_ANNOTATIONS)
+
+
+def plot_orientation(parameters, im_junction, single_cell_props, filename, output_path, cell_mask, nuclei_mask=None):
+    """ function to plot cell (and optionally nuclei) orientation
+
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    single_cell_props       :   pandas properties dataset
+    filename    :   base filename for the output file
+    output_path :   desired output path
+    cell_mask   :   cellpose cell mask
+    nuclei_mask :   cellpose nuclei mask
+    """
+    get_logger().info("Plotting: orientation")
+
+    # figure and axes
+    number_sub_figs = 1
+    if nuclei_mask is not None:
+        nuclei_mask = nuclei_mask.astype(bool)
+        number_sub_figs = 2
+
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, number_sub_figs, figsize=(number_sub_figs * w, h))
+
+    # get cell_orientation
+    cell_orientation = _calc_cell_orientation(single_cell_props, cell_mask)
+
+    # add cell (and nuclei) orientation to the figure
+    if nuclei_mask is not None:
+        _add_cell_orientation(fig, ax[0], im_junction, cell_mask, cell_orientation)
+        # get nuclei orientation
+        nuclei_orientation = _calc_nuc_orientation(single_cell_props, cell_mask, nuclei_mask)
+        _add_nuclei_orientation(fig, ax[1], im_junction, nuclei_mask, nuclei_orientation)
+    else:
+        _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation)
+
+    # plot major and minor axis
+    for index, row in single_cell_props.iterrows():
+        if nuclei_mask is not None:
+            # plot orientation degree
+            _add_single_cell_orientation_degree_axis(
+                ax[0],
+                row['Y_cell'],
+                row['X_cell'],
+                row['shape_orientation'],
+                row['major_axis_length'],
+                row['minor_axis_length']
+            )
+
+            # plot orientation degree nucleus
+            _add_single_cell_orientation_degree_axis(
+                ax[1],
+                row['Y_nuc'],
+                row['X_nuc'],
+                row['shape_orientation_nuc'],
+                row['major_axis_length_nuc'],
+                row['minor_axis_length_nuc']
+            )
+        else:
+            # plot orientation degree
+            _add_single_cell_orientation_degree_axis(
+                ax,
+                row['Y_cell'],
+                row['X_cell'],
+                row['shape_orientation'],
+                row['major_axis_length'],
+                row['minor_axis_length']
+            )
+
+    # set title and ax limits
+    if nuclei_mask is not None:
+        _add_title(ax[0], "cell shape orientation", im_junction)
+        _add_title(ax[1], "nuclei shape orientation", im_junction)
+    else:
+        _add_title(ax, "cell shape orientation", im_junction)
+
+    # set padding between and around subplots
+    plt.tight_layout()
+
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_shape_orientation")
     plt.close(fig)
 
 
 def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, filename, output_path):
-    fig, ax = plt.subplots(1, 1)
+    get_logger().info("Plotting: ratio method")
 
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, 1, figsize=(w, h))
+
+    # show junction and cell mask overlay
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
     ax.imshow(cell_mask, cmap=plt.cm.Set3, alpha=0.25)
 
-    outlines_cell = np.zeros((im_junction.shape[0], im_junction.shape[1]))
-
+    cell_outlines_accumulated = np.zeros((im_junction.shape[0], im_junction.shape[1]))
     for cell_label in np.unique(cell_mask):
-
         # exclude background
         if cell_label == 0:
             continue
 
-        single_cell_mask = np.where(cell_mask == cell_label, 1, 0)
-        outline_cell = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
-        outline_cell_ = np.where(outline_cell == True, 30, 0)
-        outlines_cell += outline_cell_
+        single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
+        cell_outline = get_outline_from_mask(single_cell_mask, parameters["membrane_thickness"])
+        # accumulates cell outlines. overlapping outlines have a higher value
+        cell_outlines_accumulated += np.where(cell_outline == True, 1, 0)
 
-    outlines_cell_ = np.where(outlines_cell > 0, 30, 0)
-    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.bwr, vmin=0, vmax=100, alpha=0.5)
+    # overlapping accumulated outlines are ignored and set to 1.
+    cell_outlines = np.where(cell_outlines_accumulated > 0, CELL_OUTLINE_INTENSITY, 0)
+    ax.imshow(np.ma.masked_where(cell_outlines == 0, cell_outlines), plt.cm.bwr, vmin=0, vmax=100, alpha=0.5)
 
+    # plot major axis around coordinates of each cell
     for index, row in single_cell_props.iterrows():
         x0 = row['X_cell']
         y0 = row['Y_cell']
 
+        # upper
         x1 = x0 + math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
         y1 = y0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
         x2 = x0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
@@ -515,6 +682,7 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax.plot(y0, x0, '.b', markersize=5)
 
+        # lower
         x1 = x0 - math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
         y1 = y0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
         x2 = x0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
@@ -524,55 +692,16 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax.plot(y0, x0, '.b', markersize=5)
 
-        ax.set_title("ratio method")
-        ax.set_xlim(0, im_junction.shape[0])
-        ax.set_ylim(0, im_junction.shape[1])
+    ax.set_title("ratio method")
+    ax.set_xlim(0, im_junction.shape[0])
+    ax.set_ylim(0, im_junction.shape[1])
 
+    # set padding between and around subplots
     plt.tight_layout()
 
-    if "pdf" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.pdf")))
-    if "svg" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.svg")))
-    if "png" in parameters["graphics_output_format"]:
-        plt.savefig(str(Path(output_path).joinpath(filename + "_ratio_method.png")))
-
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_ratio_method")
     plt.close(fig)
-
-
-## TODO: remove this function, has been integrated in plot_shape_props
-# def plot_cyclical(parameters, input_image, cell_masks_approx, filename, output_path):
-#
-#
-#    get_logger().info("Plotting shape orientation on a cyclic scale")
-#
-#
-#    #lab_image = label(input_image)
-#    lab_image = label(cell_masks_approx)
-#    regions = regionprops(lab_image)
-#    orient_list = []
-#    for region in regions:
-#        cell_masks_approx[lab_image == region.label] = region.orientation * (180 / np.pi) + 90
-#        orient_list.append(np.round(math.degrees(region.orientation)))
-#
-#    #cell_masks_approx[cell_masks_approx == 0] = np.nan
-#    cell_masks_approx= np.ma.masked_where(cell_masks_approx == 0, cell_masks_approx)
-#
-#    masked_data = (lab_image != 0)
-#    t_f = (masked_data * 1)
-#    masked_data[np.where(t_f == 0), np.where(t_f == 0)] = np.nan
-#
-#    fig = plt.figure(figsize=(20, 20))
-#    cm_phase = plt.imshow(cell_masks_approx, cmap=cm.cm.phase)  # todo: color scale OK? Put on top of file.
-#    plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
-#    #plt.imshow(np.where(masked_data == 0, 1, np.nan), cmap='binary', vmin=0, vmax=1)
-#    plt.colorbar(cm_phase)
-#
-#    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.pdf")))
-#    plt.savefig(str(Path(output_path).joinpath(filename + "_cyclic.png")))
-#    plt.close(fig)
-#
-#    #return cm_phase
 
 
 def plot_adjacency_matrix(label_image, intensity_image):
@@ -582,8 +711,7 @@ def plot_adjacency_matrix(label_image, intensity_image):
     return out
 
 
-def plot_dataset(parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask,
-                 golgi_mask, im_marker):
+def plot_dataset(parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, golgi_mask, im_marker):
     """Plots the properties dataset"""
     get_logger().info("Plotting...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
@@ -593,49 +721,39 @@ def plot_dataset(parameters, img, properties_dataset, output_path, filename, cel
         plot_organelle_polarity(
             parameters,
             im_junction,
-            cell_mask_rem_island,
+            cell_mask,
             nuclei_mask,
             golgi_mask,
-            properties_dataset,
+            properties_ds,
             filename, output_path,
         )
     if parameters["plot_marker"] and im_marker is not None:
         plot_marker_expression(
-            parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path,
+            parameters, im_marker, cell_mask, properties_ds, filename, output_path,
             nuclei_mask=nuclei_mask
         )
         plot_marker_polarity(
-            parameters, im_marker, cell_mask_rem_island, properties_dataset, filename, output_path
+            parameters, im_marker, cell_mask, properties_ds, filename, output_path
         )
-    # TODO: rename alignment to orientation
-    if parameters["plot_alignment"]:
-        plot_shape_props(
-            parameters,
-            im_junction,
-            properties_dataset,
-            filename,
-            output_path,
-            cell_mask_rem_island,
-            "eccentricity",
-            nuclei_mask=nuclei_mask,
-        )
+    if parameters["plot_orientation"]:
+        plot_eccentricity(parameters, im_junction, properties_ds, cell_mask, filename, output_path,
+                          nuclei_mask=nuclei_mask)
     if parameters["plot_ratio_method"]:
         plot_ratio_method(
             parameters,
             im_junction,
-            cell_mask_rem_island,
-            properties_dataset,
+            cell_mask,
+            properties_ds,
             filename,
             output_path
         )
     if parameters["plot_cyclic_orientation"]:
-        plot_shape_props(
+        plot_orientation(
             parameters,
             im_junction,
-            properties_dataset,
+            properties_ds,
             filename,
             output_path,
-            cell_mask_rem_island,
-            "shape_orientation",
+            cell_mask,
             nuclei_mask=nuclei_mask,
         )
