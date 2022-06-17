@@ -905,7 +905,7 @@ def plot_dataset(
             output_path
         )
         if nuclei_mask is not None:
-            plot_marker_nucleus_orientation
+            plot_marker_nucleus_orientation(
                 parameters,
                 im_junction,
                 cell_mask,
