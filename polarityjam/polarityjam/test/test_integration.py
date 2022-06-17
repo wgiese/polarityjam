@@ -83,6 +83,7 @@ class TestIntegration(TestCommon):
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(2, num_csv)
 
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack_no_golgi(self):
         in_path = str(self.get_test_image_folder("g"))
         param_file = str(self.get_test_parameter_file("parameters_no_golgi.yml"))
@@ -113,7 +114,7 @@ class TestIntegration(TestCommon):
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(3, num_csv)
 
-    @unittest.skipIf(platform.system().lower() == 'windows', "Memory issues. Skipping test!")
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack_no_nuclei(self):
         in_path = str(self.get_test_image_folder("n"))
         param_file = str(self.get_test_parameter_file("parameters_no_nuclei.yml"))
