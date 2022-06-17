@@ -914,7 +914,7 @@ def plot_dataset(
                 filename,
                 output_path
             )
-           if parameters["plot_orientation"]:
+    if parameters["plot_orientation"]:
         plot_eccentricity(parameters, im_junction, properties_ds, cell_mask, filename, output_path,
                           nuclei_mask=nuclei_mask)
     if parameters["plot_ratio_method"]:
