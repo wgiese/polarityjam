@@ -81,8 +81,19 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Data preparation",
         sidebarLayout(
             sidebarPanel(
-                radioButtons("data_upload_form", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
                 
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'example 1'",
+                    fileInput("stackData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation", "File upload", TRUE),
+                ),
+
+
                 conditionalPanel(
                     condition = "input.data_upload_form == 'single file'",
                     fileInput("stackData", "Upload data file",
@@ -492,7 +503,10 @@ server <- function(input, output, session) {
    
     inFileStackData <- input$stackData
 
-    if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+    if (input$data_upload_form == "example 1") {
+        results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
+    }
+    else if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
         results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     } else if (input$data_upload_form == "folder") {
         datapath <- stack_data_info$datapath 
@@ -903,23 +917,23 @@ server <- function(input, output, session) {
     
         results_all_df <- mergedStack()
     
-        for(row_nr in 1:nrow(results_all_df)) {
-            row <- results_all_df[row_nr,]
-      a <- row$major_axis_length
-      b <- row$minor_axis_length
-      
-      eccentricity <- sqrt(1.0 - b*b/(a*a))
-      results_all_df[row_nr,"eccentricity"] = eccentricity 
-    }
+     #   for(row_nr in 1:nrow(results_all_df)) {
+     #       row <- results_all_df[row_nr,]
+     # a <- row$major_axis_length
+     # b <- row$minor_axis_length
+     # 
+     # eccentricity <- sqrt(1.0 - b*b/(a*a))
+     # results_all_df[row_nr,"cell_eccentricity"] = eccentricity 
+    #}
     
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
-    }
-    threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
-    }
+    #threshold <- input$min_eccentricity
+    #if ("cell_eccentricity" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+    #}
+    #threshold <- input$min_nuclei_golgi_dist
+    #if ("orgenelle_distance" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+    #}
     
     feature <- parameters[input$feature_select][[1]][1]
     condition_col <- input$condition_col   
