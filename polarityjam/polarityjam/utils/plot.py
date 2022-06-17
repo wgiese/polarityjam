@@ -876,6 +876,16 @@ def plot_dataset(
             filename,
             output_path
         )
+        if nuclei_mask is not None: 
+            plot_nuc_displacement_orientation(
+                parameters,
+                im_junction,
+                cell_mask,
+                nuclei_mask,
+                properties_ds,
+                filename,
+                output_path
+            )
     if parameters["plot_marker"] and im_marker is not None:
         plot_marker_expression(
             parameters,
@@ -895,7 +905,7 @@ def plot_dataset(
             output_path
         )
         if nuclei_mask is not None:
-            plot_marker_nucleus_orientation(
+            plot_marker_nucleus_orientation
                 parameters,
                 im_junction,
                 cell_mask,
@@ -904,16 +914,7 @@ def plot_dataset(
                 filename,
                 output_path
             )
-            plot_nuc_displacement_orientation(
-                parameters,
-                im_junction,
-                cell_mask,
-                nuclei_mask,
-                properties_ds,
-                filename,
-                output_path
-            )
-    if parameters["plot_orientation"]:
+           if parameters["plot_orientation"]:
         plot_eccentricity(parameters, im_junction, properties_ds, cell_mask, filename, output_path,
                           nuclei_mask=nuclei_mask)
     if parameters["plot_ratio_method"]:

@@ -320,6 +320,7 @@ def fill_single_nucleus_data_frame(dataset, index, props):
     dataset.at[index, "nuc_displacement_orientation_rad"] = nucleus_displacement_orientation_rad
     dataset.at[index, "nuc_displacement_orientation_deg"] = 180.0 * nucleus_displacement_orientation_rad / np.pi
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
+    # TODO: should be nuc_shape_orientation_deg and rad ?
     dataset.at[index, "nuc_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
     dataset.at[index, "nuc_major_axis_length"] = props.major_axis_length
