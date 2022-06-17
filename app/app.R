@@ -85,15 +85,15 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                  radioButtons("data_upload_form", "Data from:", choices = list("example 1"), selected = "example 1"),
                 
 
-                conditionalPanel(
-                    condition = "input.data_upload_form == 'single file'",
-                    fileInput("stackData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                    checkboxInput("header_correlation", "File upload", TRUE),
-                ),
+#                conditionalPanel(
+#                    condition = "input.data_upload_form == 'single file'",
+#                    fileInput("stackData", "Upload data file",
+#                            accept = c( "text/csv",
+#                            "text/comma-separated-values,text/plain",
+#                            ".csv",".xlsx")),
+#                            tags$hr(),
+#                    checkboxInput("header_correlation", "File upload", TRUE),
+#                ),
 
                 conditionalPanel(
                     condition = "input.data_upload_form == 'folder'",
