@@ -226,7 +226,7 @@ def plot_nuc_displacement_orientation(parameters, im_junction, cell_mask, nuclei
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        nuc_angle += get_single_cell_mask(row_label, cell_mask) * row['marker_nucleus_orientation_deg']
+        nuc_angle += get_single_cell_mask(row_label, cell_mask) * row["nuc_displacement_orientation_deg"]
     nuc_polarity_angle = np.ma.masked_where(cell_mask == 0, nuc_angle)
 
     # plot polarity angle
