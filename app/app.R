@@ -74,7 +74,7 @@ vals <- reactiveValues(count=0)
 
 ###### UI: User interface #########
 
-ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta 0.2)",
+ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta version)",
 
 ### Panel 0: Data preparation
 
@@ -82,8 +82,15 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
         sidebarLayout(
             sidebarPanel(
 #                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
-                 radioButtons("data_upload_form", "Data from:", choices = list("example 1"), selected = "example 1"),
-                
+                 radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
+
+                 conditionalPanel(
+                   condition = "input.data_upload_form == 'upload data'",
+                   checkboxInput("terms_of_use", "I agree to terms of use", FALSE),
+                ),
+                 
+                 
+                 
 
 #                conditionalPanel(
 #                    condition = "input.data_upload_form == 'single file'",
@@ -150,7 +157,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             # Show a plot of the generated distribution
             mainPanel(
                 tabsetPanel(
-                    tabPanel("Table", tableOutput("merged_stack"))
+                    tabPanel("Table", htmlOutput("terms_of_use_text"), tableOutput("merged_stack"))
                 )
             )
         )
@@ -596,11 +603,30 @@ server <- function(input, output, session) {
   # end of merged stack function
   
   
+  output$terms_of_use_text <- renderText({
+    "
+    function that the merged stack of polarity data and angles in table format
+    "
+    #if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
+    if ((input$data_upload_form == "upload data")) {
+      HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
+      #HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
+    } else {
+      
+    }
+  })
+  
   output$merged_stack <- renderTable({
     "
     function that the merged stack of polarity data and angles in table format
     "
-    mergedStack()
+    if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
+      #data.frame( "Info" = c("Dear user, data upload is currently not possible in the online version.", 
+      #                       "Please download the Rshiny app from \n and run locally."))
+      
+    } else {
+      mergedStack()
+    }
   })
   
   
