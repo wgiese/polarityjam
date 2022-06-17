@@ -6,8 +6,8 @@ import skimage.measure
 import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_golgi_mask, \
-    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_golgi_mask, get_nuclei_mask
+from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
+    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask
 from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
@@ -34,7 +34,7 @@ def get_image_for_segmentation(parameters, img):
     return im_seg
 
 
-def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_golgi_mask=None):
+def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
     """Thresholds given single_cell_mask. Returns True if falls under threshold."""
     # TODO: check if this can be removed, we already remove small objects from the cellpose mask
     if len(single_cell_mask[single_cell_mask == 1]) < parameters["min_cell_size"]:
@@ -44,8 +44,8 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_gol
         if len(single_nucleus_mask[single_nucleus_mask == 1]) < parameters["min_nucleus_size"]:
             return True
 
-    if single_golgi_mask is not None:
-        if len(single_golgi_mask[single_golgi_mask == 1]) < parameters["min_golgi_size"]:
+    if single_organelle_mask is not None:
+        if len(single_organelle_mask[single_organelle_mask == 1]) < parameters["min_organelle_size"]:
             return True
 
     return False
@@ -59,9 +59,8 @@ def get_image_marker(parameters, img):
 
 def set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, graph_nf):
     single_cell_props = get_single_cell_prop(single_cell_mask)
-    neighbours = len(list(graph_nf.neighbors(connected_component_label)))
     fill_single_cell_general_data_frame(
-        properties_dataset, index, filename, connected_component_label, single_cell_props, neighbours
+        properties_dataset, index, filename, connected_component_label, single_cell_props
     )
 
     return single_cell_props
@@ -77,14 +76,14 @@ def set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask
     return nucleus_props
 
 
-def set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props):
-    regions = skimage.measure.regionprops(single_golgi_mask)
-    golgi_props = None
+def set_single_cell_organelle_props(properties_dataset, index, single_organelle_mask, nucleus_props):
+    regions = skimage.measure.regionprops(single_organelle_mask)
+    organelle_props = None
     if regions:
-        golgi_props = regions[-1]
-        fill_single_cell_golgi_data_frame(properties_dataset, index, golgi_props, nucleus_props)
+        organelle_props = regions[-1]
+        fill_single_cell_organelle_data_frame(properties_dataset, index, organelle_props, nucleus_props)
 
-    return golgi_props
+    return organelle_props
 
 
 def set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker):
@@ -138,7 +137,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     # get masks
     nuclei_mask = get_nuclei_mask(parameters, img, cell_mask_rem_island)
-    golgi_mask = get_golgi_mask(parameters, img, cell_mask_rem_island)
+    organelle_mask = get_organelle_mask(parameters, img, cell_mask_rem_island)
     im_marker = get_image_marker(parameters, img)
 
     properties_dataset = pd.DataFrame()
@@ -153,7 +152,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         # get single cell masks
         single_cell_mask = get_single_cell_mask(connected_component_label, cell_mask_rem_island)
         single_nucleus_mask = get_single_cell_nucleus_mask(connected_component_label, nuclei_mask)  # can be None
-        single_golgi_mask = get_single_cell_golgi_mask(connected_component_label, golgi_mask)  # can be None
+        single_organelle_mask = get_single_cell_organelle_mask(connected_component_label, organelle_mask)  # can be None
         single_membrane_mask = get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask)  # can be None
         single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker,
                                                            single_nucleus_mask)  # can be None
@@ -163,7 +162,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                 parameters,
                 single_cell_mask,
                 single_nucleus_mask=single_nucleus_mask,
-                single_golgi_mask=single_golgi_mask
+                single_organelle_mask=single_organelle_mask
         ):
             get_logger().info("Cell \"%s\" falls under threshold! Removed from RAG..." % connected_component_label)
             excluded += 1
@@ -178,16 +177,16 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         if single_nucleus_mask is not None:
             nucleus_props = set_single_cell_nucleus_props(properties_dataset, index, single_nucleus_mask)
 
-            # properties for golgi
-            if nucleus_props and single_golgi_mask is not None:
-                set_single_cell_golgi_props(properties_dataset, index, single_golgi_mask, nucleus_props)
+            # properties for organelle
+            if nucleus_props and single_organelle_mask is not None:
+                set_single_cell_organelle_props(properties_dataset, index, single_organelle_mask, nucleus_props)
 
         # properties for marker
         if im_marker is not None:
             set_single_cell_marker_props(properties_dataset, index, single_cell_mask, im_marker)
             set_single_cell_marker_membrane_props(properties_dataset, index, single_membrane_mask, im_marker)
 
-            # marker nuclei properties
+            # properties for marker nuclei
             if nuclei_mask is not None:
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
@@ -209,11 +208,11 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     # morans I analysis based on FOI
     fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
 
-    # neighborhood feature analysis
-    k_neighbor_dif(rag, parameters["feature_of_interest"], properties_dataset)
+    # neighborhood feature analysis based on FOI
+    k_neighbor_dif(properties_dataset, rag, parameters["feature_of_interest"])
 
     plot_dataset(
-        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, golgi_mask,
+        parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, organelle_mask,
         im_marker
     )
 
@@ -248,108 +247,118 @@ def get_single_cell_prop(single_cell_mask):
 
 def fill_single_cell_marker_membrane_data_frame(properties_dataset, index, marker_membrane_props):
     """Fills the dataset with the single cell marker membrane properties."""
-    properties_dataset.at[index, "mean_expression_mem"] = marker_membrane_props.mean_intensity
+    properties_dataset.at[index, "marker_mean_expression_mem"] = marker_membrane_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_mem"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
+        index, "marker_sum_expression_mem"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
 
 
 def fill_single_cell_marker_nuclei_cytosol_data_frame(properties_dataset, index, marker_nuc_cyt_props):
     """Fills the dataset with the single cell marker nuclei cytosol properties."""
-    properties_dataset.at[index, "mean_expression_cyt"] = marker_nuc_cyt_props.mean_intensity
+    properties_dataset.at[index, "marker_mean_expression_cyt"] = marker_nuc_cyt_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_cyt"] = marker_nuc_cyt_props.mean_intensity * marker_nuc_cyt_props.area
+        index, "marker_sum_expression_cyt"] = marker_nuc_cyt_props.mean_intensity * marker_nuc_cyt_props.area
 
 
 def fill_single_cell_marker_nuclei_data_frame(properties_dataset, index, marker_nuc_props):
     """Fills the dataset with the single cell marker nuclei properties."""
-    properties_dataset.at[index, "mean_expression_nuc"] = marker_nuc_props.mean_intensity
+    # compute marker nucleus orientation
+    marker_nucleus_orientation_rad = compute_reference_target_orientation_rad(
+        properties_dataset["nuc_X"][index],
+        properties_dataset["nuc_Y"][index],
+        properties_dataset["marker_centroid_X"][index],
+        properties_dataset["marker_centroid_Y"][index]
+    )
+
+    properties_dataset.at[index, "marker_mean_expression_nuc"] = marker_nuc_props.mean_intensity
     properties_dataset.at[
-        index, "sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
+        index, "marker_sum_expression_nuc"] = marker_nuc_props.mean_intensity * marker_nuc_props.area
+    properties_dataset.at[index, "marker_nucleus_orientation_rad"] = marker_nucleus_orientation_rad
+    properties_dataset.at[index, "marker_nucleus_orientation_deg"] = 180.0 * marker_nucleus_orientation_rad / np.pi
 
 
-def fill_single_cell_golgi_data_frame(dataset, index, golgi_props, nucleus_props):
-    """Fills the dataset with the single cell golgi properties."""
-    x_golgi, y_golgi = golgi_props.centroid
-    angle_rad, vec_x, vec_y = compute_marker_polarity_rad(
-        nucleus_props.centroid[0], nucleus_props.centroid[1], x_golgi, y_golgi
+def fill_single_cell_organelle_data_frame(dataset, index, organelle_props, nucleus_props):
+    """Fills the dataset with the single cell organelle properties."""
+    x_organelle, y_organelle = organelle_props.centroid
+    angle_rad = compute_reference_target_orientation_rad(
+        nucleus_props.centroid[0], nucleus_props.centroid[1], x_organelle, y_organelle
     )
-    dataset.at[index, "X_golgi"] = x_golgi
-    dataset.at[index, "Y_golgi"] = y_golgi
+    dataset.at[index, "organelle_X"] = x_organelle
+    dataset.at[index, "organelle_Y"] = y_organelle
 
-    dataset.at[index, "distance"] = compute_marker_vector_norm(
-        x_golgi, y_golgi, nucleus_props.centroid[0], nucleus_props.centroid[1]
+    dataset.at[index, "organelle_distance"] = compute_marker_vector_norm(
+        x_organelle, y_organelle, nucleus_props.centroid[0], nucleus_props.centroid[1]
     )
-    dataset.at[index, "vec_X"] = vec_x
-    dataset.at[index, "vec_Y"] = vec_y
-    dataset.at[index, "angle_rad"] = angle_rad
-    dataset.at[index, "flow_alignment"] = np.sin(angle_rad)
-    dataset.at[index, "angle_deg"] = 180.0 * angle_rad / np.pi
+    dataset.at[index, "organelle_orientation_rad"] = angle_rad
+    dataset.at[index, "organelle_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
-def fill_single_cell_general_data_frame(dataset, index, filename, connected_component_label, props, neighbours):
+def fill_single_cell_general_data_frame(dataset, index, filename, connected_component_label, props):
     """Fills the dataset with the general single cell properties."""
     dataset.at[index, "filename"] = filename
     dataset.at[index, "label"] = connected_component_label
-    dataset.at[index, "X_cell"] = props.centroid[0]
-    dataset.at[index, "Y_cell"] = props.centroid[1]
+    dataset.at[index, "cell_X"] = props.centroid[0]
+    dataset.at[index, "cell_Y"] = props.centroid[1]
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation"] = np.pi / 2.0 + props.orientation
+    dataset.at[index, "cell_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "flow_shape_alignment"] = np.sin(props.orientation)
-    dataset.at[index, "major_axis_length"] = props.major_axis_length
-    dataset.at[index, "minor_axis_length"] = props.minor_axis_length
-    dataset.at[index, "eccentricity"] = props.eccentricity
-    dataset.at[index, "major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
-    dataset.at[index, "area"] = props.area
-    dataset.at[index, "perimeter"] = props.perimeter
-    dataset.at[index, "n_neighbors"] = neighbours
+    dataset.at[index, "cell_major_axis_length"] = props.major_axis_length
+    dataset.at[index, "cell_minor_axis_length"] = props.minor_axis_length
+    dataset.at[index, "cell_eccentricity"] = props.eccentricity
+    dataset.at[index, "cell_major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
+    dataset.at[index, "cell_area"] = props.area
+    dataset.at[index, "cell_perimeter"] = props.perimeter
 
 
 def fill_single_nucleus_data_frame(dataset, index, props):
     """Fills the dataset with the single cell nucleus properties."""
-    dataset.at[index, "X_nuc"] = props.centroid[0]
-    dataset.at[index, "Y_nuc"] = props.centroid[1]
+    dataset.at[index, "nuc_X"] = props.centroid[0]
+    dataset.at[index, "nuc_Y"] = props.centroid[1]
+    # compute nucleus displacement
+    nucleus_displacement_orientation_rad = compute_reference_target_orientation_rad(
+        dataset["cell_X"][index], dataset["cell_Y"][index], props.centroid[0], props.centroid[1],
+    )
+    dataset.at[index, "nuc_displacement_orientation_rad"] = nucleus_displacement_orientation_rad
+    dataset.at[index, "nuc_displacement_orientation_deg"] = 180.0 * nucleus_displacement_orientation_rad / np.pi
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
-    dataset.at[index, "shape_orientation_nuc"] = np.pi / 2.0 + props.orientation
+    # TODO: should be nuc_shape_orientation_deg and rad ?
+    dataset.at[index, "nuc_shape_orientation"] = np.pi / 2.0 + props.orientation
     # assumes flow from left to right anlong x-axis
-    dataset.at[index, "flow_shape_alignment_nuc"] = np.sin(np.pi / 2.0 - props.orientation)
-    dataset.at[index, "major_axis_length_nuc"] = props.major_axis_length
-    dataset.at[index, "minor_axis_length_nuc"] = props.minor_axis_length
-    dataset.at[index, "area_nuc"] = props.area
-    dataset.at[index, "perimeter_nuc"] = props.perimeter
-    dataset.at[index, "eccentricity_nuc"] = props.eccentricity
-    dataset.at[index, "major_to_minor_ratio_nuc"] = props.major_axis_length / props.minor_axis_length
+    dataset.at[index, "nuc_major_axis_length"] = props.major_axis_length
+    dataset.at[index, "nuc_minor_axis_length"] = props.minor_axis_length
+    dataset.at[index, "nuc_area"] = props.area
+    dataset.at[index, "nuc_perimeter"] = props.perimeter
+    dataset.at[index, "nuc_eccentricity"] = props.eccentricity
+    dataset.at[index, "nuc_major_to_minor_ratio"] = props.major_axis_length / props.minor_axis_length
 
 
 def fill_single_cell_marker_polarity(dataset, index, props):
     """Fills the dataset with the single cell marker properties."""
-    x_weighted, y_weighted = props.weighted_centroid
-    x_cell, y_cell = props.centroid
-    angle_rad, _, _ = compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted)
-    dataset.at[index, "mean_expression"] = props.mean_intensity
-    dataset.at[index, "sum_expression"] = props.mean_intensity * props.area
-    dataset.at[index, "X_weighted"] = props.weighted_centroid[0]
-    dataset.at[index, "Y_weighted"] = props.weighted_centroid[1]
-    dataset.at[index, "maker_vec_norm"] = compute_marker_vector_norm(x_cell, y_cell, x_weighted, y_weighted)
-    dataset.at[index, "marker_polarity_rad"] = angle_rad  # FIXME: no sign correct?
-    dataset.at[index, "marker_polarity_deg"] = 180.0 * angle_rad / np.pi
+    marker_centroid_x, marker_centroid_y = props.weighted_centroid
+    cell_x, cell_y = props.centroid
+    angle_rad = compute_reference_target_orientation_rad(cell_x, cell_y, marker_centroid_x, marker_centroid_y)
+    dataset.at[index, "marker_mean_expr"] = props.mean_intensity
+    dataset.at[index, "marker_sum_expression"] = props.mean_intensity * props.area
+    dataset.at[index, "marker_centroid_X"] = props.weighted_centroid[0]
+    dataset.at[index, "marker_centroid_Y"] = props.weighted_centroid[1]
+    dataset.at[index, "marker_centroid_orientation_rad"] = angle_rad
+    dataset.at[index, "marker_centroid_orientation_deg"] = 180.0 * angle_rad / np.pi
 
 
-def compute_marker_vector_norm(x_cell, y_cell, x_weighted, y_weighted):
+def compute_marker_vector_norm(cell_x, cell_y, marker_centroid_x, marker_centroid_y):
     """Computes the marker vector norm"""
-    distance2 = (x_cell - x_weighted) ** 2
-    distance2 += (y_cell - y_weighted) ** 2
+    distance2 = (cell_x - marker_centroid_x) ** 2
+    distance2 += (cell_y - marker_centroid_y) ** 2
 
     return np.sqrt(distance2)
 
 
-def compute_marker_polarity_rad(x_cell, y_cell, x_weighted, y_weighted):
+def compute_reference_target_orientation_rad(ref_x, ref_y, target_x, target_y):
     """Computes the marker polarity radius"""
-    vec_x = x_cell - x_weighted
-    vec_y = y_cell - y_weighted
-    angle_rad = np.pi - np.arctan2(vec_x, vec_y)
+    vec_x = ref_x - target_x
+    vec_y = ref_y - target_y
+    organelle_orientation_rad = np.pi - np.arctan2(vec_x, vec_y)
 
-    return angle_rad, vec_x, vec_y
+    return organelle_orientation_rad
 
 
 def remove_edges(mask):
@@ -422,10 +431,11 @@ def run_morans(morans_features, weihgts):
     return mi
 
 
-def k_neighbor_dif(graph, foi, properties_dataset):
+def k_neighbor_dif(properties_dataset, graph, foi):
     """Extracts neighborhood statics from graph."""
     get_logger().info("Calculating first and second nearest neighbor statistic...")
 
+    num_neighbours = []
     mean_dif_first_neighbors = []
     median_dif_first_neighbors = []
     var_dif_first_neighbors = []
@@ -436,10 +446,12 @@ def k_neighbor_dif(graph, foi, properties_dataset):
     var_dif_second_neighbors = []
     range_dif_second_neighbors = []
     for node in graph.nodes():
+        neighbours = len(list(graph.neighbors(int(node))))
+        num_neighbours.append(neighbours)
 
         # feature of interest, first and second_nearest_neighbors
         node_foi = graph.nodes[node][foi]
-        first_nearest_neighbors, second_nearest_neighbors = second_neighbors(graph, node)
+        first_nearest_neighbors, second_nearest_neighbors = n_neighbors(graph, node)
 
         # feature of interest in comparison with first_nearest neighbor nodes
         foi_first_nearest_diff = [graph.nodes[neighbor][foi] - node_foi for neighbor in first_nearest_neighbors]
@@ -471,20 +483,22 @@ def k_neighbor_dif(graph, foi, properties_dataset):
             var_dif_second_neighbors.append(0)
             range_dif_second_neighbors.append(0)
 
+    properties_dataset["neighbors_cell"] = num_neighbours
+
     # fill properties for first nearest neighbors
-    properties_dataset["mean_dif_1st_neighbors"] = mean_dif_first_neighbors
-    properties_dataset["median_dif_1st_neighbors"] = median_dif_first_neighbors
-    properties_dataset["stddev_dif_1st_neighbors"] = var_dif_first_neighbors
-    properties_dataset["range_dif_1st_neighbors"] = range_dif_first_neighbors
+    properties_dataset["neighbors_mean_dif_1st"] = mean_dif_first_neighbors
+    properties_dataset["neighbors_median_dif_1st"] = median_dif_first_neighbors
+    properties_dataset["neighbors_stddev_dif_1st"] = var_dif_first_neighbors
+    properties_dataset["neighbors_range_dif_1st"] = range_dif_first_neighbors
 
     # fill properties for second nearest neighbors
-    properties_dataset["mean_dif_2nd_neighbors"] = mean_dif_second_neighbors
-    properties_dataset["median_dif_2nd_neighbors"] = median_dif_second_neighbors
-    properties_dataset["stddev_dif_2nd_neighbors"] = var_dif_second_neighbors
-    properties_dataset["range_dif_2nd_neighbors"] = range_dif_second_neighbors
+    properties_dataset["neighbors_mean_dif_2nd"] = mean_dif_second_neighbors
+    properties_dataset["neighbors_median_dif_2nd"] = median_dif_second_neighbors
+    properties_dataset["neighbors_stddev_dif_2nd"] = var_dif_second_neighbors
+    properties_dataset["neighbors_range_dif_2nd"] = range_dif_second_neighbors
 
 
-def second_neighbors(rag, node):
+def n_neighbors(rag, node):
     """Return all second and first nearest neighbor nodes of a given node in a rag"""
     first_nearest_list = shared_edges(rag, node)
 

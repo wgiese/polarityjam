@@ -81,8 +81,19 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Data preparation",
         sidebarLayout(
             sidebarPanel(
-                radioButtons("data_upload_form", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
                 
+                conditionalPanel(
+                    condition = "input.data_upload_form == 'example 1'",
+                    fileInput("stackData", "Upload data file",
+                            accept = c( "text/csv",
+                            "text/comma-separated-values,text/plain",
+                            ".csv",".xlsx")),
+                            tags$hr(),
+                    checkboxInput("header_correlation", "File upload", TRUE),
+                ),
+
+
                 conditionalPanel(
                     condition = "input.data_upload_form == 'single file'",
                     fileInput("stackData", "Upload data file",
@@ -181,7 +192,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             step = 1,
                             value = 0),
                 selectInput("feature_select", "Choose a feature:",
-                            choices = c("nuclei_golgi_polarity", "major_axis_shape_orientation",
+                            choices = c("organelle_orientation", "cell_shape_orientation",
                             "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
                             "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
@@ -280,9 +291,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 #                            tags$hr(),
 #                checkboxInput("header_correlation", "File upload", TRUE),
                 selectInput("feature_select_1", "Choose a feature 1:",
-                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("feature_select_2", "Choose a feature 2:",
-                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("datasetSingleImage", "Download:",
                             choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
                 #tags$hr(),
@@ -339,7 +350,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 
                 selectInput("control_condition", "control condition", choices = ""),
                 selectInput("feature_comparison", "Choose a feature:",
-                            choices = c("nuclei_golgi_polarity","major_axis_shape_orientation",
+                            choices = c("organelle_orientation","major_axis_shape_orientation",
                             "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
                             "mean_expression","marker_polarity","area","perimeter")),
                 checkboxInput("kde_comparison", "KDE plot", FALSE),
@@ -492,7 +503,10 @@ server <- function(input, output, session) {
    
     inFileStackData <- input$stackData
 
-    if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+    if (input$data_upload_form == "example 1") {
+        results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
+    }
+    else if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
         results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     } else if (input$data_upload_form == "folder") {
         datapath <- stack_data_info$datapath 
@@ -627,7 +641,7 @@ server <- function(input, output, session) {
     feature <- parameters[input$feature_select][[1]][1]
 
     threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_df)){
+    if ("organelle_distance" %in% colnames(results_df)){
       results_df <- subset(results_df, results_df$distance > threshold)
     }
 
@@ -808,20 +822,23 @@ server <- function(input, output, session) {
     #if (!is.null(inFileStackData))
     #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
 
-   
-    for(i in 1:nrow(results_all_df)) {
-      row <- results_all_df[i,]
-      a <- row$major_axis_length
-      b <- row$minor_axis_length
-      
-      eccentricity <- sqrt(1.0 - b*b/(a*a))
-      results_all_df[i,"eccentricity"] = eccentricity 
-    }
+    # TODO: make filtering conditional
+    #for(i in 1:nrow(results_all_df)) {
+    #  row <- results_all_df[i,]
+    #  a <- row$major_axis_length
+    #  b <- row$minor_axis_length
+    #  
+    #  eccentricity <- sqrt(1.0 - b*b/(a*a))
+    #  results_all_df[i,"cell_eccentricity"] = eccentricity 
+    #}
     
-    threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
-    }
+    #threshold <- input$min_nuclei_golgi_dist
+    #if ("organelle_distance" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+    #}
+
+    #print("In merged_plot")
+    #print(head(results_all_df))
     
     bin_size = 360/input$bins
     exp_condition <- input$exp_condition
@@ -900,23 +917,23 @@ server <- function(input, output, session) {
     
         results_all_df <- mergedStack()
     
-        for(row_nr in 1:nrow(results_all_df)) {
-            row <- results_all_df[row_nr,]
-      a <- row$major_axis_length
-      b <- row$minor_axis_length
-      
-      eccentricity <- sqrt(1.0 - b*b/(a*a))
-      results_all_df[row_nr,"eccentricity"] = eccentricity 
-    }
+     #   for(row_nr in 1:nrow(results_all_df)) {
+     #       row <- results_all_df[row_nr,]
+     # a <- row$major_axis_length
+     # b <- row$minor_axis_length
+     # 
+     # eccentricity <- sqrt(1.0 - b*b/(a*a))
+     # results_all_df[row_nr,"cell_eccentricity"] = eccentricity 
+    #}
     
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
-    }
-    threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
-    }
+    #threshold <- input$min_eccentricity
+    #if ("cell_eccentricity" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+    #}
+    #threshold <- input$min_nuclei_golgi_dist
+    #if ("orgenelle_distance" %in% colnames(results_all_df)){
+    #  results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+    #}
     
     feature <- parameters[input$feature_select][[1]][1]
     condition_col <- input$condition_col   
@@ -1765,13 +1782,13 @@ server <- function(input, output, session) {
             condition_data <- subset(data, data[condition_col] == condition )
             control_data <- subset(data, data[condition_col] == control_condition )
             print("Output Watson test object")
-            #print(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE))
+            #print(watson.two(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad, alpha=0.05, plot=TRUE))
             
             #print("Struct of Watson test object")
-            #print(str(watson.two(condition_data$angle_rad, control_data$angle_rad, alpha=0.05, plot=TRUE)))
+            #print(str(watson.two(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad, alpha=0.05, plot=TRUE)))
         
-            watson1 <- watson.two.test(condition_data$angle_rad, control_data$angle_rad)
-            out <- capture.output(watson.two.test(condition_data$angle_rad, control_data$angle_rad))
+            watson1 <- watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad)
+            out <- capture.output(watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad))
             print(out)
             p_value <- out[5]
             res[1,condition] <- p_value
@@ -1797,13 +1814,13 @@ server <- function(input, output, session) {
         #cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
         #cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
       
-        #print(watson.two(cond1_data$angle_rad, cond2_data$angle_rad, alpha=0.05, plot=TRUE))
+        #print(watson.two(cond1_data$organelle_orientation_rad, cond2_data$organelle_orientation_rad, alpha=0.05, plot=TRUE))
       
         #watson.two(data1, data2)
-        #watson.two(cond1_data$angle_rad, cond2_data$angle_rad)
+        #watson.two(cond1_data$organelle_orientation_rad, cond2_data$organelle_orientation_rad)
       
         #print("Structure")
-        #print(str(watson.two(cond1_data$angle_rad, cond2_data$angle_rad)))
+        #print(str(watson.two(cond1_data$organelle_orientation_rad, cond2_data$organelle_orientation_rad)))
       
         #statistics_df <- data.frame()
         #statistics_df
@@ -1828,7 +1845,7 @@ server <- function(input, output, session) {
       cond1_data <- read.csv(inFileCondition_1$datapath, header = input$header_cond1)
       cond2_data <- read.csv(inFileCondition_2$datapath, header = input$header_cond2)
       
-      watson.two(cond1_data$angle_rad, cond2_data$angle_rad, alpha=0.05, plot=TRUE)
+      watson.two(cond1_data$organelle_orientation_rad, cond2_data$organelle_orientation_rad, alpha=0.05, plot=TRUE)
     })
     
     

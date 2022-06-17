@@ -10,7 +10,7 @@ show_polarity_angles: True
 # segmentation parameters
 channel_junction: 0
 channel_nucleus : 1
-channel_golgi : -1
+channel_organelle : -1
 channel_expression_marker : 0
 estimated_cell_diameter : 250
 

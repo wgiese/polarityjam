@@ -17,10 +17,10 @@ def get_single_cell_mask(connected_component_label, cell_mask):
     return np.where(cell_mask == connected_component_label, 1, 0)  # convert connected_component_label to 1
 
 
-def get_single_cell_golgi_mask(connected_component_label, golgi_mask):
-    """Gets the single cell golgi mask."""
-    if golgi_mask is not None:
-        return np.where(golgi_mask == connected_component_label, 1, 0)
+def get_single_cell_organelle_mask(connected_component_label, organelle_mask):
+    """Gets the single cell organelle mask."""
+    if organelle_mask is not None:
+        return np.where(organelle_mask == connected_component_label, 1, 0)
     else:
         return None
 
@@ -41,16 +41,16 @@ def get_single_cell_nucleus_mask(connected_component_label, nuclei_mask):
         return None
 
 
-def get_golgi_mask(parameters, img, cellpose_mask):
-    """Gets the golgi mask."""
-    if parameters["channel_golgi"] >= 0:
-        img_golgi_blur = ndi.gaussian_filter(img[:, :, parameters["channel_golgi"]], sigma=3)
+def get_organelle_mask(parameters, img, cellpose_mask):
+    """Gets the organelle mask."""
+    if parameters["channel_organelle"] >= 0:
+        img_organelle_blur = ndi.gaussian_filter(img[:, :, parameters["channel_organelle"]], sigma=3)
 
-        golgi_mask = np.where(img_golgi_blur > skimage.filters.threshold_otsu(img_golgi_blur), True, False)
+        organelle_mask = np.where(img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False)
 
-        golgi_label = golgi_mask * cellpose_mask
+        organelle_label = organelle_mask * cellpose_mask
 
-        return golgi_label
+        return organelle_label
     else:
         return None
 

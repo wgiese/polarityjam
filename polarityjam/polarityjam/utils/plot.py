@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.masks import get_single_cell_mask, get_outline_from_mask
+from polarityjam.utils.masks import get_single_cell_mask, get_outline_from_mask, get_single_cell_nucleus_mask
 from polarityjam.utils.rag import orientation_graph_nf
 
 # for figure plot resolution
@@ -119,9 +119,9 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename, parameter
     plt.close(fig)
 
 
-def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, golgi_mask, single_cell_props,
+def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, organelle_mask, single_cell_props,
                             base_filename, output_path):
-    """ function to plot nuclei-golgi polarity vectors 
+    """ function to plot nuclei-organelle polarity vectors
     
     parameters  :   dict
                     user defined parameters
@@ -131,8 +131,8 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
                     same dimension as im_junction, contains cell masks
     nuclei_mask :   numpy.array (2-dim), int
                     same dimension as im_junction, contains nuclei masks
-    golgi_mask  :   numpy.array (2-dim), int
-                    same dimension as im_junction, contains golgi masks
+    organelle_mask  :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains organelle masks
     single_cell_props : pandas data frame
     base_filename : string 
                     base_filename for plots
@@ -154,7 +154,7 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        cell_angle += get_single_cell_mask(row_label, cell_mask) * row['angle_deg']
+        cell_angle += get_single_cell_mask(row_label, cell_mask) * row['organelle_orientation_deg']
     polarity_angle = np.ma.masked_where(cell_mask == 0, cell_angle)
 
     # plot polarity angle
@@ -163,18 +163,19 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     color_bar.set_label("polarity angle")
     color_bar.ax.set_yticks([0, 90, 180, 270, 360])
 
-    # plot differently colored golgi (red) and nuclei (blue)
+    # plot differently colored organelle (red) and nuclei (blue)
     zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
-    rgb_golgi = np.dstack((golgi_mask.astype(int) * 256, zero, zero, golgi_mask.astype(float) * 0.5))
+    rgb_organelle = np.dstack((organelle_mask.astype(int) * 256, zero, zero, organelle_mask.astype(float) * 0.5))
     rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
     ax.imshow(rgb_nuclei)
-    ax.imshow(rgb_golgi)
+    ax.imshow(rgb_organelle)
 
     # plot polarity vector
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_nuc"], row["Y_nuc"], row["X_golgi"], row["Y_golgi"])
+        _add_single_cell_polarity_vector(ax, row["nuc_X"], row["nuc_Y"], row["organelle_X"], row["organelle_Y"])
         if parameters["show_polarity_angles"]:
-            ax.text(row["Y_cell"], row["X_cell"], str(int(np.round(row["angle_deg"], 0))), color="yellow", fontsize=6)
+            ax.text(row["cell_Y"], row["cell_X"], str(int(np.round(row["organelle_orientation_deg"], 0))),
+                    color="yellow", fontsize=6)
 
     # set ax limits
     ax.set_xlim(0, im_junction.shape[1])
@@ -186,8 +187,151 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, gol
     save_current_fig(
         parameters["graphics_output_format"],
         output_path, base_filename,
-        "_nuclei_golgi_vector",
+        "_nuclei_organelle_vector",
         image=polarity_angle
+    )
+    plt.close(fig)
+
+
+def plot_nuc_displacement_orientation(parameters, im_junction, cell_mask, nuclei_mask, single_cell_props,
+                                      base_filename, output_path):
+    """ function to plot nuclei-organelle polarity vectors
+
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    cell_mask   :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains cell masks
+    nuclei_mask :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains nuclei masks
+    single_cell_props : pandas data frame
+    base_filename : string
+                    base_filename for plots
+    output_path :   string
+                    output path for plots
+    """
+    get_logger().info("Plotting: marker nucleus polarity")
+
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(figsize=(w, h))
+
+    # base image
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # determine nucleus polarity_angle
+    nuc_angle = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+        if row_label == 0:
+            continue
+        nuc_angle += get_single_cell_mask(row_label, cell_mask) * row["nuc_displacement_orientation_deg"]
+    nuc_polarity_angle = np.ma.masked_where(cell_mask == 0, nuc_angle)
+
+    # plot polarity angle
+    cax = ax.imshow(nuc_polarity_angle, cmap=cm.cm.phase, vmin=0, vmax=360, alpha=0.5)
+    color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
+    color_bar.set_label("polarity angle")
+    color_bar.ax.set_yticks([0, 90, 180, 270, 360])
+
+    # plot nuclei (blue)
+    zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+    rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
+    ax.imshow(rgb_nuclei)
+
+    # plot polarity vector
+    for index, row in single_cell_props.iterrows():
+        _add_single_cell_polarity_vector(ax, row["cell_X"], row["cell_Y"], row["nuc_X"], row["nuc_Y"])
+        if parameters["show_polarity_angles"]:
+            ax.text(
+                row["nuc_Y"], row["nuc_X"], str(int(np.round(row["nuc_displacement_orientation_deg"], 0))),
+                color="yellow", fontsize=6
+            )
+    # set ax limits
+    ax.set_xlim(0, im_junction.shape[1])
+    ax.set_ylim(0, im_junction.shape[0])
+    ax.invert_yaxis()
+    ax.axis('off')
+
+    # save output & close
+    save_current_fig(
+        parameters["graphics_output_format"],
+        output_path, base_filename,
+        "_nucleus_displacement_orientation",
+        image=nuc_polarity_angle
+    )
+    plt.close(fig)
+
+
+def plot_marker_nucleus_orientation(parameters, im_junction, cell_mask, nuclei_mask, single_cell_props, base_filename,
+                                    output_path):
+    """ function to plot nuclei-organelle polarity vectors
+
+    parameters  :   dict
+                    user defined parameters
+    im_junction :   numpy.array (2-dim), float
+                    channel containing the junction staining (used for segmentation)
+    cell_mask   :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains cell masks
+    nuclei_mask :   numpy.array (2-dim), int
+                    same dimension as im_junction, contains nuclei masks
+    single_cell_props : pandas data frame
+    base_filename : string
+                    base_filename for plots
+    output_path :   string
+                    output path for plots
+    """
+    get_logger().info("Plotting: marker nucleus polarity")
+
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(figsize=(w, h))
+
+    # base image
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # determine nucleus polarity_angle
+    nuc_angle = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+        if row_label == 0:
+            continue
+        nuc_angle += get_single_cell_mask(row_label, cell_mask) * row['marker_nucleus_orientation_deg']
+    nuc_polarity_angle = np.ma.masked_where(cell_mask == 0, nuc_angle)
+
+    # plot polarity angle
+    cax = ax.imshow(nuc_polarity_angle, cmap=cm.cm.phase, vmin=0, vmax=360, alpha=0.5)
+    color_bar = fig.colorbar(cax, ax=ax, shrink=0.3)  # , extend='both')
+    color_bar.set_label("polarity angle")
+    color_bar.ax.set_yticks([0, 90, 180, 270, 360])
+
+    # plot nuclei (blue)
+    zero = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+    rgb_nuclei = np.dstack((zero, zero, nuclei_mask.astype(int) * 256, nuclei_mask.astype(float) * 0.5))
+    ax.imshow(rgb_nuclei)
+
+    # plot polarity vector
+    for index, row in single_cell_props.iterrows():
+        _add_single_cell_polarity_vector(ax, row["nuc_X"], row["nuc_Y"], row["marker_centroid_X"],
+                                         row["marker_centroid_Y"])
+        if parameters["show_polarity_angles"]:
+            ax.text(
+                row["nuc_Y"], row["nuc_X"], str(int(np.round(row["marker_nucleus_orientation_deg"], 0))),
+                color="yellow", fontsize=6
+            )
+    # set ax limits
+    ax.set_xlim(0, im_junction.shape[1])
+    ax.set_ylim(0, im_junction.shape[0])
+    ax.invert_yaxis()
+    ax.axis('off')
+
+    # save output & close
+    save_current_fig(
+        parameters["graphics_output_format"],
+        output_path, base_filename,
+        "_marker_nucleus_orientation",
+        image=nuc_polarity_angle
     )
     plt.close(fig)
 
@@ -227,11 +371,12 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
 
     # plot mean expression value of cell and membrane as text
     for index, row in single_cell_dataset.iterrows():
-        ax[0].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression"], 1)), color="w", fontsize=7)
-        ax[1].text(row["Y_cell"], row["X_cell"], str(np.round(row["mean_expression_mem"], 1)), color="w", fontsize=7)
+        ax[0].text(row["cell_Y"], row["cell_X"], str(np.round(row["marker_mean_expr"], 1)), color="w", fontsize=7)
+        ax[1].text(row["cell_Y"], row["cell_X"], str(np.round(row["marker_mean_expression_mem"], 1)), color="w",
+                   fontsize=7)
         if nuclei_mask is not None:
             ax[2].text(
-                row["Y_nuc"], row["X_nuc"], str(np.round(row["mean_expression_nuc"], 1)), color="w", fontsize=7
+                row["nuc_Y"], row["nuc_X"], str(np.round(row["marker_mean_expression_nuc"], 1)), color="w", fontsize=7
             )
 
     # set title
@@ -272,7 +417,8 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
 
     # add all polarity vectors
     for index, row in single_cell_props.iterrows():
-        _add_single_cell_polarity_vector(ax, row["X_cell"], row["Y_cell"], row["X_weighted"], row["Y_weighted"])
+        _add_single_cell_polarity_vector(ax, row["cell_X"], row["cell_Y"], row["marker_centroid_X"],
+                                         row["marker_centroid_Y"])
 
     ax.set_title("marker polarity")
 
@@ -352,7 +498,7 @@ def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
             continue
         single_cell_mask = np.where(cell_mask == row_label, True, 0)
         single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-        nuclei_eccentricity += np.where(single_nuclei_mask_ == True, 1, 0) * row['eccentricity_nuc']
+        nuclei_eccentricity += np.where(single_nuclei_mask_ == True, 1, 0) * row['nuc_eccentricity']
 
     get_logger().info("Maximal nuclei eccentricity: %s" % str(np.max(nuclei_eccentricity)))
     get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
@@ -366,7 +512,7 @@ def _calc_cell_eccentricity(single_cell_props, cell_mask):
         row_label = int(row['label'])
         if row_label == 0:
             continue
-        cell_eccentricity += get_single_cell_mask(row_label, cell_mask) * row['eccentricity']
+        cell_eccentricity += get_single_cell_mask(row_label, cell_mask) * row['cell_eccentricity']
 
     get_logger().info("Maximal cell eccentricity: %s" % str(np.max(cell_eccentricity)))
     get_logger().info("Minimal cell eccentricity: %s" % str(np.min(cell_eccentricity)))
@@ -430,33 +576,33 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, fil
             # plot orientation degree
             _add_single_cell_eccentricity_axis(
                 ax[0],
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length'],
-                row["eccentricity"]
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length'],
+                row["cell_eccentricity"]
             )
 
             # plot orientation degree nucleus
             _add_single_cell_eccentricity_axis(
                 ax[1],
-                row['Y_nuc'],
-                row['X_nuc'],
-                row['shape_orientation_nuc'],
-                row['major_axis_length_nuc'],
-                row['minor_axis_length_nuc'],
-                row["eccentricity_nuc"]
+                row['nuc_Y'],
+                row['nuc_X'],
+                row['nuc_shape_orientation'],
+                row['nuc_major_axis_length'],
+                row['nuc_minor_axis_length'],
+                row["nuc_eccentricity"]
             )
         else:
             _add_single_cell_eccentricity_axis(
                 ax,
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length'],
-                row["eccentricity"]
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length'],
+                row["cell_eccentricity"]
             )
 
     # set title and ax limits
@@ -485,7 +631,7 @@ def _calc_nuc_orientation(single_cell_props, cell_mask, nuclei_mask):
             continue
         single_cell_mask = np.where(cell_mask == row_label, True, 0)
         single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
-        nuclei_orientation += np.where(single_nuclei_mask_ == True, 1, 0) * row['shape_orientation_nuc'] * 180.0 / np.pi
+        nuclei_orientation += np.where(single_nuclei_mask_ == True, 1, 0) * row['nuc_shape_orientation'] * 180.0 / np.pi
 
     get_logger().info("Maximal nuclei orientation: %s" % str(np.max(nuclei_orientation)))
     get_logger().info("Minimal nuclei orientation: %s" % str(np.min(nuclei_orientation)))
@@ -501,7 +647,7 @@ def _calc_cell_orientation(single_cell_props, cell_mask):
         if row_label == 0:
             continue
         cell_orientation += get_single_cell_mask(row_label, cell_mask) * row[
-            'shape_orientation_nuc'] * 180.0 / np.pi
+            'nuc_shape_orientation'] * 180.0 / np.pi
 
     get_logger().info("Maximal cell orientation: %s" % str(np.max(cell_orientation)))
     get_logger().info("Minimal cell orientation: %s" % str(np.min(cell_orientation)))
@@ -599,31 +745,31 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
             # plot orientation degree
             _add_single_cell_orientation_degree_axis(
                 ax[0],
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length']
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length']
             )
 
             # plot orientation degree nucleus
             _add_single_cell_orientation_degree_axis(
                 ax[1],
-                row['Y_nuc'],
-                row['X_nuc'],
-                row['shape_orientation_nuc'],
-                row['major_axis_length_nuc'],
-                row['minor_axis_length_nuc']
+                row['nuc_Y'],
+                row['nuc_X'],
+                row['nuc_shape_orientation'],
+                row['nuc_major_axis_length'],
+                row['nuc_minor_axis_length']
             )
         else:
             # plot orientation degree
             _add_single_cell_orientation_degree_axis(
                 ax,
-                row['Y_cell'],
-                row['X_cell'],
-                row['shape_orientation'],
-                row['major_axis_length'],
-                row['minor_axis_length']
+                row['cell_Y'],
+                row['cell_X'],
+                row['cell_shape_orientation'],
+                row['cell_major_axis_length'],
+                row['cell_minor_axis_length']
             )
 
     # set title and ax limits
@@ -669,24 +815,24 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
 
     # plot major axis around coordinates of each cell
     for index, row in single_cell_props.iterrows():
-        x0 = row['X_cell']
-        y0 = row['Y_cell']
+        x0 = row['cell_X']
+        y0 = row['cell_Y']
 
         # upper
-        x1 = x0 + math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y1 = y0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        x2 = x0 + math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y2 = y0 - math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
+        x1 = x0 + math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y1 = y0 + math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        x2 = x0 + math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y2 = y0 - math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
 
         ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
         ax.plot(y0, x0, '.b', markersize=5)
 
         # lower
-        x1 = x0 - math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y1 = y0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        x2 = x0 - math.cos(np.pi / 4.0) * 0.5 * row['major_axis_length']
-        y2 = y0 + math.sin(np.pi / 4.0) * 0.5 * row['major_axis_length']
+        x1 = x0 - math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y1 = y0 - math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        x2 = x0 - math.cos(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
+        y2 = y0 + math.sin(np.pi / 4.0) * 0.5 * row['cell_major_axis_length']
 
         ax.plot((y0, y1), (x0, x1), '--r', linewidth=0.5)
         ax.plot((y0, y2), (x0, x2), '--r', linewidth=0.5)
@@ -711,30 +857,63 @@ def plot_adjacency_matrix(label_image, intensity_image):
     return out
 
 
-def plot_dataset(parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, golgi_mask, im_marker):
+def plot_dataset(
+        parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, organelle_mask, im_marker
+):
     """Plots the properties dataset"""
     get_logger().info("Plotting...")
     im_junction = img[:, :, int(parameters["channel_junction"])]
 
     # TODO: adapt name plot polarity in parameter files
-    if parameters["plot_polarity"] and nuclei_mask is not None and golgi_mask is not None:
+    if parameters["plot_polarity"] and nuclei_mask is not None and organelle_mask is not None:
         plot_organelle_polarity(
             parameters,
             im_junction,
             cell_mask,
             nuclei_mask,
-            golgi_mask,
+            organelle_mask,
             properties_ds,
-            filename, output_path,
+            filename,
+            output_path
         )
+        if nuclei_mask is not None: 
+            plot_nuc_displacement_orientation(
+                parameters,
+                im_junction,
+                cell_mask,
+                nuclei_mask,
+                properties_ds,
+                filename,
+                output_path
+            )
     if parameters["plot_marker"] and im_marker is not None:
         plot_marker_expression(
-            parameters, im_marker, cell_mask, properties_ds, filename, output_path,
+            parameters,
+            im_marker,
+            cell_mask,
+            properties_ds,
+            filename,
+            output_path,
             nuclei_mask=nuclei_mask
         )
         plot_marker_polarity(
-            parameters, im_marker, cell_mask, properties_ds, filename, output_path
+            parameters,
+            im_marker,
+            cell_mask,
+            properties_ds,
+            filename,
+            output_path
         )
+        if nuclei_mask is not None:
+            plot_marker_nucleus_orientation(
+                parameters,
+                im_junction,
+                cell_mask,
+                nuclei_mask,
+                properties_ds,
+                filename,
+                output_path
+            )
     if parameters["plot_orientation"]:
         plot_eccentricity(parameters, im_junction, properties_ds, cell_mask, filename, output_path,
                           nuclei_mask=nuclei_mask)
@@ -755,5 +934,5 @@ def plot_dataset(parameters, img, properties_ds, output_path, filename, cell_mas
             filename,
             output_path,
             cell_mask,
-            nuclei_mask=nuclei_mask,
+            nuclei_mask=nuclei_mask
         )

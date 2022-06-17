@@ -49,7 +49,7 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df.shape[0], 97, delta=10)
 
         # number of features should not change
-        self.assertEqual(df.shape[1], 41)
+        self.assertEqual(38, df.shape[1])
 
         # only one csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -72,17 +72,18 @@ class TestIntegration(TestCommon):
         df1 = pd.read_csv(Path(out_path).joinpath("060721_EGM2_18dyn_02.csv"))
         df2 = pd.read_csv(Path(out_path).joinpath("060721_EGM2_18dyn_03.csv"))
 
-        self.assertAlmostEqual(df1.shape[0], 107, delta=10)
-        self.assertAlmostEqual(df2.shape[0], 99, delta=10)
+        self.assertAlmostEqual(107, df1.shape[0], delta=10)
+        self.assertAlmostEqual(99, df2.shape[0], delta=10)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 41)
-        self.assertEqual(df2.shape[1], 41)
+        self.assertEqual(38, df1.shape[1])
+        self.assertEqual(38, df2.shape[1])
 
         # two csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(2, num_csv)
 
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack_no_golgi(self):
         in_path = str(self.get_test_image_folder("g"))
         param_file = str(self.get_test_parameter_file("parameters_no_golgi.yml"))
@@ -101,20 +102,19 @@ class TestIntegration(TestCommon):
         df2 = pd.read_csv(Path(out_path).joinpath("MAX_Flow_IF2_Vecad_Dapi_40X_I2.2.csv"))
         df3 = pd.read_csv(Path(out_path).joinpath("MAX_Flow_IF2_Vecad_Dapi_40X_I3.1.csv"))
 
-        self.assertAlmostEqual(df1.shape[0], 56, delta=5)
-        self.assertAlmostEqual(df2.shape[0], 56, delta=5)
-        self.assertAlmostEqual(df3.shape[0], 58, delta=7)
+        self.assertAlmostEqual(56, df1.shape[0], delta=5)
+        self.assertAlmostEqual(56, df2.shape[0], delta=5)
+        self.assertAlmostEqual(58, df3.shape[0], delta=7)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 46)
-        self.assertEqual(df2.shape[1], 46)
-        self.assertEqual(df3.shape[1], 46)
-
+        self.assertEqual(47, df1.shape[1])
+        self.assertEqual(47, df2.shape[1])
+        self.assertEqual(47, df3.shape[1])
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(3, num_csv)
 
-    @unittest.skipIf(platform.system().lower() == 'windows', "Memory issues. Skipping test!")
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack_no_nuclei(self):
         in_path = str(self.get_test_image_folder("n"))
         param_file = str(self.get_test_parameter_file("parameters_no_nuclei.yml"))
@@ -135,14 +135,14 @@ class TestIntegration(TestCommon):
         df3 = pd.read_csv(Path(out_path).joinpath("MAX_8h_flow_uslide_new_setup_2021_10_14__21_36_01.csv"))
 
         # assert row count
-        self.assertAlmostEqual(df1.shape[0], 33, delta=5)
-        self.assertAlmostEqual(df2.shape[0], 28, delta=4)
-        self.assertAlmostEqual(df3.shape[0], 29, delta=4)
+        self.assertAlmostEqual(33, df1.shape[0], delta=5)
+        self.assertAlmostEqual(28, df2.shape[0], delta=4)
+        self.assertAlmostEqual(29, df3.shape[0], delta=4)
 
         # number of features should not change
-        self.assertEqual(df1.shape[1], 32)
-        self.assertEqual(df2.shape[1], 32)
-        self.assertEqual(df3.shape[1], 32)
+        self.assertEqual(30, df1.shape[1])
+        self.assertEqual(30, df2.shape[1])
+        self.assertEqual(30, df3.shape[1])
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
