@@ -172,10 +172,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 #                shinyDirButton("dir", "Input directory", "Upload"),
 #                verbatimTextOutput("dir", placeholder = TRUE),
 #                actionButton("refreshStack", "Refresh"),
-                selectInput("feature_select", "Choose a feature:",
-                            choices = c("organelle_orientation", "cell_shape_orientation",
-                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
-                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
+
+                selectInput("feature_select", "Choose a feature:", choices = ""),
+#                selectInput("feature_select", "Choose a feature:",
+#                            choices = c("organelle_orientation", "cell_shape_orientation",
+#                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
+#                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
                             choices = c("None", "Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test")),
                 conditionalPanel(
@@ -499,6 +501,7 @@ server <- function(input, output, session) {
     #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
         updateSelectInput(session, "sample_col", choices = var_list, selected="label")
         updateSelectInput(session, "condition_col", choices = var_list, selected="filename")
+        updateSelectInput(session, "feature_select", choices = var_list, selected="cell_shape_orientation")
     #    #updateSelectInput(session, "filter_column", choices = var_list, selected="none")
     })
 
