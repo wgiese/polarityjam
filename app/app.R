@@ -926,25 +926,42 @@ server <- function(input, output, session) {
     
         parameters <- fromJSON(file = "parameters/parameters.json")
         #parameters[input$feature_select][[1]][1]
-        if (input$feature_select == "filename") {
-
-        }        
-        else {
+        
+        if (input$feature_select %in% names(parameters)) {
             p <-merged_plot()
             p
-        }   
+        }
+        else {
+        
+        }
+
+        #if (input$feature_select == "filename") {
+#
+#        }        
+#        else {
+#            p <-merged_plot()
+#            p
+#        }   
     })  
    
     output$parameter_error <- renderText({
     
         parameters <- fromJSON(file = "parameters/parameters.json")
         #parameters[input$feature_select][[1]][1]
-        if (input$feature_select == "filename") {
-            print("Plotting of this parameter is not possible.")
-        }        
-        else {
+        #if (input$feature_select == "filename") {
+        #    print("Plotting of this parameter is not supported.")
+        #}        
+        #else {
+       # 
+       # }
         
-        }   
+        if (input$feature_select %in% names(parameters)) {
+        
+        }
+        else {
+            print("Plotting of this parameter is not supported.")
+        }
+ 
     })  
   
 

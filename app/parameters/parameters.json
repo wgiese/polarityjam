@@ -1,4 +1,5 @@
 { 
+    "nuclei_golgi_polarity": ["nuclei_golgi_polarity", "axial", "nuclei-golgi polarity"],
     "organelle_orientation_rad": ["organelle_orientation_rad", "axial", "nuclei-golgi polarity"],
     "cell_shape_orientation": ["cell_shape_orientation", "2-axial", "cell shape orientation"],
     "nuc_shape_orientation": ["nuc_shape_orientation","2-axial", "nucleus shape orientation"],
