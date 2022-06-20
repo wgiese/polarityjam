@@ -273,6 +273,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                            downloadButton("downloadMultiPlotSVG", "Download svg-file"), 
                            downloadButton("downloadMultiPlotPNG", "Download png-file"),
                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("multi_dist_plot", height="120%"))),
+                           #textOutput("parameter_error"),
                            NULL,
                     ),
                     tabPanel("MergedPlot", downloadButton("downloadMergedPlotPDF", "Download pdf-file"), 
@@ -280,6 +281,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             downloadButton("downloadMergedPlotSVG", "Download svg-file"), 
                             downloadButton("downloadMergedPlotPNG", "Download png-file"),
                             div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("merged_plot", height="120%"))),
+                            textOutput("parameter_error"),
                             NULL,
                     ),
                     tabPanel("Statistics", tableOutput("merged_statistics"))
@@ -922,10 +924,30 @@ server <- function(input, output, session) {
   
     output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     
-        p <-merged_plot()
-        p
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        #parameters[input$feature_select][[1]][1]
+        if (input$feature_select == "filename") {
+
+        }        
+        else {
+            p <-merged_plot()
+            p
+        }   
+    })  
+   
+    output$parameter_error <- renderText({
+    
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        #parameters[input$feature_select][[1]][1]
+        if (input$feature_select == "filename") {
+            print("Plotting of this parameter is not possible.")
+        }        
+        else {
+        
+        }   
     })  
   
+
     multi_plot <- reactive({
     
         source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
