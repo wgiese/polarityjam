@@ -81,8 +81,10 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Data preparation",
         sidebarLayout(
             sidebarPanel(
+
+                
 #                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
-                 radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
 
                 conditionalPanel(
                    condition = "input.data_upload_form == 'upload data'",
@@ -303,10 +305,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 #                            ".csv",".xlsx")),
 #                            tags$hr(),
 #                checkboxInput("header_correlation", "File upload", TRUE),
-                selectInput("feature_select_1", "Choose a feature 1:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
-                selectInput("feature_select_2", "Choose a feature 2:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                selectInput("feature_select_1", "Choose a feature:", choices = ""),
+                selectInput("feature_select_2", "Choose a feature:", choices = ""),
+                #selectInput("feature_select_1", "Choose a feature 1:",
+                #            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                #selectInput("feature_select_2", "Choose a feature 2:",
+                #            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("datasetSingleImage", "Download:",
                             choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
                 #tags$hr(),
@@ -362,10 +366,11 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 
                 
                 selectInput("control_condition", "control condition", choices = ""),
-                selectInput("feature_comparison", "Choose a feature:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation",
-                            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
-                            "mean_expression","marker_polarity","area","perimeter")),
+                selectInput("feature_comparison", "Choose a feature", choices = ""),
+                #selectInput("feature_comparison", "Choose a feature:",
+                #            choices = c("organelle_orientation","major_axis_shape_orientation",
+                #            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
+                #            "mean_expression","marker_polarity","area","perimeter")),
                 checkboxInput("kde_comparison", "KDE plot", FALSE),
                 checkboxInput("histogram_comparison", "Histogram plot", TRUE),
 #                checkboxInput("split_view_comparison", "Split view", TRUE),
@@ -504,6 +509,9 @@ server <- function(input, output, session) {
         updateSelectInput(session, "sample_col", choices = var_list, selected="label")
         updateSelectInput(session, "condition_col", choices = var_list, selected="filename")
         updateSelectInput(session, "feature_select", choices = var_list, selected="cell_shape_orientation")
+        updateSelectInput(session, "feature_select_1", choices = var_list, selected="cell_shape_orientation")
+        updateSelectInput(session, "feature_select_2", choices = var_list, selected="nuc_shape_orientation")
+        updateSelectInput(session, "feature_comparison", choices = var_list, selected="nuclei_golgi_polarity")
     #    #updateSelectInput(session, "filter_column", choices = var_list, selected="none")
     })
 
@@ -1391,7 +1399,18 @@ server <- function(input, output, session) {
 
         print(res)
         print(str(res))
-        p_value <- signif(res$p.value, digits = 3)
+        p_value_ <- signif(res$p.value, digits = 3)
+        
+        if (p_value_ < 0.001) {
+            p_value <- "P < 0.001"
+        } else if (p_value_ < 0.01) {
+            p_value <- "P < 0.01"
+
+        } else {
+            p_value <- p_value_
+        }
+            
+
         reg_coeff <- signif(res$r, digits = 3)
 
         #reg_coeff <- res$r
@@ -1651,25 +1670,26 @@ server <- function(input, output, session) {
     
         results_all_df <- mergedStack()
     
-        for(row_nr in 1:nrow(results_all_df)) {
-            row <- results_all_df[row_nr,]
-      a <- row$major_axis_length
-      b <- row$minor_axis_length
-      
-      eccentricity <- sqrt(1.0 - b*b/(a*a))
-      results_all_df[row_nr,"eccentricity"] = eccentricity 
-    }
+#        for(row_nr in 1:nrow(results_all_df)) {
+#            row <- results_all_df[row_nr,]
+#      a <- row$major_axis_length
+#      b <- row$minor_axis_length
+#      
+#      eccentricity <- sqrt(1.0 - b*b/(a*a))
+#      results_all_df[row_nr,"eccentricity"] = eccentricity 
+#    }
     
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
-    }
-    threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
-    }
+#    threshold <- input$min_eccentricity
+#    if ("eccentricity" %in% colnames(results_all_df)){
+#      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+#    }
+#    threshold <- input$min_nuclei_golgi_dist
+#    if ("distance" %in% colnames(results_all_df)){
+#      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+#    }
     
-    feature <- parameters[input$feature_select][[1]][1]
+    #feature <- parameters[input$feature_select][[1]][1]
+    feature <- parameters[input$feature_comparison][[1]][1]
     condition_col <- input$condition_col   
 
     condition_list <- unlist(unique(results_all_df[condition_col]))
@@ -1816,6 +1836,14 @@ server <- function(input, output, session) {
         control_condition <- input$control_condition
         condition_list <- unlist(unique(data[condition_col]))
         
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
+    
+        parameters <- fromJSON(file = "parameters/parameters.json")
+
+        
+        feature <- parameters[input$feature_comparison][[1]][1]
+
         res <- data.frame(matrix(ncol = length(condition_list) + 1, nrow = 0))
         cols <- c("Test","Control")
 
@@ -1856,9 +1884,11 @@ server <- function(input, output, session) {
             
             #print("Struct of Watson test object")
             #print(str(watson.two(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad, alpha=0.05, plot=TRUE)))
-        
-            watson1 <- watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad)
-            out <- capture.output(watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad))
+            condition_values <- unlist(condition_data[feature])
+            control_values <- unlist(control_data[feature])
+            #watson1 <- watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad)
+            watson1 <- watson.two.test(condition_values, control_values)
+            out <- capture.output(watson.two.test(condition_values, control_values))
             print(out)
             p_value <- out[5]
             res[1,condition] <- p_value
