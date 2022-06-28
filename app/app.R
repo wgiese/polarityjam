@@ -319,6 +319,17 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 #tags$hr(),
                 selectInput("corr_plot_option", "Choose a plot option:",
                             choices = c("correlation plot","spoke plot")),
+                
+                conditionalPanel(
+                    condition = "input.corr_plot_option == 'correlation plot'",
+                    checkboxInput ("center_corr_plot", "center correlation plot", TRUE),
+                ),
+                conditionalPanel(
+                    condition = "input.corr_plot_option == 'spoke plot'",
+                    numericInput ("spoke_subsample_n", "Subsample every n-th row:", value=1, min = 1, max = 50, step = 1)
+                ),
+
+
                 numericInput ("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
                 numericInput ("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
                 numericInput ("plot_height_corr", "Height (# pixels): ", value = 600),
@@ -1554,6 +1565,14 @@ server <- function(input, output, session) {
         text_size <- input$text_size_corr
         
         correlation_data <- mergedStack()       
+
+        if (input$spoke_subsample_n > 1) {
+            N <- nrow(correlation_data) %/% input$spoke_subsample_n
+            if (nrow(correlation_data) > N){
+                correlation_data <- correlation_data[sample(nrow(correlation_data), N), ]
+            }
+        }
+
 
         feature_1 <- parameters[input$feature_select_1][[1]][1]
         feature_2 <- parameters[input$feature_select_2][[1]][1]
