@@ -58,6 +58,9 @@ option_list <- list(
 )
 opt = parse_args(OptionParser(option_list = option_list))
 
+# Discussion of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
+# Color palettes Paul Tol: https://personal.sron.nl/~pault/
+
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
 
@@ -83,8 +86,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             sidebarPanel(
 
                 
-#                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
-                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
+#                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
 
                 conditionalPanel(
                    condition = "input.data_upload_form == 'upload data'",
@@ -1369,6 +1372,8 @@ server <- function(input, output, session) {
     plot_correlation <- reactive({
       
         parameters <- fromJSON(file = "parameters/parameters.json")
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
       
         text_size <- input$text_size_corr
 
@@ -1389,14 +1394,115 @@ server <- function(input, output, session) {
         feature_2_values <- unlist(correlation_data[feature_2])
         feature_2_values_ <- correlation_data[feature_2]*180.0/pi
         
-        feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
-        feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+        #feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+        #feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
         
         feature_1_name <- parameters[input$feature_select_1][[1]][3]
         feature_2_name <- parameters[input$feature_select_2][[1]][3]
 
-        res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+        print("feature_values")
 
+        if (parameters[input$feature_select_1][[1]][2] == "axial") {
+          
+          res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+          mean_dir_1 = circ.mean(feature_1_values)
+          mean_dir_2 = circ.mean(feature_2_values)
+          
+          if (mean_dir_1 < 0.0) {
+            mean_dir_1 <- mean_dir_1 + 2.0*pi
+          }
+        
+          if (mean_dir_2 < 0.0) {
+            mean_dir_2 <- mean_dir_2 + 2.0*pi
+          }
+
+
+          print("Mean directions")
+          print(mean_dir_1)
+          print(mean_dir_2)
+          
+          #if ( mean_dir_1 < pi/2.0) {
+          #  feature_1_values_ <- feature_1_values_ - pi  
+          #}
+
+
+          #if ( mean_dir_2 < pi/2.0) {
+          #  feature_2_values_ <- feature_2_values_ - pi  
+          #}
+        
+          #if ( mean_dir_1 > 3.0*pi/2.0) {
+          #  feature_1_values_ <- feature_1_values_ - pi  
+          #}
+
+
+          #if ( mean_dir_2 > 3.0*pi/2.0) {
+          #  
+          #  feature_2_values_ <- feature_2_values_ - pi  
+          #}
+
+          feature_1_values_sin <- sin(correlation_data[feature_1] - mean_dir_1)
+          feature_2_values_sin <- sin(correlation_data[feature_2] - mean_dir_2)
+
+          #feature_1_values_ <- 180.0*(correlation_data[feature_1] - mean_dir_1)/pi
+          #feature_2_values_ <- 180.0*(correlation_data[feature_2] - mean_dir_2)/pi
+
+          #for (i in 1:length(feature_1_values)) {
+          #  if (feature_1_values[i] > mean_dir_1 + pi ) {
+          #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] - 2.0*pi)/pi  
+          #  }  
+          #  if (feature_1_values[i] < mean_dir_1 - pi ) {
+          #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] + 2.0*pi)/pi  
+          #  } 
+          #}
+
+          if ( (mean_dir_1 < pi/2.0) | (mean_dir_1 > 3.0*pi/2.0)) {
+            for (i in 1:length(feature_2_values)) {
+              if (feature_1_values[i] > pi) {
+                correlation_data[i,feature_1] <- correlation_data[i,feature_1] - 2.0*pi  
+              }  
+            }
+            feature_1_values_ <- correlation_data[feature_1]*180.0/pi
+          }
+
+
+
+          if ( (mean_dir_2 < pi/2.0) | (mean_dir_2 > 3.0*pi/2.0)) {
+            for (i in 1:length(feature_2_values)) {
+              if (feature_2_values[i] > pi) {
+                correlation_data[i,feature_2] <- correlation_data[i,feature_2] - 2.0*pi  
+              }  
+            }
+            feature_2_values_ <- correlation_data[feature_2]*180.0/pi
+          }
+
+          reg_coeff <- signif(res$r, digits = 3)
+          
+          plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))  
+          #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))  
+          #plot_df <- as.data.frame(c(correlation_data[paste0(feature_1,"_shift")],  correlation_data[paste0(feature_2,"_shift")]))  
+        
+          }   else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+          
+          res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+          mean_dir_1 = circ.mean(feature_1_values)
+          mean_dir_2 = circ.mean(feature_2_values)
+          
+          print("Mean directions")
+          print(mean_dir_1)
+          print(mean_dir_2)
+          
+          reg_coeff <- signif(res$r, digits = 3)
+          
+          #reg_coeff <- res$r
+          #p_value <- res$p.value
+          
+          plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+          
+        } else {
+
+        }
+
+        
         print(res)
         print(str(res))
         p_value_ <- signif(res$p.value, digits = 3)
@@ -1411,12 +1517,10 @@ server <- function(input, output, session) {
         }
             
 
-        reg_coeff <- signif(res$r, digits = 3)
 
-        #reg_coeff <- res$r
-        #p_value <- res$p.value
-
-        plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+        
+        
+        
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
