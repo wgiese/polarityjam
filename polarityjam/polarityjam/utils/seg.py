@@ -51,17 +51,18 @@ def get_segmentation_file_name(parameters, filepath):
     stem = Path(filepath).stem
 
     suffix = "_seg.npy"
-    if parameters["manually_annotated_mask"]:
-        suffix = parameters["manually_annotated_mask"]
-    segmentation = Path(filepath).parent.joinpath(stem + suffix)
+    if parameters["use_given_mask"]:
+        segmentation = Path(parameters["manually_annotated_mask"])
+    else:
+        segmentation = Path(filepath).parent.joinpath(stem + suffix)
 
     return segmentation, stem
 
 
 def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     get_logger().info("Look up cellpose segmentation...")
-    segmentation, _ = get_segmentation_file_name(parameters, filepath)
 
+    segmentation, _ = get_segmentation_file_name(parameters, filepath)
     if segmentation.exists() and parameters["use_given_mask"]:
         get_logger().info("Load cellpose segmentation...")
 
