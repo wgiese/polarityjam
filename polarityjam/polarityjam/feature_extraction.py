@@ -7,7 +7,8 @@ import skimage.segmentation
 
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
-    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask
+    get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask, \
+    get_single_junction_protein_mask
 from polarityjam.utils.moran import Moran
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.rag import orientation_graph_nf
@@ -52,12 +53,18 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_org
 
 
 def get_image_marker(parameters, img):
-    """Gets the image marker."""
+    """Gets the image of the marker channel specified in the parameters."""
     if parameters["channel_expression_marker"] >= 0:
         return img[:, :, parameters["channel_expression_marker"]]
 
 
-def set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, graph_nf):
+def get_image_junction(parameters, img):
+    """Gets the image of the junction channel specified in the parameters."""
+    if parameters["channel_junction"] >= 0:
+        return img[:, :, parameters["channel_junction"]]
+
+
+def set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask):
     single_cell_props = get_single_cell_prop(single_cell_mask)
     fill_single_cell_general_data_frame(
         properties_dataset, index, filename, connected_component_label, single_cell_props
@@ -126,6 +133,59 @@ def set_single_cell_marker_membrane_props(properties_dataset, index, single_memb
     return marker_membrane_props
 
 
+def set_single_cell_junction_props(
+        properties_dataset, index, single_membrane_mask, im_junction, single_cell_junction_protein,
+        single_junction_protein_area_mask
+):
+    # get junction properties
+    junction_props = get_single_cell_prop(single_membrane_mask.astype(int), intensity=im_junction)
+
+    # membrane perimeter
+    junction_perimeter = junction_props.perimeter
+
+    # single_cell_junction_protein mask, area & perimeter
+    junction_protein_area_props = get_single_cell_prop(single_junction_protein_area_mask.astype(int))
+    # junction_fragmented_perimeter = junction_protein_area_props.perimeter  # todo: this seems not correct! Perimeter calculation on discontinous parts seems not possible.
+    junction_protein_area = junction_protein_area_props.area
+
+    # secondary statistics
+    #junction_coverage_index = junction_fragmented_perimeter / junction_perimeter
+    junction_interface_occupancy = junction_protein_area / junction_props.area
+    junction_intensity_per_interface_area = junction_props.mean_intensity  # todo: check if this correct
+    junction_protein_intensity = junction_props.mean_intensity * junction_props.area
+    junction_cluster_density = junction_protein_intensity / junction_protein_area
+
+    fill_single_cell_junction_data_frame(
+        properties_dataset, index, junction_perimeter, junction_props, junction_protein_area,
+    )
+    fill_single_cell_junction_sec_stat_data_frame(
+        properties_dataset, index, junction_interface_occupancy,
+        junction_intensity_per_interface_area,
+        junction_cluster_density
+    )
+
+
+def fill_single_cell_junction_sec_stat_data_frame(
+        dataset, index, junction_interface_occupancy, junction_intensity_per_interface_area,
+        cluster_density
+):
+    # dataset.at[index, "junction_coverage_index"] = junction_coverage_index
+    dataset.at[index, "junction_interface_occupancy"] = junction_interface_occupancy
+    dataset.at[index, "junction_intensity_per_interface_area"] = junction_intensity_per_interface_area
+    dataset.at[index, "junction_cluster_density"] = cluster_density
+
+
+def fill_single_cell_junction_data_frame(
+        dataset, index, junction_perimeter, marker_membrane_props, junction_protein_area
+):
+    """Fills the dataset with the single cell marker junction properties."""
+    dataset.at[index, "junction_perimeter"] = junction_perimeter
+    dataset.at[index, "junction_protein_area"] = junction_protein_area
+    # dataset.at[index, "junction_fragmented_perimeter"] = junction_fragmented_perimeter
+    dataset.at[index, "junction_mean_expression"] = marker_membrane_props.mean_intensity
+    dataset.at[index, "junction_protein_intensity"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
+
+
 def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, filename, output_path):
     """Extracts features from a cellpose segmentation based on parameters given."""
 
@@ -139,6 +199,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     nuclei_mask = get_nuclei_mask(parameters, img, cell_mask_rem_island)
     organelle_mask = get_organelle_mask(parameters, img, cell_mask_rem_island)
     im_marker = get_image_marker(parameters, img)
+    im_junction = get_image_junction(parameters, img)
 
     properties_dataset = pd.DataFrame()
 
@@ -153,9 +214,12 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
         single_cell_mask = get_single_cell_mask(connected_component_label, cell_mask_rem_island)
         single_nucleus_mask = get_single_cell_nucleus_mask(connected_component_label, nuclei_mask)  # can be None
         single_organelle_mask = get_single_cell_organelle_mask(connected_component_label, organelle_mask)  # can be None
-        single_membrane_mask = get_single_cell_membrane_mask(parameters, im_marker, single_cell_mask)  # can be None
+        single_membrane_mask = get_single_cell_membrane_mask(parameters, im_marker, im_junction,
+                                                             single_cell_mask)  # can be None
         single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker,
                                                            single_nucleus_mask)  # can be None
+        single_junction_protein_area_mask, single_junction_protein = get_single_junction_protein_mask(single_cell_mask,
+                                                                                                      im_junction)  # can be None
 
         # threshold
         if threshold(
@@ -171,7 +235,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             continue
 
         # properties for single cell
-        set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask, rag)
+        set_single_cell_props(properties_dataset, index, filename, connected_component_label, single_cell_mask)
 
         # properties for nucleus:
         if single_nucleus_mask is not None:
@@ -190,6 +254,17 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
             if nuclei_mask is not None:
                 set_single_cell_marker_nuclei_props(properties_dataset, index, single_nucleus_mask, im_marker)
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
+
+        # properties for junctions
+        if im_junction is not None:
+            set_single_cell_junction_props(
+                properties_dataset,
+                index,
+                single_membrane_mask,
+                im_junction,
+                single_junction_protein,
+                single_junction_protein_area_mask
+            )
 
         # append feature of interest to the RAG node for being able to do further analysis
         foi = properties_dataset.at[index, parameters["feature_of_interest"]]
@@ -234,10 +309,10 @@ def fill_morans_i(properties_dataset, rag, foi):
     properties_dataset["morans_p_norm"] = [morans_i.p_norm] * len(properties_dataset)
 
 
-def get_single_cell_prop(single_cell_mask):
+def get_single_cell_prop(single_cell_mask, intensity=None):
     """Gets the single cell properties."""
     # we are looking at a single cell. There is only one region!
-    regions = skimage.measure.regionprops(single_cell_mask)
+    regions = skimage.measure.regionprops(single_cell_mask, intensity_image=intensity)
     if len(regions) > 1:
         raise ValueError("Too many regions for a single cell!")
     props = regions[-1]
