@@ -149,7 +149,7 @@ def set_single_cell_junction_props(
     junction_protein_area = junction_protein_area_props.area
 
     # secondary statistics
-    #junction_coverage_index = junction_fragmented_perimeter / junction_perimeter
+    # junction_coverage_index = junction_fragmented_perimeter / junction_perimeter
     junction_interface_occupancy = junction_protein_area / junction_props.area
     junction_intensity_per_interface_area = junction_props.mean_intensity  # todo: check if this correct
     junction_protein_intensity = junction_props.mean_intensity * junction_props.area
@@ -176,14 +176,18 @@ def fill_single_cell_junction_sec_stat_data_frame(
 
 
 def fill_single_cell_junction_data_frame(
-        dataset, index, junction_perimeter, marker_membrane_props, junction_protein_area
+        dataset, index, junction_perimeter, junction_props, junction_protein_area
 ):
-    """Fills the dataset with the single cell marker junction properties."""
+    """Fills the dataset with the single cell junction properties."""
+    junctions_centroid_x, junctions_centroid_y = junction_props.weighted_centroid
+
+    dataset.at[index, "junction_centroid_X"] = junctions_centroid_x
+    dataset.at[index, "junction_centroid_Y"] = junctions_centroid_y
     dataset.at[index, "junction_perimeter"] = junction_perimeter
     dataset.at[index, "junction_protein_area"] = junction_protein_area
     # dataset.at[index, "junction_fragmented_perimeter"] = junction_fragmented_perimeter
-    dataset.at[index, "junction_mean_expression"] = marker_membrane_props.mean_intensity
-    dataset.at[index, "junction_protein_intensity"] = marker_membrane_props.mean_intensity * marker_membrane_props.area
+    dataset.at[index, "junction_mean_expression"] = junction_props.mean_intensity
+    dataset.at[index, "junction_protein_intensity"] = junction_props.mean_intensity * junction_props.area
 
 
 def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, filename, output_path):
@@ -218,8 +222,10 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                                                              single_cell_mask)  # can be None
         single_cytosol_mask = get_single_cell_cytosol_mask(single_cell_mask, im_marker,
                                                            single_nucleus_mask)  # can be None
-        single_junction_protein_area_mask, single_junction_protein = get_single_junction_protein_mask(single_cell_mask,
-                                                                                                      im_junction)  # can be None
+        single_junction_protein_area_mask, single_junction_protein = get_single_junction_protein_mask(
+            single_membrane_mask,
+            im_junction
+        )  # can be None
 
         # threshold
         if threshold(
@@ -288,7 +294,7 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, organelle_mask,
-        im_marker
+        im_marker, im_junction
     )
 
     return properties_dataset

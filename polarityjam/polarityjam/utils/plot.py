@@ -427,6 +427,43 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
     plt.close(fig)
 
 
+def plot_junction_polarity(parameters, im_junction, cell_mask, single_cell_props, filename, output_path):
+    get_logger().info("Plotting: junction polarity")
+    # figure and axes
+    w, h = parameters["graphics_width"], parameters["graphics_height"]
+    fig, ax = plt.subplots(1, figsize=(w, h))
+
+    # plot marker intensity
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # cumulative cell outlines
+    outlines_cell_accumulated = np.zeros((im_junction.shape[0], im_junction.shape[1]))
+    for cell_label in np.unique(cell_mask):
+        # exclude background
+        if cell_label == 0:
+            continue
+
+        single_cell_mask = get_single_cell_mask(cell_label, cell_mask)
+        outline_cell = get_outline_from_mask(single_cell_mask, parameters["outline_width"])
+        outline_cell_ = np.where(outline_cell == True, 30, 0)
+        outlines_cell_accumulated += outline_cell_
+
+    # plot non-cumulative cell outlines
+    outlines_cell_ = np.where(outlines_cell_accumulated > 0, CELL_OUTLINE_INTENSITY, 0)
+    ax.imshow(np.ma.masked_where(outlines_cell_ == 0, outlines_cell_), plt.cm.Wistia, vmin=0, vmax=100, alpha=0.5)
+
+    # add all polarity vectors
+    for index, row in single_cell_props.iterrows():
+        _add_single_cell_polarity_vector(ax, row["cell_X"], row["cell_Y"], row["junction_centroid_X"],
+                                         row["junction_centroid_Y"])
+
+    ax.set_title("junction polarity")
+
+    # save output & close
+    save_current_fig(parameters["graphics_output_format"], output_path, filename, "_junction_polarity")
+    plt.close(fig)
+
+
 def _add_single_cell_eccentricity_axis(
         ax, y0, x0, orientation, major_axis_length, minor_axis_length, eccentricity
 ):
@@ -858,7 +895,8 @@ def plot_adjacency_matrix(label_image, intensity_image):
 
 
 def plot_dataset(
-        parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, organelle_mask, im_marker
+        parameters, img, properties_ds, output_path, filename, cell_mask, nuclei_mask, organelle_mask, im_marker,
+        im_junction
 ):
     """Plots the properties dataset"""
     get_logger().info("Plotting...")
@@ -876,7 +914,7 @@ def plot_dataset(
             filename,
             output_path
         )
-        if nuclei_mask is not None: 
+        if nuclei_mask is not None:
             plot_nuc_displacement_orientation(
                 parameters,
                 im_junction,
@@ -914,6 +952,9 @@ def plot_dataset(
                 filename,
                 output_path
             )
+    if parameters["plot_junctions"] and im_junction is not None:
+        plot_junction_polarity(parameters, im_junction, cell_mask, properties_ds, filename, output_path)
+
     if parameters["plot_orientation"]:
         plot_eccentricity(parameters, im_junction, properties_ds, cell_mask, filename, output_path,
                           nuclei_mask=nuclei_mask)
