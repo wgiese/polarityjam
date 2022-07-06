@@ -51,7 +51,7 @@ def get_segmentation_file_name(parameters, filepath):
     stem = Path(filepath).stem
 
     suffix = "_seg.npy"
-    if parameters["use_given_mask"]:
+    if parameters["manually_annotated_mask"]:
         segmentation = Path(parameters["manually_annotated_mask"])
     else:
         segmentation = Path(filepath).parent.joinpath(stem + suffix)

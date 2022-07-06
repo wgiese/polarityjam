@@ -86,19 +86,21 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             sidebarPanel(
 
                 
-                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
-#                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
+                #radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
 
                 conditionalPanel(
                    condition = "input.data_upload_form == 'upload data'",
                    checkboxInput("terms_of_use", "I agree to terms of use", FALSE),
                 ),
                  
-                 
-                 
+                conditionalPanel(
+                  condition = "input.terms_of_use == true",
+                  radioButtons("data_upload_source", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
+                ), 
 
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'single file'",
+                    condition = "(input.data_upload_source == 'single file') & (input.terms_of_use == true)",
                     fileInput("stackData", "Upload data file",
                             accept = c( "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -108,7 +110,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 ),
 
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'folder'",
+                    condition = "(input.data_upload_source == 'folder') & (input.terms_of_use == true)",
                     shinyDirButton("dir", "Input directory", "Upload"),
                     verbatimTextOutput("dir", placeholder = TRUE),
                     actionButton("refreshStack", "Refresh"),
@@ -116,7 +118,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 
 
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'key file'",
+                    condition = "(input.data_upload_source == 'key file') & (input.terms_of_use == true)",
                     fileInput("keyData", "Upload catalogue",
                             accept = c( "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -162,7 +164,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             # Show a plot of the generated distribution
             mainPanel(
                 tabsetPanel(
-                    tabPanel("Table", htmlOutput("terms_of_use_text"), tableOutput("merged_stack"))
+                    tabPanel("Data", htmlOutput("terms_of_use_text"), tableOutput("merged_stack"))
                 )
             )
         )
@@ -542,9 +544,9 @@ server <- function(input, output, session) {
     if (input$data_upload_form == "example 1") {
         results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
     }
-    else if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+    else if ( (input$data_upload_source == "single file") & !is.null(inFileStackData)  ) {
         results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
-    } else if (input$data_upload_form == "folder") {
+    } else if (input$data_upload_source == "folder") {
         datapath <- stack_data_info$datapath 
         
         file_list <- list.files(datapath)
@@ -570,7 +572,7 @@ server <- function(input, output, session) {
             results_all_df$experimental_condition <- input$exp_condition
         }
 
-    } else if ((input$data_upload_form == "key file") & !is.null(input$keyData) ) {
+    } else if ((input$data_upload_source == "key file") & !is.null(input$keyData) ) {
         results_all_df <-data.frame()
         print("key data path")
         print(input$keyData$datapath)
@@ -645,11 +647,14 @@ server <- function(input, output, session) {
     "
     function that the merged stack of polarity data and angles in table format
     "
-    #if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
-    if ((input$data_upload_form == "upload data")) {
-      HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
+    if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
+    #if ((input$data_upload_form == "upload data")) {
+      #HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
       #HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
-    } else {
+      HTML("<p>  <font size='+2'> Terms of Use </font><br>
+           Text </p>")
+      
+      } else {
       
     }
   })
