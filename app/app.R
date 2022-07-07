@@ -361,47 +361,38 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
     tabPanel("Compare",                    
         sidebarLayout(
             sidebarPanel(
-#                fileInput("control_condition", "Control condition",
-#                            accept = c( "text/csv",
-#                            "text/comma-separated-values,text/plain",
-#                            ".csv")),    
-#                tags$hr(),
-#                checkboxInput("header_cond1", "File upload", TRUE),
-                
-#                fileInput("condition_2", "Condition 2",
-#                            accept = c( "text/csv",
-#                            "text/comma-separated-values,text/plain",
-#                            ".csv")), 
-#                tags$hr(),
-#                checkboxInput("header_cond2", "File upload", TRUE),
-#                sliderInput("bins_comparison",
-#                            "Number of bins:",
-#                            min = 1,
-#                            max = 30,
-#                            value = 12),
 
-                
-                selectInput("control_condition", "control condition", choices = ""),
-                selectInput("feature_comparison", "Choose a feature", choices = ""),
-                #selectInput("feature_comparison", "Choose a feature:",
-                #            choices = c("organelle_orientation","major_axis_shape_orientation",
-                #            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
-                #            "mean_expression","marker_polarity","area","perimeter")),
-                checkboxInput("kde_comparison", "KDE plot", FALSE),
-                checkboxInput("histogram_comparison", "Histogram plot", TRUE),
-#                checkboxInput("split_view_comparison", "Split view", TRUE),
+
             ),
             mainPanel(
                 #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
                 tabsetPanel(
-                    tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                    tabPanel("CDF Plot", plotOutput("CDFPlot")), 
                     tabPanel("Statistics", tableOutput("comparison_statistics"))
                 )
             )
         )
+    ),
+
+### Panel C: Comparison statistics
+
+    tabPanel("Terms of Use",
+        sidebarLayout(
+            sidebarPanel(
+                checkboxInput("terms_of_use_all", "I agree to the terms of use", FALSE),
+            ),
+
+            mainPanel(
+                tabsetPanel(
+                    tabPanel("Text", htmlOutput("terms_of_use_text"))
+                )
+
+            )
+        )
     )
+
 )
+
+
 
 
 
