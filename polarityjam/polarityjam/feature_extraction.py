@@ -4,6 +4,7 @@ import skimage.filters
 import skimage.io
 import skimage.measure
 import skimage.segmentation
+import cv2
 
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
@@ -133,30 +134,74 @@ def set_single_cell_marker_membrane_props(properties_dataset, index, single_memb
     return marker_membrane_props
 
 
+def map_single_cell_to_circle(sc_protein_area, x_centroid, y_centroid, r):
+    circular_img = np.zeros([sc_protein_area.shape[0], sc_protein_area.shape[1]])
+    circular_img_count = {}
+
+    x_nonzero, y_nonzero = np.nonzero(sc_protein_area)
+
+    # loop over bounding box indices
+    for x, y in zip(x_nonzero, y_nonzero):
+        x_vec = x_centroid - x
+        y_vec = y_centroid - y
+
+        angle_rad = np.pi - np.arctan2(x_vec, y_vec)
+        new_x = r * np.sin(angle_rad) + x_centroid
+        new_y = r * np.cos(angle_rad) + y_centroid
+
+        # correct for wrong x axis alignment (bottom left corner is (0,0), not top left)
+        new_x = x_centroid - (new_x - x_centroid)
+
+        # count
+        if (int(new_x), int(new_y)) not in circular_img_count.keys():
+            circular_img_count[int(new_x), int(new_y)] = 1
+        else:
+            circular_img_count[int(new_x), int(new_y)] += 1
+
+        circular_img[int(new_x), int(new_y)] += sc_protein_area[x, y]
+
+    # calculate mean
+    for k in circular_img_count.keys():
+        circular_img[k[0], k[1]] = circular_img[k[0], k[1]] / circular_img_count[k]
+
+    return circular_img
+
+
 def set_single_cell_junction_props(
         properties_dataset, index, single_membrane_mask, im_junction, single_cell_junction_protein,
         single_junction_protein_area_mask
 ):
-    # get junction properties
-    junction_props = get_single_cell_prop(single_membrane_mask.astype(int), intensity=im_junction)
+    # get junction properties. According to junction mapper: https://doi.org/10.7554/eLife.45413
+    interface_props = get_single_cell_prop(single_membrane_mask.astype(int), intensity=im_junction)
+
+    # get circular junction props
+    r = (properties_dataset["cell_major_axis_length"].values[0] - properties_dataset["cell_minor_axis_length"].values[
+        0]) / 2
+    n_img = map_single_cell_to_circle(single_cell_junction_protein, interface_props.centroid[0],
+                                      interface_props.centroid[1], r)
+    circular_junction_props = get_single_cell_prop(n_img.astype(bool).astype(int), intensity=n_img)
 
     # membrane perimeter
-    junction_perimeter = junction_props.perimeter
+    interface_perimeter = interface_props.perimeter  # todo: use me on dilated mask!!!!!!!
 
     # single_cell_junction_protein mask, area & perimeter
-    junction_protein_area_props = get_single_cell_prop(single_junction_protein_area_mask.astype(int))
+    junction_protein_area_props = get_single_cell_prop(single_junction_protein_area_mask.astype(int), intensity=single_cell_junction_protein)
     # junction_fragmented_perimeter = junction_protein_area_props.perimeter  # todo: this seems not correct! Perimeter calculation on discontinous parts seems not possible.
-    junction_protein_area = junction_protein_area_props.area
 
-    # secondary statistics
-    # junction_coverage_index = junction_fragmented_perimeter / junction_perimeter
-    junction_interface_occupancy = junction_protein_area / junction_props.area
-    junction_intensity_per_interface_area = junction_props.mean_intensity  # todo: check if this correct
-    junction_protein_intensity = junction_props.mean_intensity * junction_props.area
-    junction_cluster_density = junction_protein_intensity / junction_protein_area
+    # secondary statistics  # interface area = junction_props.area
+    # junction_coverage_index = junction_fragmented_perimeter / junction_perimeter  # todo: calc junction_fragmented_perimeter
+    junction_interface_occupancy = junction_protein_area_props.area / interface_props.area
+    junction_protein_intensity = junction_protein_area_props.mean_intensity * junction_protein_area_props.area
+    junction_intensity_per_interface_area = junction_protein_intensity / interface_props.area
+    junction_cluster_density = junction_protein_intensity / junction_protein_area_props.area
 
     fill_single_cell_junction_data_frame(
-        properties_dataset, index, junction_perimeter, junction_props, junction_protein_area,
+        properties_dataset,
+        index,
+        interface_perimeter,
+        interface_props,
+        junction_protein_area_props.area,
+        circular_junction_props.centroid_weighted
     )
     fill_single_cell_junction_sec_stat_data_frame(
         properties_dataset, index, junction_interface_occupancy,
@@ -176,10 +221,10 @@ def fill_single_cell_junction_sec_stat_data_frame(
 
 
 def fill_single_cell_junction_data_frame(
-        dataset, index, junction_perimeter, junction_props, junction_protein_area
+        dataset, index, junction_perimeter, junction_props, junction_protein_area, weighted_centroid
 ):
     """Fills the dataset with the single cell junction properties."""
-    junctions_centroid_x, junctions_centroid_y = junction_props.weighted_centroid
+    junctions_centroid_x, junctions_centroid_y = weighted_centroid
 
     dataset.at[index, "junction_centroid_X"] = junctions_centroid_x
     dataset.at[index, "junction_centroid_Y"] = junctions_centroid_y
