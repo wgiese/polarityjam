@@ -21,6 +21,9 @@ CELL_OUTLINE_INTENSITY = 30
 
 
 def save_current_fig(graphics_output_format, output_path, filename, filename_suffix, image=None):
+    # prevent text outside figure area
+    plt.tight_layout()
+
     if "pdf" in graphics_output_format:
         plt.savefig(str(Path(output_path).joinpath(filename + filename_suffix + ".pdf")))
     if "svg" in graphics_output_format:
@@ -68,7 +71,7 @@ def _get_outline_and_membrane_thickness(im_marker, cell_mask, parameters):
     return [outlines_cell, outlines_mem_accumulated]
 
 
-def plot_seg_channels(seg_img, output_path, filename):
+def plot_seg_channels(seg_img, output_path, filename, parameters):
     """Plots the separate channels from the input file given."""
     get_logger().info("Plotting: input channels")
 
@@ -76,12 +79,17 @@ def plot_seg_channels(seg_img, output_path, filename):
     filename_out = str(output_path.joinpath(filename + "_seg.png"))
     if len(seg_img.shape) > 2:
         fig, ax = plt.subplots(1, 2)
+        if not parameters["show_graphics_axis"]:
+            ax[0].axis('off')
+            ax[1].axis('off')
         ax[0].imshow(seg_img[0, :, :])
         ax[0].set_title("junction channel")
         ax[1].imshow(seg_img[1, :, :])
         ax[1].set_title("nuclei channel")
     else:
         fig, ax = plt.subplots()
+        if not parameters["show_graphics_axis"]:
+            ax.axis('off')
         ax.imshow(seg_img[:, :])
     plt.savefig(filename_out)
     plt.close(fig)
@@ -109,6 +117,11 @@ def plot_cellpose_masks(seg_img, cellpose_mask, output_path, filename, parameter
         ax[0].set_title("junction channel")
         ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
         ax[1].set_title("cellpose segmentation")
+
+    if not parameters["show_graphics_axis"]:
+        for ax_ in ax:
+            ax_.axis('off')
+
 
     # save output & close
     save_current_fig(
@@ -177,11 +190,8 @@ def plot_organelle_polarity(parameters, im_junction, cell_mask, nuclei_mask, org
             ax.text(row["cell_Y"], row["cell_X"], str(int(np.round(row["organelle_orientation_deg"], 0))),
                     color="yellow", fontsize=6)
 
-    # set ax limits
-    ax.set_xlim(0, im_junction.shape[1])
-    ax.set_ylim(0, im_junction.shape[0])
-    ax.invert_yaxis()
-    ax.axis('off')
+    # set title and ax limits
+    _add_title(ax, "organelle orientation", im_junction, parameters["show_graphics_axis"])
 
     # save output & close
     save_current_fig(
@@ -248,11 +258,9 @@ def plot_nuc_displacement_orientation(parameters, im_junction, cell_mask, nuclei
                 row["nuc_Y"], row["nuc_X"], str(int(np.round(row["nuc_displacement_orientation_deg"], 0))),
                 color="yellow", fontsize=6
             )
-    # set ax limits
-    ax.set_xlim(0, im_junction.shape[1])
-    ax.set_ylim(0, im_junction.shape[0])
-    ax.invert_yaxis()
-    ax.axis('off')
+
+    # set title and ax limits
+    _add_title(ax, "nucleus displacement orientation", im_junction, parameters["show_graphics_axis"])
 
     # save output & close
     save_current_fig(
@@ -320,11 +328,9 @@ def plot_marker_nucleus_orientation(parameters, im_junction, cell_mask, nuclei_m
                 row["nuc_Y"], row["nuc_X"], str(int(np.round(row["marker_nucleus_orientation_deg"], 0))),
                 color="yellow", fontsize=6
             )
-    # set ax limits
-    ax.set_xlim(0, im_junction.shape[1])
-    ax.set_ylim(0, im_junction.shape[0])
-    ax.invert_yaxis()
-    ax.axis('off')
+
+    # set title and ax limits
+    _add_title(ax, "marker nucleus orientation", im_junction, parameters["show_graphics_axis"])
 
     # save output & close
     save_current_fig(
@@ -385,6 +391,10 @@ def plot_marker_expression(parameters, im_marker, cell_mask, single_cell_dataset
     if nuclei_mask is not None:
         ax[2].set_title("mean intensity nucleus")
 
+    if not parameters["show_graphics_axis"]:
+        for ax_ in ax:
+            ax_.axis('off')
+
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_marker_expression")
     plt.close(fig)
@@ -421,6 +431,8 @@ def plot_marker_polarity(parameters, im_marker, cell_mask, single_cell_props, fi
                                          row["marker_centroid_Y"])
 
     ax.set_title("marker polarity")
+    if not parameters["show_graphics_axis"]:
+        ax.axis('off')
 
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_marker_polarity")
@@ -458,6 +470,9 @@ def plot_junction_polarity(parameters, im_junction, cell_mask, single_cell_props
                                          row["junction_centroid_Y"])
 
     ax.set_title("junction polarity")
+
+    if not parameters["show_graphics_axis"]:
+        ax.axis('off')
 
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_junction_polarity")
@@ -517,12 +532,13 @@ def _add_nuclei_eccentricity(fig, ax, im_junction, nuclei_mask, nuclei_eccentric
     _add_colorbar(fig, cax_1, ax, yticks, "eccentricity")
 
 
-def _add_title(ax, plot_title, im_junction):
+def _add_title(ax, plot_title, im_junction, axis_on):
     ax.set_title(plot_title)
     ax.set_xlim(0, im_junction.shape[1])
     ax.set_ylim(0, im_junction.shape[0])
     ax.invert_yaxis()
-    ax.axis('off')
+    if not axis_on:
+        ax.axis('off')
 
 
 def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
@@ -644,13 +660,10 @@ def plot_eccentricity(parameters, im_junction, single_cell_props, cell_mask, fil
 
     # set title and ax limits
     if nuclei_mask is not None:
-        _add_title(ax[0], "cell elongation", im_junction)
-        _add_title(ax[1], "nuclei elongation", im_junction)
+        _add_title(ax[0], "cell elongation", im_junction, parameters["show_graphics_axis"])
+        _add_title(ax[1], "nuclei elongation", im_junction, parameters["show_graphics_axis"])
     else:
-        _add_title(ax, "cell elongation", im_junction)
-
-    # save to disk
-    plt.tight_layout()
+        _add_title(ax, "cell elongation", im_junction, parameters["show_graphics_axis"])
 
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_eccentricity")
@@ -811,13 +824,10 @@ def plot_orientation(parameters, im_junction, single_cell_props, filename, outpu
 
     # set title and ax limits
     if nuclei_mask is not None:
-        _add_title(ax[0], "cell shape orientation", im_junction)
-        _add_title(ax[1], "nuclei shape orientation", im_junction)
+        _add_title(ax[0], "cell shape orientation", im_junction, parameters["show_graphics_axis"])
+        _add_title(ax[1], "nuclei shape orientation", im_junction, parameters["show_graphics_axis"])
     else:
-        _add_title(ax, "cell shape orientation", im_junction)
-
-    # set padding between and around subplots
-    plt.tight_layout()
+        _add_title(ax, "cell shape orientation", im_junction, parameters["show_graphics_axis"])
 
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_shape_orientation")
@@ -879,8 +889,8 @@ def plot_ratio_method(parameters, im_junction, cell_mask, single_cell_props, fil
     ax.set_xlim(0, im_junction.shape[0])
     ax.set_ylim(0, im_junction.shape[1])
 
-    # set padding between and around subplots
-    plt.tight_layout()
+    if not parameters["show_graphics_axis"]:
+        ax.axis('off')
 
     # save output & close
     save_current_fig(parameters["graphics_output_format"], output_path, filename, "_ratio_method")

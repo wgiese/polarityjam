@@ -57,7 +57,7 @@ def _run(infile, parameters, output_path, fileout_name):
     img_seg = get_image_for_segmentation(parameters, img)
 
     # plot input
-    plot_seg_channels(img_seg, output_path, fileout_name)
+    plot_seg_channels(img_seg, output_path, fileout_name, parameters)
 
     # basic segmentation
     cellpose_mask = load_or_get_cellpose_segmentation(parameters, img_seg, infile)
