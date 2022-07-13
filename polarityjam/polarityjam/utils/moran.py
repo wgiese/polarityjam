@@ -443,3 +443,10 @@ def _swap_ending(s, ending, delim='_'):
     parts = [x for x in s.split(delim)[:-1] if x != '']
     parts.append(ending)
     return delim.join(parts)
+
+
+def run_morans(morans_features, weihgts):
+    """Run morans I, measure of spatial correlation and significance."""
+    mi = Moran(morans_features, weihgts, two_tailed=False)
+
+    return mi

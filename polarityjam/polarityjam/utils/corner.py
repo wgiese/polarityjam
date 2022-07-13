@@ -5,10 +5,10 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 
-def get_corner(img, epsilon=5):
-    contours, _ = cv2.findContours(img.astype(bool).astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+def get_corner(sc_img, epsilon=5):
+    contours, _ = cv2.findContours(sc_img.astype(bool).astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if len(contours) > 1:
-        raise RuntimeError("Too many contours found. Expected a single contour for image!")
+        raise RuntimeError("Too many contours found. Expected a single contour for a single cell image!")
     contours = contours[0].squeeze(1)
 
     hull = ConvexHull(contours)

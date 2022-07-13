@@ -4,9 +4,11 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from polarityjam.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
+from polarityjam.feature_extraction import get_image_for_segmentation
+from polarityjam.utils.moran import run_morans
 from polarityjam.test.test_common import TestCommon
 from polarityjam.utils.io import read_parameters, read_image
+from polarityjam.utils.weights import W
 
 
 class TestFunctions(TestCommon):
@@ -90,8 +92,11 @@ class TestFunctions(TestCommon):
                         nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
 
         # run morans i
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        weights = W.from_networkx(graph)
+        # extract the feature of interest from the rag
+        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
+
+        mr_i = run_morans(morans_features, weights)
 
         # check the output
         self.assertEqual(-1, mr_i.I)
@@ -110,8 +115,10 @@ class TestFunctions(TestCommon):
                     empty_int[i, j] = 0
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        weights = W.from_networkx(graph)
+        # extract the feature of interest from the rag
+        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
+        mr_i = run_morans(morans_features, weights)
 
         # assert
         self.assertAlmostEqual(0, mr_i.I, delta=0.3)
@@ -128,8 +135,10 @@ class TestFunctions(TestCommon):
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
 
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        weights = W.from_networkx(graph)
+        # extract the feature of interest from the rag
+        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
+        mr_i = run_morans(morans_features, weights)
 
         # assert
         self.assertEqual(1, mr_i.I)
