@@ -1,7 +1,7 @@
 import numpy as np
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.genertor import fill_neighborhood_features
+from polarityjam.utils.collector import fill_neighborhood_features
 
 
 def shared_edges(rag, node):

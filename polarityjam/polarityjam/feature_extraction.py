@@ -2,36 +2,129 @@ import numpy as np
 import pandas as pd
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.genertor import fill_morans_i
+from polarityjam.utils import parameters
+from polarityjam.utils.collector import fill_morans_i, Collector
 from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
     get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask, \
-    get_single_junction_protein_mask
+    get_single_junction_protein_mask, Masks, SingleCellMasks
 from polarityjam.utils.neighborhood import k_neighbor_dif
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.properties import set_single_cell_nucleus_props, set_single_cell_organelle_props, \
     set_single_cell_props, set_single_cell_marker_nuclei_props, set_single_cell_marker_cytosol_props, \
-    set_single_cell_marker_membrane_props, set_single_cell_marker_props, set_single_cell_junction_props
+    set_single_cell_marker_membrane_props, set_single_cell_marker_props, set_single_cell_junction_props, \
+    SingleCellProperties
 from polarityjam.utils.rag import orientation_graph_nf, remove_islands
+from polarityjam.utils.seg import get_image_marker, get_image_junction
 
 
-def get_image_for_segmentation(parameters, img):
-    """Returns segmentation (junction, nucleus) if multichannel, else junction only."""
+class Extractor:
+    def __init__(self, img, cells_mask, filename, output_path):
+        self.img = img
+        self.img_marker = None
+        self.img_junction = None
+        self.filename = filename
+        self.output_path = output_path
+        self.collector = Collector()
+        self.masks = Masks(cells_mask)
 
-    ch_junction = int(parameters["channel_junction"])
-    ch_nucleus = int(parameters["channel_nucleus"])
+    def threshold(self, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
+        """Thresholds given single_cell_mask. Returns True if falls under threshold."""
+        # TODO: check if this can be removed, we already remove small objects from the cellpose mask
+        if len(single_cell_mask[single_cell_mask == 1]) < parameters.min_cell_size:
+            return True
 
-    get_logger().info("Image shape: %s" % str(img.shape))
-    get_logger().info("Junction channel at position: %s" % str(ch_junction))
+        if single_nucleus_mask is not None:
+            if len(single_nucleus_mask[single_nucleus_mask == 1]) < parameters.min_nucleus_size:
+                return True
 
-    # add debug out output here
-    im_junction = img[:, :, ch_junction]
-    if ch_nucleus >= 0:
-        im_nucleus = img[:, :, ch_nucleus]
-        im_seg = np.array([im_junction, im_nucleus])
-    else:
-        return im_junction
+        if single_organelle_mask is not None:
+            if len(single_organelle_mask[single_organelle_mask == 1]) < parameters.min_organelle_size:
+                return True
 
-    return im_seg
+        return False
+
+    def get_image_marker(self, img):
+        """Gets the image of the marker channel specified in the parameters."""
+        if parameters.channel_expression_marker >= 0:
+            return img[:, :, parameters.channel_expression_marker]
+
+    def get_image_junction(self, img):
+        """Gets the image of the junction channel specified in the parameters."""
+        if parameters.channel_junction >= 0:
+            return img[:, :, parameters.channel_junction]
+
+    def extract(self, p):
+        """ Extracts the features from an input image.
+
+        """
+        # initialize graph - no features associated with nodes
+        rag = orientation_graph_nf(self.masks.cell_mask)
+        rag = self.masks.remove_islands(rag)
+
+        get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
+
+        self.masks.set_nuclei_mask(self.img)
+        self.masks.set_organelle_mask(self.img)
+        self.im_marker = self.get_image_marker(self.img)
+        self.im_junction = self.get_image_junction(self.img)
+
+        excluded = 0
+        # iterate through each unique segmented cell
+        for index, connected_component_label in enumerate(np.unique(self.masks.cell_mask_rem_island)):
+            # ignore background
+            if connected_component_label == 0:
+                continue
+
+            # get single cell masks
+            sc_masks = SingleCellMasks()
+            sc_masks.calc_sc_masks(self.masks, connected_component_label, self.im_marker,
+                                                       self.im_junction)
+
+            # threshold
+            if self.threshold(
+                    sc_masks.sc_mask,
+                    single_nucleus_mask=sc_masks.sc_nucleus_mask,
+                    single_organelle_mask=sc_masks.sc_organelle_mask
+            ):
+                get_logger().info("Cell \"%s\" falls under threshold! Removed from RAG..." % connected_component_label)
+                excluded += 1
+                # remove a cell from the RAG
+                rag.remove_node(connected_component_label)
+                continue
+
+            sc_props = SingleCellProperties()
+            sc_props.calc_sc_props(sc_masks, self.masks, self.im_marker, self.im_junction)
+
+            self.collector.fill_sc_props(sc_props, index, self.filename, connected_component_label)
+
+            # append feature of interest to the RAG node for being able to do further analysis
+            foi = self.collector.dataset.at[index, parameters.feature_of_interest]
+            foi_name = str(parameters.feature_of_interest)
+            rag.nodes[connected_component_label.astype('int')][foi_name] = foi
+
+            get_logger().info(
+                " ".join(
+                    str(x) for x in ["Cell %s - feature \"%s\": %s" % (connected_component_label, foi_name, foi)]
+                )
+            )
+
+        get_logger().info("Excluded cells: %s" % str(excluded))
+        get_logger().info("Leftover cells: %s" % str(len(np.unique(self.masks.cell_mask)) - excluded))
+
+        # morans I analysis based on FOI
+        self.collector.fill_morans_i(rag, parameters.feature_of_interest)
+
+        # neighborhood feature analysis based on FOI
+        k_neighbor_dif(self.collector.dataset, rag, parameters.feature_of_interest)
+
+        plot_dataset(
+            p, self.img, self.collector.dataset, self.output_path, self.filename,
+            self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
+            self.masks.organelle_mask,
+            self.im_marker, self.im_junction
+        )
+
+        return self.collector.dataset
 
 
 def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
@@ -49,18 +142,6 @@ def threshold(parameters, single_cell_mask, single_nucleus_mask=None, single_org
             return True
 
     return False
-
-
-def get_image_marker(parameters, img):
-    """Gets the image of the marker channel specified in the parameters."""
-    if parameters["channel_expression_marker"] >= 0:
-        return img[:, :, parameters["channel_expression_marker"]]
-
-
-def get_image_junction(parameters, img):
-    """Gets the image of the junction channel specified in the parameters."""
-    if parameters["channel_junction"] >= 0:
-        return img[:, :, parameters["channel_junction"]]
 
 
 def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, filename, output_path):
