@@ -1,7 +1,7 @@
 import numpy as np
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.collector import fill_neighborhood_features
+from polarityjam.utils.properties import NeighborhoodProps
 
 
 def shared_edges(rag, node):
@@ -30,23 +30,15 @@ def n_neighbors(rag, node):
     return first_nearest_list, second_nearest_list
 
 
-def k_neighbor_dif(properties_dataset, graph, foi):
+def k_neighbor_dif(graph, foi):
     """Extracts neighborhood statics from graph."""
     get_logger().info("Calculating first and second nearest neighbor statistic...")
-    neighborhood_props = {
-        "num_neighbours": [],
-        "mean_dif_first_neighbors": [],
-        "median_dif_first_neighbors": [],
-        "var_dif_first_neighbors": [],
-        "range_dif_first_neighbors": [],
-        "mean_dif_second_neighbors": [],
-        "median_dif_second_neighbors": [],
-        "var_dif_second_neighbors": [],
-        "range_dif_second_neighbors": [],
-    }
+    neighborhood_props_list = []
     for node in graph.nodes():
+        neighborhood_props = NeighborhoodProps()
         neighbours = len(list(graph.neighbors(int(node))))
-        neighborhood_props["num_neighbours"].append(neighbours)
+
+        neighborhood_props.num_neighbours = neighbours
 
         # feature of interest, first and second_nearest_neighbors
         node_foi = graph.nodes[node][foi]
@@ -60,28 +52,20 @@ def k_neighbor_dif(properties_dataset, graph, foi):
 
         # append first nearest neighbors statistics
         if len(foi_first_nearest_diff) > 0:
-            neighborhood_props["mean_dif_first_neighbors"].append(np.mean(foi_first_nearest_diff))
-            neighborhood_props["median_dif_first_neighbors"].append(np.median(foi_first_nearest_diff))
-            neighborhood_props["var_dif_first_neighbors"].append(np.std(foi_first_nearest_diff))
-            neighborhood_props["range_dif_first_neighbors"].append(
-                abs(np.min(foi_first_nearest_diff) - np.max(foi_first_nearest_diff)))
-        else:
-            neighborhood_props["mean_dif_first_neighbors"].append(0)
-            neighborhood_props["median_dif_first_neighbors"].append(0)
-            neighborhood_props["var_dif_first_neighbors"].append(0)
-            neighborhood_props["range_dif_first_neighbors"].append(0)
+            neighborhood_props.mean_dif_first_neighbors = np.mean(foi_first_nearest_diff)
+            neighborhood_props.median_dif_first_neighbors = np.median(foi_first_nearest_diff)
+            neighborhood_props.var_dif_first_neighbors = np.std(foi_first_nearest_diff)
+            neighborhood_props.range_dif_first_neighbors = abs(
+                np.min(foi_first_nearest_diff) - np.max(foi_first_nearest_diff))
 
         # append second nearest neighbors statistics
         if len(foi_second_nearest_diff) > 0:
-            neighborhood_props["mean_dif_second_neighbors"].append(np.mean(foi_second_nearest_diff))
-            neighborhood_props["median_dif_second_neighbors"].append(np.median(foi_second_nearest_diff))
-            neighborhood_props["var_dif_second_neighbors"].append(np.std(foi_second_nearest_diff))
-            neighborhood_props["range_dif_second_neighbors"].append(
-                abs(np.min(foi_second_nearest_diff) - np.max(foi_second_nearest_diff)))
-        else:
-            neighborhood_props["mean_dif_second_neighbors"].append(0)
-            neighborhood_props["median_dif_second_neighbors"].append(0)
-            neighborhood_props["var_dif_second_neighbors"].append(0)
-            neighborhood_props["range_dif_second_neighbors"].append(0)
+            neighborhood_props.mean_dif_second_neighbors = np.mean(foi_second_nearest_diff)
+            neighborhood_props.median_dif_second_neighbors = np.median(foi_second_nearest_diff)
+            neighborhood_props.var_dif_second_neighbors = np.std(foi_second_nearest_diff)
+            neighborhood_props.range_dif_second_neighbors = abs(
+                np.min(foi_second_nearest_diff) - np.max(foi_second_nearest_diff))
 
-    fill_neighborhood_features(properties_dataset, neighborhood_props)
+        neighborhood_props_list.append(neighborhood_props)
+
+    return neighborhood_props_list

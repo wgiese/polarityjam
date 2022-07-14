@@ -5,11 +5,15 @@ from scipy import ndimage as ndi
 
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
+from polarityjam.utils.compute import otsu_thresh_mask
 
 
 class SingleCellMasks:
 
-    def __init__(self):
+    def __init__(self, masks, connected_component_label):
+        self.connected_component_label = connected_component_label
+        self.masks = masks
+
         self.sc_mask = None
         self.sc_nucleus_mask = None
         self.sc_organelle_mask = None
@@ -18,18 +22,66 @@ class SingleCellMasks:
         self.sc_junction_protein_area_mask = None
         self.sc_junction_protein = None  # todo: put me elsewhere
 
-    def calc_sc_masks(self, masks, connected_component_label, im_marker, im_junction):
-        self.sc_mask = masks.get_sc_mask(connected_component_label)
-        self.sc_nucleus_mask = masks.get_sc_nucleus_mask(connected_component_label)  # can be None
-        self.sc_organelle_mask = masks.get_sc_organelle_mask(connected_component_label)  # can be None
-        self.sc_membrane_mask = masks.get_sc_membrane_mask(im_marker, im_junction,
-                                                           self.sc_mask)  # can be None
-        self.sc_cytosol_mask = masks.get_sc_cytosol_mask(self.sc_mask, im_marker,
-                                                         self.sc_nucleus_mask)  # can be None
-        self.sc_junction_protein_area_mask, self.sc_junction_protein = masks.get_sc_junction_protein_mask(
-            self.sc_membrane_mask,
-            im_junction
-        )  # can be None
+    def calc_sc_masks(self, im_junction):
+        self.get_sc_mask()
+        self.get_sc_nucleus_mask()  # can be None
+        self.get_sc_organelle_mask()  # can be None
+        self.get_sc_membrane_mask()  # can be None
+        self.get_sc_cytosol_mask()  # can be None
+        self.sc_junction_protein_area_mask, self.sc_junction_protein = self.get_sc_junction_protein_mask(
+            im_junction)  # can be None
+
+    def get_sc_organelle_mask(self):
+        """Gets the single cell organelle mask."""
+        sc_organelle_mask = None
+        if self.masks.organelle_mask is not None:
+            sc_organelle_mask = np.where(self.masks.organelle_mask == self.connected_component_label, 1, 0)
+
+        self.sc_organelle_mask = sc_organelle_mask
+
+    def get_sc_nucleus_mask(self):
+        """Gets the single cell nucleus mask."""
+        sc_nucleus_mask = None
+        if self.masks.nuclei_mask is not None:
+            sc_nucleus_mask = np.where(self.masks.nuclei_mask == self.connected_component_label, 1, 0)
+        self.sc_nucleus_mask = sc_nucleus_mask
+
+    def get_sc_mask(self):
+        """Gets the single cell mask from a mask where each cell has an increasing connected component value."""
+        sc_mask = None
+        if self.masks.cell_mask_rem_island is not None:
+            sc_mask = np.where(self.masks.cell_mask_rem_island == self.connected_component_label, 1, 0)
+        self.sc_mask = sc_mask
+
+    def get_sc_membrane_mask(self):
+        """Gets the single cell membrane mask."""
+        if not self.sc_mask is not None:
+            self.get_sc_mask()
+        sc_membrane_mask = self._get_outline_from_mask(self.sc_mask, parameters.membrane_thickness)
+        self.sc_membrane_mask = sc_membrane_mask
+
+    def get_sc_cytosol_mask(self):
+        """Gets the cytosol mask."""
+        sc_cytosol_mask = None
+        if self.sc_nucleus_mask is not None:
+            sc_cytosol_mask = np.logical_xor(self.sc_mask.astype(bool), self.sc_nucleus_mask.astype(bool))
+        self.sc_cytosol_mask = sc_cytosol_mask
+
+    def get_sc_junction_protein_mask(self, im_junction):
+        if im_junction is not None:
+            single_cell_junction_protein = otsu_thresh_mask(self.sc_mask, im_junction)
+            return single_cell_junction_protein.astype(bool), single_cell_junction_protein
+        return None, None
+
+    @staticmethod
+    def _get_outline_from_mask(mask, width=1):
+        """Computes outline for a mask with a single label"""
+        mask = mask.astype(bool)
+        dilated_mask = ndi.binary_dilation(mask, iterations=width)
+        eroded_mask = ndi.binary_erosion(mask, iterations=width)
+        outline_mask = np.logical_xor(dilated_mask, eroded_mask)
+
+        return outline_mask
 
 
 class Masks:
@@ -39,96 +91,53 @@ class Masks:
         self.nuclei_mask = None
         self.organelle_mask = None
 
-    def remove_islands(self, frame_graph):
+    def set_cell_mask_rem_island(self, neighborhood_graph):
         """Remove unconnected cells (Cells without neighbours)."""
         # Get list of islands - nodes with no neighbours and remove them
         list_of_islands = []
-        for nodes in frame_graph.nodes:
-            if len(list(frame_graph.neighbors(nodes))) == 0:
+        for nodes in neighborhood_graph.nodes:
+            if len(list(neighborhood_graph.neighbors(nodes))) == 0:
                 list_of_islands.append(nodes)
 
-        get_logger().info("Removed number of islands: %s" % len(list_of_islands))
+        list_of_islands = np.unique(list_of_islands)
 
         mask = self.cell_mask
 
-        # remove islands from image and graph
-        for elemet in np.unique(list_of_islands):
-            frame_graph.remove_node(elemet)
+        # remove islands from mask
+        for elemet in list_of_islands:
             mask[:, :][mask[:, :] == elemet] = 0
 
         self.cell_mask_rem_island = mask
 
-        return frame_graph
+        get_logger().info("Removed number of islands: %s" % len(list_of_islands))
 
-    def set_nuclei_mask(self, img):
-        """Gets the nuclei mask."""
+        return list_of_islands
+
+    def set_nuclei_mask(self, img_nuclei):
+        """Sets the nuclei mask."""
+        nuclei_mask = None
         if parameters.channel_nucleus >= 0:
-            img_nuclei_blur = ndi.gaussian_filter(img[:, :, parameters.channel_nucleus], sigma=3)
-
+            img_nuclei_blur = ndi.gaussian_filter(img_nuclei, sigma=3)
             nuclei_mask = np.where(img_nuclei_blur > skimage.filters.threshold_otsu(img_nuclei_blur), True, False)
+            if self.cell_mask_rem_island is not None:
+                nuclei_mask = nuclei_mask * self.cell_mask_rem_island
+            self.nuclei_mask = nuclei_mask
 
-            nuclei_label = nuclei_mask * self.cell_mask_rem_island
+        return nuclei_mask
 
-            self.nuclei_mask = nuclei_label
-            return True
-        return False
-
-    def set_organelle_mask(self, img):
-        """Gets the organelle mask."""
+    def set_organelle_mask(self, img_organelle):
+        """Set the organelle mask."""
+        organelle_mask = None
         if parameters.channel_organelle >= 0:
-            img_organelle_blur = ndi.gaussian_filter(img[:, :, parameters.channel_organelle], sigma=3)
+            img_organelle_blur = ndi.gaussian_filter(img_organelle, sigma=3)
+            organelle_mask = np.where(
+                img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False
+            )
+            if self.cell_mask_rem_island is not None:
+                organelle_mask = organelle_mask * self.cell_mask_rem_island
+            self.organelle_mask = organelle_mask
 
-            organelle_mask = np.where(img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True,
-                                      False)
-            organelle_label = organelle_mask * self.cell_mask_rem_island
-
-            self.organelle_mask = organelle_label
-            return True
-        return False
-
-    def get_sc_mask(self, connected_component_label):
-        """Gets the single cell mask from a mask where each cell has an increasing connected component value."""
-        return np.where(self.cell_mask_rem_island == connected_component_label, 1,
-                        0)  # convert connected_component_label to 1
-
-    def get_sc_organelle_mask(self, connected_component_label):
-        """Gets the single cell organelle mask."""
-        if self.organelle_mask is not None:
-            return np.where(self.organelle_mask == connected_component_label, 1, 0)
-        return None
-
-    def get_sc_nucleus_mask(self, connected_component_label):
-        """Gets the single cell nucleus mask."""
-        if self.nuclei_mask is not None:
-            return np.where(self.nuclei_mask == connected_component_label, 1, 0)
-        return None
-
-    def get_sc_membrane_mask(self, im_marker, im_junctions, single_cell_mask):
-        """Gets the single cell membrane mask."""
-        if im_marker is not None or im_junctions is not None:
-            return get_outline_from_mask(single_cell_mask.astype(bool), parameters.membrane_thickness)
-        return None
-
-    def get_sc_cytosol_mask(self, single_cell_mask, im_marker, single_nucleus_mask):
-        """Gets the cytosol mask."""
-        if single_nucleus_mask is not None and im_marker is not None:
-            return np.logical_xor(single_cell_mask.astype(bool), single_nucleus_mask.astype(bool))
-        return None
-
-    def get_sc_junction_protein_mask(self, single_membrane_mask, im_junction):
-        if im_junction is not None:
-            single_cell_junction_protein = get_single_junction_protein(single_membrane_mask, im_junction)
-            return single_cell_junction_protein.astype(bool), single_cell_junction_protein
-        return None, None
-
-    # todo: move me elsewhere. But avoid circular import error (don't move to feature_extraction.py)
-    def get_sc_junction_protein(self, single_membrane_mask, im_junction):
-        # otsu threshold membrane (junctions) intensity to get junction protein area
-        single_cell_junction_protein = single_membrane_mask * im_junction
-        otsu_val = skimage.filters.threshold_otsu(single_cell_junction_protein)
-        single_cell_junction_protein[single_cell_junction_protein <= otsu_val] = 0
-
-        return single_cell_junction_protein
+        return organelle_mask
 
 
 def get_single_cell_membrane_mask(parameters, im_marker, im_junctions, single_cell_mask):
@@ -178,19 +187,9 @@ def get_organelle_mask(parameters, img, cellpose_mask):
 
 def get_single_junction_protein_mask(single_membrane_mask, im_junction):
     if im_junction is not None:
-        single_cell_junction_protein = get_single_junction_protein(single_membrane_mask, im_junction)
+        single_cell_junction_protein = otsu_thresh_mask(single_membrane_mask, im_junction)
         return single_cell_junction_protein.astype(bool), single_cell_junction_protein
     return None, None
-
-
-# todo: move me elsewhere. But avoid circular import error (don't move to feature_extraction.py)
-def get_single_junction_protein(single_membrane_mask, im_junction):
-    # otsu threshold membrane (junctions) intensity to get junction protein area
-    single_cell_junction_protein = single_membrane_mask * im_junction
-    otsu_val = skimage.filters.threshold_otsu(single_cell_junction_protein)
-    single_cell_junction_protein[single_cell_junction_protein <= otsu_val] = 0
-
-    return single_cell_junction_protein
 
 
 def get_nuclei_mask(parameters, img, cellpose_mask):

@@ -9,7 +9,7 @@ from polarityjam.utils.collector import fill_single_cell_marker_polarity, fill_s
 from polarityjam.utils.masks import SingleCellMasks, Masks
 
 
-class SCJunctionProps:
+class SingleCellJunctionProps:
     def __init__(
             self, interface_props,
             circular_junction_props,
@@ -35,14 +35,14 @@ class SCJunctionProps:
 class NeighborhoodProps:
     def __init__(self):
         self.num_neighbours = None
-        self.mean_dif_first_neighbors = None
-        self.median_dif_first_neighbors = None
-        self.var_dif_first_neighbors = None
-        self.range_dif_first_neighbors = None
-        self.mean_dif_second_neighbors = None
-        self.median_dif_second_neighbors = None
-        self.var_dif_second_neighbors = None
-        self.range_dif_second_neighbors = None
+        self.mean_dif_first_neighbors = 0
+        self.median_dif_first_neighbors = 0
+        self.var_dif_first_neighbors = 0
+        self.range_dif_first_neighbors = 0
+        self.mean_dif_second_neighbors = 0
+        self.median_dif_second_neighbors = 0
+        self.var_dif_second_neighbors = 0
+        self.range_dif_second_neighbors = 0
 
 
 class SingleCellProperties:
@@ -88,8 +88,8 @@ class SingleCellProperties:
                 im_junction,
                 sc_masks.sc_junction_protein,
                 sc_masks.sc_junction_protein_area_mask,
-                2,  # todo: replace me
-                2  # todo: replace me
+                self.single_cell_props.major_axis_length,
+                self.single_cell_props.minor_axis_length
             )
 
     def set_single_cell_props(self, single_cell_mask):
@@ -171,7 +171,7 @@ class SingleCellProperties:
         junction_intensity_per_interface_area = junction_protein_intensity / interface_props.area
         junction_cluster_density = junction_protein_intensity / junction_protein_area_props.area
 
-        self.junction_props = SCJunctionProps(
+        self.junction_props = SingleCellJunctionProps(
             interface_props, circular_junction_props, interface_perimeter, junction_protein_area_props, None,
             junction_interface_occupancy, junction_protein_intensity,
             junction_intensity_per_interface_area, junction_cluster_density

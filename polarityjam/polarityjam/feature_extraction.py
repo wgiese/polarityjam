@@ -7,6 +7,7 @@ from polarityjam.utils.collector import fill_morans_i, Collector
 from polarityjam.utils.masks import get_single_cell_membrane_mask, get_single_cell_mask, get_single_cell_organelle_mask, \
     get_single_cell_cytosol_mask, get_single_cell_nucleus_mask, get_organelle_mask, get_nuclei_mask, \
     get_single_junction_protein_mask, Masks, SingleCellMasks
+from polarityjam.utils.moran import run_morans
 from polarityjam.utils.neighborhood import k_neighbor_dif
 from polarityjam.utils.plot import plot_dataset
 from polarityjam.utils.properties import set_single_cell_nucleus_props, set_single_cell_organelle_props, \
@@ -20,14 +21,17 @@ from polarityjam.utils.seg import get_image_marker, get_image_junction
 class Extractor:
     def __init__(self, img, cells_mask, filename, output_path):
         self.img = img
-        self.img_marker = None
-        self.img_junction = None
+        self.img_marker = self.get_image_marker(self.img)
+        self.img_junction = self.get_image_junction(self.img)
+        self.img_nucleus = self.get_image_nucleus(self.img)
+        self.img_organelle = self.get_image_organelle(self.img)
         self.filename = filename
         self.output_path = output_path
         self.collector = Collector()
         self.masks = Masks(cells_mask)
 
-    def threshold(self, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
+    @staticmethod
+    def threshold(single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
         """Thresholds given single_cell_mask. Returns True if falls under threshold."""
         # TODO: check if this can be removed, we already remove small objects from the cellpose mask
         if len(single_cell_mask[single_cell_mask == 1]) < parameters.min_cell_size:
@@ -43,30 +47,45 @@ class Extractor:
 
         return False
 
-    def get_image_marker(self, img):
+    @staticmethod
+    def get_image_marker(img):
         """Gets the image of the marker channel specified in the parameters."""
         if parameters.channel_expression_marker >= 0:
             return img[:, :, parameters.channel_expression_marker]
+        return None
 
-    def get_image_junction(self, img):
+    @staticmethod
+    def get_image_junction(img):
         """Gets the image of the junction channel specified in the parameters."""
         if parameters.channel_junction >= 0:
             return img[:, :, parameters.channel_junction]
+        return None
+
+    @staticmethod
+    def get_image_nucleus(img):
+        """Gets the image of the nucleus channel specified in the parameters."""
+        if parameters.channel_nucleus >= 0:
+            return img[:, :, parameters.channel_nucleus]
+        return None
+
+    @staticmethod
+    def get_image_organelle(img):
+        """Gets the image of the organelle channel specified in the parameters."""
+        if parameters.channel_organelle >= 0:
+            return img[:, :, parameters.channel_organelle]
+        return None
 
     def extract(self, p):
-        """ Extracts the features from an input image.
-
-        """
+        """ Extracts the features from an input image."""
         # initialize graph - no features associated with nodes
         rag = orientation_graph_nf(self.masks.cell_mask)
-        rag = self.masks.remove_islands(rag)
+        list_of_islands = self.masks.set_cell_mask_rem_island(rag)
+        rag = remove_islands(rag, list_of_islands)
 
         get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
-        self.masks.set_nuclei_mask(self.img)
-        self.masks.set_organelle_mask(self.img)
-        self.im_marker = self.get_image_marker(self.img)
-        self.im_junction = self.get_image_junction(self.img)
+        self.masks.set_nuclei_mask(self.img_nucleus)
+        self.masks.set_organelle_mask(self.img_nucleus)
 
         excluded = 0
         # iterate through each unique segmented cell
@@ -76,9 +95,8 @@ class Extractor:
                 continue
 
             # get single cell masks
-            sc_masks = SingleCellMasks()
-            sc_masks.calc_sc_masks(self.masks, connected_component_label, self.im_marker,
-                                                       self.im_junction)
+            sc_masks = SingleCellMasks(self.masks, connected_component_label)
+            sc_masks.calc_sc_masks(self.img_junction)
 
             # threshold
             if self.threshold(
@@ -93,18 +111,19 @@ class Extractor:
                 continue
 
             sc_props = SingleCellProperties()
-            sc_props.calc_sc_props(sc_masks, self.masks, self.im_marker, self.im_junction)
+            sc_props.calc_sc_props(sc_masks, self.masks, self.img_marker, self.img_junction)
 
-            self.collector.fill_sc_props(sc_props, index, self.filename, connected_component_label)
+            self.collector.collect_sc_props(sc_props, index, self.filename, connected_component_label)
 
             # append feature of interest to the RAG node for being able to do further analysis
-            foi = self.collector.dataset.at[index, parameters.feature_of_interest]
-            foi_name = str(parameters.feature_of_interest)
-            rag.nodes[connected_component_label.astype('int')][foi_name] = foi
+            foi_val = self.collector.dataset.at[index, parameters.feature_of_interest]
+            rag.nodes[connected_component_label.astype('int')][parameters.feature_of_interest] = foi_val
 
             get_logger().info(
                 " ".join(
-                    str(x) for x in ["Cell %s - feature \"%s\": %s" % (connected_component_label, foi_name, foi)]
+                    str(x) for x in ["Cell %s - feature \"%s\": %s" % (
+                        connected_component_label, parameters.feature_of_interest, foi_val
+                    )]
                 )
             )
 
@@ -112,16 +131,18 @@ class Extractor:
         get_logger().info("Leftover cells: %s" % str(len(np.unique(self.masks.cell_mask)) - excluded))
 
         # morans I analysis based on FOI
-        self.collector.fill_morans_i(rag, parameters.feature_of_interest)
+        morans_i = run_morans(rag, parameters.feature_of_interest)
+        self.collector.collect_morans_i_props(morans_i)
 
         # neighborhood feature analysis based on FOI
-        k_neighbor_dif(self.collector.dataset, rag, parameters.feature_of_interest)
+        neighborhood_props_list = k_neighbor_dif(rag, parameters.feature_of_interest)
+        self.collector.collect_neighborhood_props(neighborhood_props_list)
 
         plot_dataset(
             p, self.img, self.collector.dataset, self.output_path, self.filename,
             self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
             self.masks.organelle_mask,
-            self.im_marker, self.im_junction
+            self.img_marker, self.img_junction
         )
 
         return self.collector.dataset

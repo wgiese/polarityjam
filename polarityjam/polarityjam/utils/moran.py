@@ -1,3 +1,5 @@
+from polarityjam.polarityjam_logging import get_logger
+
 PERMUTATIONS = 999
 import numpy as np
 import scipy.stats as stats
@@ -445,8 +447,19 @@ def _swap_ending(s, ending, delim='_'):
     return delim.join(parts)
 
 
-def run_morans(morans_features, weihgts):
+def run_morans(rag, foi):
     """Run morans I, measure of spatial correlation and significance."""
-    mi = Moran(morans_features, weihgts, two_tailed=False)
+    get_logger().info("Calculating morans I group statistic...")
 
-    return mi
+    # extract FOI and weights
+    weights = W.from_networkx(rag)
+
+    # extract the feature of interest from the rag
+    morans_features = [rag.nodes[nodes_idx][foi] for nodes_idx in list(rag.nodes)]
+
+    morans_i = Moran(morans_features, weights, two_tailed=False)
+
+    get_logger().info("Morans I value: %s " % morans_i.I)
+    get_logger().info("Morans I p norm: %s " % morans_i.p_norm)
+
+    return morans_i

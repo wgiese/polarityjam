@@ -1,4 +1,5 @@
 import numpy as np
+import skimage.filters
 
 
 def compute_reference_target_orientation_rad(ref_x, ref_y, target_x, target_y):
@@ -49,3 +50,12 @@ def map_single_cell_to_circle(sc_protein_area, x_centroid, y_centroid, r):
         circular_img[k[0], k[1]] = circular_img[k[0], k[1]] / circular_img_count[k]
 
     return circular_img
+
+
+def otsu_thresh_mask(mask, channel):
+    # otsu threshold membrane (junctions) intensity to get junction protein area
+    masked_channel = mask * channel
+    otsu_val = skimage.filters.threshold_otsu(masked_channel)
+    masked_channel[masked_channel <= otsu_val] = 0
+
+    return masked_channel
