@@ -1,5 +1,6 @@
 import numpy as np
 import skimage.filters
+import skimage.measure
 
 
 def compute_reference_target_orientation_rad(ref_x, ref_y, target_x, target_y):
@@ -9,6 +10,17 @@ def compute_reference_target_orientation_rad(ref_x, ref_y, target_x, target_y):
     organelle_orientation_rad = np.pi - np.arctan2(vec_x, vec_y)
 
     return organelle_orientation_rad
+
+
+def compute_angle_deg(angle_rad):
+    """Returns degree"""
+    return 180.0 * angle_rad / np.pi
+
+
+def compute_shape_orientation(orientation):
+    """Conputes the shape orientation with zero based on x-axis"""
+    # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
+    return np.pi / 2.0 + orientation
 
 
 def compute_marker_vector_norm(cell_x, cell_y, marker_centroid_x, marker_centroid_y):
@@ -53,9 +65,20 @@ def map_single_cell_to_circle(sc_protein_area, x_centroid, y_centroid, r):
 
 
 def otsu_thresh_mask(mask, channel):
-    # otsu threshold membrane (junctions) intensity to get junction protein area
+    # otsu threshold a mask given a channel from the input image
     masked_channel = mask * channel
     otsu_val = skimage.filters.threshold_otsu(masked_channel)
     masked_channel[masked_channel <= otsu_val] = 0
 
     return masked_channel
+
+
+def compute_single_cell_prop(single_cell_mask, intensity=None):
+    """Gets the single cell properties."""
+    # we are looking at a single cell. There is only one region!
+    regions = skimage.measure.regionprops(single_cell_mask, intensity_image=intensity)
+    if len(regions) > 1:
+        raise ValueError("Too many regions for a single cell!")
+    props = regions[-1]
+
+    return props

@@ -894,17 +894,15 @@ def plot_adjacency_matrix(label_image, intensity_image):
     return out
 
 
-def plot_dataset(
-        properties_ds, output_path, filename, cell_mask, nuclei_mask, organelle_mask, im_marker,
-        im_junction
-):
+def plot_dataset(properties_ds, cell_mask, nuclei_mask, organelle_mask, img_marker, img_junction, filename,
+                 output_path):
     """Plots the properties dataset"""
     get_logger().info("Plotting...")
 
     # TODO: adapt name plot polarity in parameter files
     if parameters.plot_polarity and nuclei_mask is not None and organelle_mask is not None:
         plot_organelle_polarity(
-            im_junction,
+            img_junction,
             cell_mask,
             nuclei_mask,
             organelle_mask,
@@ -914,16 +912,16 @@ def plot_dataset(
         )
         if nuclei_mask is not None:
             plot_nuc_displacement_orientation(
-                im_junction,
+                img_junction,
                 cell_mask,
                 nuclei_mask,
                 properties_ds,
                 filename,
                 output_path
             )
-    if parameters.plot_marker and im_marker is not None:
+    if parameters.plot_marker and img_marker is not None:
         plot_marker_expression(
-            im_marker,
+            img_marker,
             cell_mask,
             properties_ds,
             filename,
@@ -931,7 +929,7 @@ def plot_dataset(
             nuclei_mask=nuclei_mask
         )
         plot_marker_polarity(
-            im_marker,
+            img_marker,
             cell_mask,
             properties_ds,
             filename,
@@ -939,22 +937,22 @@ def plot_dataset(
         )
         if nuclei_mask is not None:
             plot_marker_nucleus_orientation(
-                im_junction,
+                img_junction,
                 cell_mask,
                 nuclei_mask,
                 properties_ds,
                 filename,
                 output_path
             )
-    if parameters.plot_junctions and im_junction is not None:
-        plot_junction_polarity(im_junction, cell_mask, properties_ds, filename, output_path)
+    if parameters.plot_junctions and img_junction is not None:
+        plot_junction_polarity(img_junction, cell_mask, properties_ds, filename, output_path)
 
     if parameters.plot_orientation:
-        plot_eccentricity(im_junction, properties_ds, cell_mask, filename, output_path,
+        plot_eccentricity(img_junction, properties_ds, cell_mask, filename, output_path,
                           nuclei_mask=nuclei_mask)
     if parameters.plot_ratio_method:
         plot_ratio_method(
-            im_junction,
+            img_junction,
             cell_mask,
             properties_ds,
             filename,
@@ -962,7 +960,7 @@ def plot_dataset(
         )
     if parameters.plot_cyclic_orientation:
         plot_orientation(
-            im_junction,
+            img_junction,
             properties_ds,
             filename,
             output_path,

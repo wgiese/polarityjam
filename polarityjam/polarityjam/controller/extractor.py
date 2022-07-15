@@ -1,6 +1,6 @@
 import numpy as np
 
-from polarityjam.model.collector import Collector
+from polarityjam.controller.collector import Collector
 from polarityjam.model.masks import MasksCollection, SingleCellMasksCollection
 from polarityjam.model.properties import SingleCellPropertiesCollection
 from polarityjam.polarityjam_logging import get_logger
@@ -78,7 +78,7 @@ class Extractor:
         get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
         self.masks.set_nuclei_mask(self.img_nucleus)
-        self.masks.set_organelle_mask(self.img_nucleus)
+        self.masks.set_organelle_mask(self.img_organelle)
 
         excluded = 0
         # iterate through each unique segmented cell
@@ -131,11 +131,7 @@ class Extractor:
         neighborhood_props_list = k_neighbor_dif(rag, parameters.feature_of_interest)
         self.collector.collect_neighborhood_props(neighborhood_props_list)
 
-        plot_dataset(
-            self.collector.dataset, self.output_path, self.filename,
-            self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
-            self.masks.organelle_mask,
-            self.img_marker, self.img_junction
-        )
+        plot_dataset(self.collector.dataset, self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
+                     self.masks.organelle_mask, self.img_marker, self.img_junction, self.filename, self.output_path)
 
         return self.collector.dataset

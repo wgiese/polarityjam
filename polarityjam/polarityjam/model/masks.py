@@ -21,7 +21,7 @@ class SingleCellMasksCollection:
         self.sc_junction_protein_area_mask = None
         self.sc_junction_protein = None  # todo: put me elsewhere
 
-    def calc_sc_masks(self, im_junction):
+    def calc_sc_masks(self, im_junction):  # todo: make me a controller
         self.get_sc_mask()
         self.get_sc_nucleus_mask()  # can be None
         self.get_sc_organelle_mask()  # can be None
@@ -68,7 +68,7 @@ class SingleCellMasksCollection:
 
     def get_sc_junction_protein_mask(self, im_junction):
         if im_junction is not None:
-            single_cell_junction_protein = otsu_thresh_mask(self.sc_mask, im_junction)
+            single_cell_junction_protein = otsu_thresh_mask(self.sc_membrane_mask, im_junction)
             return single_cell_junction_protein.astype(bool), single_cell_junction_protein
         return None, None
 
@@ -126,14 +126,16 @@ class MasksCollection:
 
     def set_organelle_mask(self, img_organelle):
         """Set the organelle mask."""
+        if self.cell_mask_rem_island is None:
+            return None
+
         organelle_mask = None
         if parameters.channel_organelle >= 0:
             img_organelle_blur = ndi.gaussian_filter(img_organelle, sigma=3)
-            organelle_mask = np.where(
+            organelle_mask_o = np.where(
                 img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False
             )
-            if self.cell_mask_rem_island is not None:
-                organelle_mask = organelle_mask * self.cell_mask_rem_island
+            organelle_mask = organelle_mask_o * self.cell_mask_rem_island
             self.organelle_mask = organelle_mask
 
         return organelle_mask
