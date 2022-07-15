@@ -69,7 +69,7 @@ class TestCommon(unittest.TestCase):
         return self.current_path.joinpath("resources", "test_key_file.csv")
 
     def load_parameters(self):
-        param_base_file = Path(self.current_path).joinpath("..", "utils", "base", "parameters.yml")
+        param_base_file = Path(self.current_path).joinpath("..", "utils", "resources", "parameters.yml")
 
         with open(param_base_file, 'r') as yml_f:
             parameters = yaml.safe_load(yml_f)

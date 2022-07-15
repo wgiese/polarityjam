@@ -19,7 +19,7 @@ def read_parameters(parameter_file):
     """Reads in default parameters and replaces user defined parameters."""
     current_path = Path(os.path.dirname(os.path.realpath(__file__)))
 
-    param_base_file = Path(current_path).joinpath("base", "parameters.yml")
+    param_base_file = Path(current_path).joinpath("resources", "parameters.yml")
 
     with open(param_base_file, 'r') as yml_f:
         parameters = yaml.safe_load(yml_f)

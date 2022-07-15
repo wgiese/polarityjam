@@ -1,5 +1,4 @@
-channel_expression_marker: -1
-channel_focal_adhesions: -1
+channel_expression_marker: 3
 channel_organelle: 0
 channel_junction: 3
 channel_nucleus: 2
@@ -20,6 +19,7 @@ min_organelle_size: 10
 min_nucleus_size: 10
 outline_width: 2
 plot_orientation: true
+plot_junctions: true
 plot_marker: true
 plot_polarity: true
 plot_ratio_method: true

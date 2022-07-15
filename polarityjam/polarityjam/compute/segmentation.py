@@ -94,3 +94,21 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     return cellpose_mask
 
 
+def get_image_for_segmentation(parameters, img):
+    """Returns segmentation (junction, nucleus) if multichannel, else junction only."""
+
+    ch_junction = int(parameters["channel_junction"])
+    ch_nucleus = int(parameters["channel_nucleus"])
+
+    get_logger().info("Image shape: %s" % str(img.shape))
+    get_logger().info("Junction channel at position: %s" % str(ch_junction))
+
+    # add debug out output here
+    im_junction = img[:, :, ch_junction]
+    if ch_nucleus >= 0:
+        im_nucleus = img[:, :, ch_nucleus]
+        im_seg = np.array([im_junction, im_nucleus])
+    else:
+        return im_junction
+
+    return im_seg

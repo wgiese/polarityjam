@@ -4,9 +4,11 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from polarityjam.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
+from polarityjam.compute.segmentation import get_image_for_segmentation
+from polarityjam.compute.moran import run_morans
 from polarityjam.test.test_common import TestCommon
 from polarityjam.utils.io import read_parameters, read_image
+from polarityjam.model.weights import W
 
 
 class TestFunctions(TestCommon):
@@ -90,8 +92,7 @@ class TestFunctions(TestCommon):
                         nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
 
         # run morans i
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # check the output
         self.assertEqual(-1, mr_i.I)
@@ -110,8 +111,7 @@ class TestFunctions(TestCommon):
                     empty_int[i, j] = 0
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertAlmostEqual(0, mr_i.I, delta=0.3)
@@ -128,8 +128,7 @@ class TestFunctions(TestCommon):
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
 
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertEqual(1, mr_i.I)
