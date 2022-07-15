@@ -83,6 +83,8 @@ class Extractor:
         excluded = 0
         # iterate through each unique segmented cell
         for index, connected_component_label in enumerate(np.unique(self.masks.cell_mask_rem_island)):
+            index -= excluded  # index should be continuous
+
             # ignore background
             if connected_component_label == 0:
                 continue

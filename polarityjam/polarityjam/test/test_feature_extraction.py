@@ -92,11 +92,7 @@ class TestFunctions(TestCommon):
                         nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
 
         # run morans i
-        weights = W.from_networkx(graph)
-        # extract the feature of interest from the rag
-        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
-
-        mr_i = run_morans(morans_features, weights)
+        mr_i = run_morans(graph, "morani")
 
         # check the output
         self.assertEqual(-1, mr_i.I)
@@ -115,10 +111,7 @@ class TestFunctions(TestCommon):
                     empty_int[i, j] = 0
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
         # run
-        weights = W.from_networkx(graph)
-        # extract the feature of interest from the rag
-        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
-        mr_i = run_morans(morans_features, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertAlmostEqual(0, mr_i.I, delta=0.3)
@@ -135,10 +128,7 @@ class TestFunctions(TestCommon):
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
 
         # run
-        weights = W.from_networkx(graph)
-        # extract the feature of interest from the rag
-        morans_features = [graph.nodes[nodes_idx]["morani"] for nodes_idx in list(graph.nodes)]
-        mr_i = run_morans(morans_features, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertEqual(1, mr_i.I)

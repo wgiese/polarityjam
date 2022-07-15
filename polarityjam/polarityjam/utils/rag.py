@@ -13,7 +13,7 @@ def remove_islands(frame_graph, list_of_islands):
     """Remove unconnected cells (Cells without neighbours)."""
 
     # remove islands from image and graph
-    for elemet in np.unique(list_of_islands):
-        frame_graph.remove_node(elemet)
+    for elem in np.unique(list_of_islands):
+        frame_graph.remove_node(elem)
 
     return frame_graph

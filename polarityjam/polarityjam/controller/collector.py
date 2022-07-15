@@ -1,11 +1,8 @@
-import numpy as np
 import pandas as pd
-
-from polarityjam.compute.compute import compute_reference_target_orientation_rad, compute_marker_vector_norm
 
 
 class Collector:
-    """Collects features "as they come" in a large dataset."""
+    """Collects features "as they come" in a large dataset. Not responsible for feature calculation!"""
 
     def __init__(self):
         self.dataset = pd.DataFrame()
@@ -126,7 +123,7 @@ class Collector:
 
     def collect_neighborhood_props(self, neighborhood_props_list):
         for index, neighborhood_props in enumerate(neighborhood_props_list):
-            index += 1
+            index += 1  # offset from pandas df header
             self.dataset.at[index, "neighbors_cell"] = neighborhood_props.num_neighbours
 
             # fill properties for first nearest neighbors
