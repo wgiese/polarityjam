@@ -5,13 +5,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from polarityjam.feature_extraction import get_features_from_cellpose_seg_multi_channel, Extractor
+from polarityjam.controller.extractor import Extractor
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
-from polarityjam.utils.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
-from polarityjam.utils.seg import load_or_get_cellpose_segmentation, get_image_for_segmentation
+from polarityjam.vizualization.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
+from polarityjam.compute.segmentation import load_or_get_cellpose_segmentation, get_image_for_segmentation
 
 
 def run(args):
@@ -48,38 +48,6 @@ def _finish(parameters, output_path):
     out_param = Path(output_path).joinpath("%s_param%s" % (get_doc_file_prefix(), ".yml"))
     get_logger().info("Writing parameter to disk: %s" % out_param)
     write_dict_to_yml(out_param, parameters)
-
-
-def _run(infile, parameters, output_path, fileout_name):
-    create_path_recursively(output_path)
-
-    # read input
-    img = read_image(infile)
-    img_seg = get_image_for_segmentation(parameters, img)
-
-    # plot input
-    plot_seg_channels(img_seg, output_path, fileout_name, parameters)
-
-    # basic segmentation
-    cellpose_mask = load_or_get_cellpose_segmentation(parameters, img_seg, infile)
-
-    # plot cellpose mask
-    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name, parameters)
-
-    # feature extraction
-    properties_df = get_features_from_cellpose_seg_multi_channel(
-        parameters, img, cellpose_mask, fileout_name, output_path
-    )
-
-    get_logger().info("Head of created dataset: \n %s" % properties_df.head())
-
-    # write output
-    fileout_base, _ = os.path.splitext(fileout_name)
-    fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
-    get_logger().info("Writing features to disk: %s" % fileout_path)
-    properties_df.to_csv(str(fileout_path), index=False)
-
-    return properties_df, cellpose_mask
 
 
 def _set_params(param):

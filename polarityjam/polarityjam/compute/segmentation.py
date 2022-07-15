@@ -7,6 +7,7 @@ from skimage import morphology
 
 from polarityjam.polarityjam_logging import get_logger
 
+
 def get_cellpose_model(parameters):
     """Gets the specified cellpose model"""
 
@@ -91,18 +92,6 @@ def load_or_get_cellpose_segmentation(parameters, img_seg, filepath):
     get_logger().info("Detected number of cellpose labels: %s" % len(np.unique(cellpose_mask)))
 
     return cellpose_mask
-
-
-def get_image_marker(parameters, img ):
-    """Gets the image of the marker channel specified in the parameters."""
-    if parameters["channel_expression_marker"] >= 0:
-        return img[:, :, parameters["channel_expression_marker"]]
-
-
-def get_image_junction(parameters, img):
-    """Gets the image of the junction channel specified in the parameters."""
-    if parameters["channel_junction"] >= 0:
-        return img[:, :, parameters["channel_junction"]]
 
 
 def get_image_for_segmentation(parameters, img):

@@ -4,11 +4,11 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from polarityjam.utils.seg import get_image_for_segmentation
-from polarityjam.utils.moran import run_morans
+from polarityjam.compute.segmentation import get_image_for_segmentation
+from polarityjam.compute.moran import run_morans
 from polarityjam.test.test_common import TestCommon
 from polarityjam.utils.io import read_parameters, read_image
-from polarityjam.utils.weights import W
+from polarityjam.model.weights import W
 
 
 class TestFunctions(TestCommon):

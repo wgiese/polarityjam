@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from skimage.future import graph
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils.masks import get_single_cell_mask, get_outline_from_mask
+from polarityjam.model.masks import get_single_cell_mask, get_outline_from_mask
 from polarityjam.utils.rag import orientation_graph_nf
 
 # for figure plot resolution

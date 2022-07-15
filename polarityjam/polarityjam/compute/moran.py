@@ -4,7 +4,7 @@ PERMUTATIONS = 999
 import numpy as np
 import scipy.stats as stats
 
-from polarityjam.utils.weights import W
+from polarityjam.model.weights import W
 
 
 # ### copied from pysal package esda moran see https://pysal.org/esda/generated/esda.Moran.html

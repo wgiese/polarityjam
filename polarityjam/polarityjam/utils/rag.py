@@ -1,8 +1,6 @@
 import numpy as np
 from skimage.future.graph import RAG
 
-from polarityjam.polarityjam_logging import get_logger
-
 
 def orientation_graph_nf(img):
     """Gets the RegionAdjacencyGraph for an instance segmentation """
