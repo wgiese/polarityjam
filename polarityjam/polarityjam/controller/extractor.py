@@ -68,7 +68,7 @@ class Extractor:
             return img[:, :, parameters.channel_organelle]
         return None
 
-    def extract(self, p):
+    def extract(self):
         """ Extracts the features from an input image."""
         # initialize graph - no features associated with nodes
         rag = orientation_graph_nf(self.masks.cell_mask)
@@ -132,7 +132,7 @@ class Extractor:
         self.collector.collect_neighborhood_props(neighborhood_props_list)
 
         plot_dataset(
-            p, self.img, self.collector.dataset, self.output_path, self.filename,
+            self.collector.dataset, self.output_path, self.filename,
             self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
             self.masks.organelle_mask,
             self.img_marker, self.img_junction

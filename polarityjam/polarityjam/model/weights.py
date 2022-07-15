@@ -1022,7 +1022,7 @@ class W(object):
             with ids in the weights.
         full : bool
             Write out the entire path for a shapefile (``True``) or
-            only the base of the shapefile without extension (``False``).
+            only the resources of the shapefile without extension (``False``).
             Default is ``True``.
         """
 

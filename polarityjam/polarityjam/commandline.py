@@ -39,7 +39,7 @@ def run(args):
     get_logger().info("Parameters: %s" % json.dumps(parameters, sort_keys=True, indent=4))
 
     # start routine
-    _run_oo(filepath, parameters, output_path, filename)
+    _run(filepath, parameters, output_path, filename)
     _finish(parameters, output_path)
 
 
@@ -60,7 +60,7 @@ def _set_params(param):
             raise KeyError from e
 
 
-def _run_oo(infile, param, output_path, fileout_name):
+def _run(infile, param, output_path, fileout_name):
     create_path_recursively(output_path)
 
     # set the parameters
@@ -71,17 +71,17 @@ def _run_oo(infile, param, output_path, fileout_name):
     img_seg = get_image_for_segmentation(param, img)
 
     # plot input
-    plot_seg_channels(img_seg, output_path, fileout_name, param)
+    plot_seg_channels(img_seg, output_path, fileout_name)
 
     # basic segmentation
     cellpose_mask = load_or_get_cellpose_segmentation(param, img_seg, infile)
 
     # plot cellpose mask
-    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name, param)
+    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
     e = Extractor(img, cellpose_mask, fileout_name, output_path)
-    properties_df = e.extract(param)
+    properties_df = e.extract()
 
     get_logger().info("Head of created dataset: \n %s" % properties_df.head())
 
