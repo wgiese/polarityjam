@@ -88,7 +88,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 
                 #radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
                 radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
-
+                
                 conditionalPanel(
                    condition = "input.data_upload_form == 'upload data'",
                    checkboxInput("terms_of_use", "I agree to terms of use", FALSE),
@@ -358,37 +358,63 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
       
 ### Panel C: Comparison statistics
 
-    tabPanel("Compare",                    
-        sidebarLayout(
-            sidebarPanel(
+tabPanel("Compare",                    
+         sidebarLayout(
+           sidebarPanel(
+             #                fileInput("control_condition", "Control condition",
+             #                            accept = c( "text/csv",
+             #                            "text/comma-separated-values,text/plain",
+             #                            ".csv")),    
+             #                tags$hr(),
+             #                checkboxInput("header_cond1", "File upload", TRUE),
+             
+             #                fileInput("condition_2", "Condition 2",
+             #                            accept = c( "text/csv",
+             #                            "text/comma-separated-values,text/plain",
+             #                            ".csv")), 
+             #                tags$hr(),
+             #                checkboxInput("header_cond2", "File upload", TRUE),
+             #                sliderInput("bins_comparison",
+             #                            "Number of bins:",
+             #                            min = 1,
+             #                            max = 30,
+             #                            value = 12),
+             
+             
+             selectInput("control_condition", "control condition", choices = ""),
+             selectInput("feature_comparison", "Choose a feature:",
+                         choices = c("organelle_orientation","major_axis_shape_orientation",
+                                     "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
+                                     "mean_expression","marker_polarity","area","perimeter")),
+             checkboxInput("kde_comparison", "KDE plot", FALSE),
+             checkboxInput("histogram_comparison", "Histogram plot", TRUE),
+             #                checkboxInput("split_view_comparison", "Split view", TRUE),
+           ),
+           mainPanel(
+             #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+             tabsetPanel(
+               tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+               tabPanel("CDF Plot", plotOutput("CDFPlot")), 
+               tabPanel("Statistics", tableOutput("comparison_statistics"))
+             )
+           )
+         )
+      ),
 
+### Panel D: Terms of Use
 
-            ),
-            mainPanel(
-                #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                tabsetPanel(
-                    tabPanel("Statistics", tableOutput("comparison_statistics"))
-                )
-            )
+tabPanel("Terms of Use",
+      sidebarLayout(
+        sidebarPanel(
+          checkboxInput("terms_of_use_all", "I agree to the terms of use", FALSE),
+        ),
+      mainPanel(
+        tabsetPanel(
+          tabPanel("Text", htmlOutput("terms_of_use_text_all"))
         )
-    ),
-
-### Panel C: Comparison statistics
-
-    tabPanel("Terms of Use",
-        sidebarLayout(
-            sidebarPanel(
-                checkboxInput("terms_of_use_all", "I agree to the terms of use", FALSE),
-            ),
-
-            mainPanel(
-                tabsetPanel(
-                    tabPanel("Text", htmlOutput("terms_of_use_text"))
-                )
-
-            )
-        )
+      )
     )
+  )
 
 )
 
@@ -649,6 +675,20 @@ server <- function(input, output, session) {
       
     }
   })
+  
+  output$terms_of_use_text_all <- renderText({
+    "
+    function that the merged stack of polarity data and angles in table format
+    "
+
+      #if ((input$data_upload_form == "upload data")) {
+      #HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
+      #HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
+      HTML("<p>  <font size='+2'> Terms of Use </font><br>
+           Text </p>")
+
+  })
+  
   
   output$merged_stack <- renderTable({
     "
