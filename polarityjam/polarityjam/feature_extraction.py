@@ -192,6 +192,8 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
                 set_single_cell_marker_cytosol_props(properties_dataset, index, single_cytosol_mask, im_marker)
 
         # append feature of interest to the RAG node for being able to do further analysis
+        # TODO: Does not work if there are only isolated, unconnected cells cells only compute if feature_of_interest
+
         foi = properties_dataset.at[index, parameters["feature_of_interest"]]
         foi_name = str(parameters["feature_of_interest"])
         rag.nodes[connected_component_label.astype('int')][foi_name] = foi
@@ -206,10 +208,17 @@ def get_features_from_cellpose_seg_multi_channel(parameters, img, cell_mask, fil
     get_logger().info("Leftover cells: %s" % str(len(np.unique(cell_mask)) - excluded))
 
     # morans I analysis based on FOI
-    fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
+    
+    if (len(rag.edges) > 0):
+        get_logger().info("Number of edges in adjacency graph: %s" % len(rag.edges))
+    
+        fill_morans_i(properties_dataset, rag, parameters["feature_of_interest"])
 
-    # neighborhood feature analysis based on FOI
-    k_neighbor_dif(properties_dataset, rag, parameters["feature_of_interest"])
+        # neighborhood feature analysis based on FOI
+        k_neighbor_dif(properties_dataset, rag, parameters["feature_of_interest"])
+    else:
+        get_logger().info("Skip Moran's I computation, adjacency graph has no edges")
+
 
     plot_dataset(
         parameters, img, properties_dataset, output_path, filename, cell_mask_rem_island, nuclei_mask, organelle_mask,

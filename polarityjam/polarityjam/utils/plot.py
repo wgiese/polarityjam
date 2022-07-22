@@ -647,7 +647,7 @@ def _calc_cell_orientation(single_cell_props, cell_mask):
         if row_label == 0:
             continue
         cell_orientation += get_single_cell_mask(row_label, cell_mask) * row[
-            'nuc_shape_orientation'] * 180.0 / np.pi
+            'cell_shape_orientation'] * 180.0 / np.pi
 
     get_logger().info("Maximal cell orientation: %s" % str(np.max(cell_orientation)))
     get_logger().info("Minimal cell orientation: %s" % str(np.min(cell_orientation)))

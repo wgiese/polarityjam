@@ -1,5 +1,24 @@
 
 
+compute_circular_mean <- function(circular_data) {
+  
+  sin_sum <- 0.0
+  cos_sum <- 0.0
+  
+  for (i in 1:length(circular_data)) {
+    angle <- circular_data[i]
+    sin_sum <- sin_sum + sin(angle)
+    cos_sum <- cos_sum + cos(angle)
+  }
+  
+  sin_mean <- sin_sum/length(circular_data)
+  cos_mean <- cos_sum/length(circular_data)
+  
+  angle_mean_rad <- atan2(sin_mean, cos_mean)
+  
+  return(angle_mean_rad)
+}
+
 compute_circular_statistics <- function(data, feature, parameters) {
 
     circular_data <- unlist(data[feature])
