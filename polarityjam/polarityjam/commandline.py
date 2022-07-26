@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from polarityjam.controller.extractor import Extractor
+from polarityjam.model.collection import PropertiesCollection
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
@@ -80,18 +81,19 @@ def _run(infile, param, output_path, fileout_name):
     plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
-    e = Extractor(img, cellpose_mask, fileout_name, output_path)
-    properties_df = e.extract()
+    e = Extractor()
+    c = PropertiesCollection()
+    properties_df = e.extract(img, cellpose_mask, fileout_name, output_path, c)
 
-    get_logger().info("Head of created dataset: \n %s" % properties_df.head())
+    get_logger().info("Head of created dataset: \n %s" % properties_df.dataset.head())
 
     # write output
     fileout_base, _ = os.path.splitext(fileout_name)
     fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
     get_logger().info("Writing features to disk: %s" % fileout_path)
-    properties_df.to_csv(str(fileout_path), index=False)
+    properties_df.dataset.to_csv(str(fileout_path), index=False)
 
-    return properties_df, cellpose_mask
+    return properties_df.dataset, cellpose_mask
 
 
 def run_stack(args):

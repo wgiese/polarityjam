@@ -11,16 +11,9 @@ from polarityjam.vizualization.plot import plot_dataset
 
 
 class Extractor:
-    def __init__(self, img, cells_mask, filename, output_path):
-        self.img = img
-        self.img_marker = self.get_image_marker(self.img)
-        self.img_junction = self.get_image_junction(self.img)
-        self.img_nucleus = self.get_image_nucleus(self.img)
-        self.img_organelle = self.get_image_organelle(self.img)
-        self.filename = filename
-        self.output_path = output_path
+    def __init__(self):
+        self.segmentor = None
         self.collector = PropertyCollector()
-        self.masks = MasksCollection(cells_mask)
 
     @staticmethod
     def threshold(single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
@@ -67,29 +60,36 @@ class Extractor:
             return img[:, :, parameters.channel_organelle]
         return None
 
-    def extract(self):
+    def extract(self, img, cells_mask, filename, output_path, collection):  # cells_mask = is going to be segementor
         """ Extracts the features from an input image."""
+
+        img_marker = self.get_image_marker(img)
+        img_junction = self.get_image_junction(img)
+        img_nucleus = self.get_image_nucleus(img)
+        img_organelle = self.get_image_organelle(img)
+
+        masks = MasksCollection(cells_mask)
+
         # initialize graph - no features associated with nodes
-        rag = orientation_graph_nf(self.masks.cell_mask)
-        list_of_islands = self.masks.set_cell_mask_rem_island(rag)
+        rag = orientation_graph_nf(masks.cell_mask)
+        list_of_islands = masks.set_cell_mask_rem_island(rag)
         rag = remove_islands(rag, list_of_islands)
 
         get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
-        self.masks.set_nuclei_mask(self.img_nucleus)
-        self.masks.set_organelle_mask(self.img_organelle)
+        masks.set_nuclei_mask(img_nucleus)
+        masks.set_organelle_mask(img_organelle)
 
         excluded = 0
         # iterate through each unique segmented cell
-        for index, connected_component_label in enumerate(np.unique(self.masks.cell_mask_rem_island)):
-            index -= excluded  # index should be continuous
+        for connected_component_label in np.unique(masks.cell_mask_rem_island):
 
             # ignore background
             if connected_component_label == 0:
                 continue
 
             # get single cell masks
-            sc_masks = SingleCellMaskCollector().calc_sc_masks(self.masks, connected_component_label, self.img_junction)
+            sc_masks = SingleCellMaskCollector().calc_sc_masks(masks, connected_component_label, img_junction)
 
             # threshold
             if self.threshold(
@@ -104,13 +104,13 @@ class Extractor:
                 continue
 
             sc_props_collection = SingleCellPropertyCollector().calc_sc_props(
-                sc_masks, self.img_marker, self.img_junction
+                sc_masks, img_marker, img_junction
             )
 
-            self.collector.collect_sc_props(sc_props_collection, index, self.filename, connected_component_label)
+            self.collector.collect_sc_props(sc_props_collection, collection, filename, connected_component_label)
 
             # append feature of interest to the RAG node for being able to do further analysis
-            foi_val = self.collector.dataset.at[index, parameters.feature_of_interest]
+            foi_val = self.collector.get_foi(collection)
             rag.nodes[connected_component_label.astype('int')][parameters.feature_of_interest] = foi_val
 
             get_logger().info(
@@ -122,17 +122,21 @@ class Extractor:
             )
 
         get_logger().info("Excluded cells: %s" % str(excluded))
-        get_logger().info("Leftover cells: %s" % str(len(np.unique(self.masks.cell_mask)) - excluded))
+        get_logger().info("Leftover cells: %s" % str(len(np.unique(masks.cell_mask)) - excluded))
 
         # morans I analysis based on FOI
         morans_i = run_morans(rag, parameters.feature_of_interest)
-        self.collector.collect_morans_i_props(morans_i)
+        num_cells = len(np.unique(masks.cell_mask_rem_island))
+        self.collector.collect_group_statistic(collection, morans_i, num_cells)
 
         # neighborhood feature analysis based on FOI
         neighborhood_props_list = k_neighbor_dif(rag, parameters.feature_of_interest)
-        self.collector.collect_neighborhood_props(neighborhood_props_list)
+        self.collector.collect_neighborhood_props(collection, neighborhood_props_list)
 
-        plot_dataset(self.collector.dataset, self.masks.cell_mask_rem_island, self.masks.nuclei_mask,
-                     self.masks.organelle_mask, self.img_marker, self.img_junction, self.filename, self.output_path)
+        # mark the beginning of a new image that is potentially extracted
+        self.collector.set_reset_index(collection)
 
-        return self.collector.dataset
+        plot_dataset(collection.dataset, masks.cell_mask_rem_island, masks.nuclei_mask,
+                     masks.organelle_mask, img_marker, img_junction, filename, output_path)
+
+        return collection

@@ -3,6 +3,7 @@ from scipy import ndimage as ndi
 import numpy as np
 import pandas as pd
 from polarityjam.compute.compute import otsu_thresh_mask
+from polarityjam.model.collection import PropertiesCollection
 
 from polarityjam.model.masks import SingleCellMasksCollection
 from polarityjam.model.properties import SingleCellCellProps, SingleCellNucleusProps, SingleCellOrganelleProps, \
@@ -16,34 +17,58 @@ class PropertyCollector:
     """Collects features "as they come" in a large dataset. Not responsible for feature calculation!"""
 
     def __init__(self):
-        self.dataset = pd.DataFrame()
+        pass
 
-    def collect_sc_props(self, sc_props, index, filename, connected_component_label):
-        self.collect_sc_general_props(index, filename, connected_component_label, sc_props.single_cell_props)
+    def collect_sc_props(self, sc_props, props_collection: PropertiesCollection, filename, connected_component_label):
+
+        props_collection.add_sc_general_props(filename, connected_component_label, sc_props.single_cell_props)
 
         if sc_props.marker_props:
-            self.collect_sc_marker_polarity_props(index, sc_props.marker_props)
+            props_collection.add_sc_marker_polarity_props(sc_props.marker_props)
 
         if sc_props.nucleus_props:
-            self.collect_sc_nucleus_props(index, sc_props.nucleus_props)
+            props_collection.add_sc_nucleus_props(sc_props.nucleus_props)
 
         if sc_props.organelle_props:
-            self.collect_sc_organelle_props(index, sc_props.organelle_props)
+            props_collection.add_sc_organelle_props(sc_props.organelle_props)
 
         if sc_props.marker_nuc_props:
-            self.collect_sc_marker_nuclei_props(index, sc_props.marker_nuc_props)
+            props_collection.add_sc_marker_nuclei_props(sc_props.marker_nuc_props)
 
         if sc_props.marker_nuc_cyt_props:
-            self.collect_sc_marker_nuclei_cytosol_props(index, sc_props.marker_nuc_cyt_props)
+            props_collection.add_sc_marker_nuclei_cytosol_props(sc_props.marker_nuc_cyt_props)
 
         if sc_props.marker_membrane_props:
-            self.collect_sc_marker_membrane_props(index, sc_props.marker_membrane_props)
+            props_collection.add_sc_marker_membrane_props(sc_props.marker_membrane_props)
 
         if sc_props.junction_props:
-            self.collect_sc_junction_props(index, sc_props.junction_props)
+            props_collection.add_sc_junction_props(sc_props.junction_props)
 
         if sc_props.junction_props:
-            self.collect_sc_junction_sec_stat_props(index, sc_props.junction_props)
+            props_collection.add_sc_junction_sec_stat_props(sc_props.junction_props)
+
+        props_collection.increase_index()
+
+    def collect_group_statistic(self, props_collection, morans_i, length):
+        props_collection.reset_index()
+        for i in range(1, length):
+            props_collection.add_morans_i_props(morans_i)
+            props_collection.increase_index()
+
+    def collect_neighborhood_props(self, props_collection, neighborhood_props_list):
+        props_collection.reset_index()
+        for neighborhood_props in neighborhood_props_list:
+            props_collection.add_neighborhood_props(neighborhood_props)
+            props_collection.increase_index()
+
+    def get_foi(self, props_collection):
+        return props_collection.dataset.at[props_collection.current_index() - 1, parameters.feature_of_interest]
+
+    def reset_index(self, props_collection):
+        props_collection.reset_index()
+
+    def set_reset_index(self, props_collection):
+        props_collection.set_reset_index()
 
     def collect_sc_marker_polarity_props(self, index, props):
         """Fills the dataset with the single cell marker properties."""
@@ -134,7 +159,7 @@ class PropertyCollector:
         self.dataset["morans_i"] = [morans_i.I] * len(self.dataset)
         self.dataset["morans_p_norm"] = [morans_i.p_norm] * len(self.dataset)
 
-    def collect_neighborhood_props(self, neighborhood_props_list):
+    def collect_neighborhood_propss(self, neighborhood_props_list):
         for index, neighborhood_props in enumerate(neighborhood_props_list):
             index += 1  # offset from pandas df header
             self.dataset.at[index, "neighbors_cell"] = neighborhood_props.num_neighbours

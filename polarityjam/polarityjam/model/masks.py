@@ -4,7 +4,6 @@ from scipy import ndimage as ndi
 
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
-from polarityjam.compute.compute import otsu_thresh_mask
 
 
 class SingleCellMasksCollection:
