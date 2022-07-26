@@ -2,20 +2,28 @@ import math
 
 import cv2
 import numpy as np
-from scipy.spatial import ConvexHull
 
 
 def get_corner(sc_img, epsilon=5):
-    contours, _ = cv2.findContours(sc_img.astype(bool).astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(sc_img.astype(bool).astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    idx_l = 0
+    len_l = 0
     if len(contours) > 1:
-        raise RuntimeError("Too many contours found. Expected a single contour for a single cell image!")
-    contours = contours[0].squeeze(1)
+        # only take the longest contour
+        for idx, c in enumerate(contours):
+            if len(c) > len_l:
+                idx_l = idx
+                len_l = len(c)
 
-    hull = ConvexHull(contours)
+    contours = contours[idx_l].squeeze(1)
 
-    corners = douglas_peucker(hull.points, epsilon)
+    # append first point to build a circular structure
+    contours = np.concatenate((contours, [contours[0]]))
 
-    return corners
+    corners = douglas_peucker(contours, epsilon)
+
+    return corners[:-1][:]  # last corner point forms circle
 
 
 def douglas_peucker(points, epsilon):

@@ -1,7 +1,7 @@
 import pandas as pd
+import json
 
-
-class Collector:
+class PropertyCollector:
     """Collects features "as they come" in a large dataset. Not responsible for feature calculation!"""
 
     def __init__(self):
@@ -108,6 +108,7 @@ class Collector:
         self.dataset.at[index, "junction_mean_expression"] = sc_junction_props.interface_props.mean_intensity
         self.dataset.at[
             index, "junction_protein_intensity"] = sc_junction_props.interface_props.mean_intensity * sc_junction_props.interface_props.area
+        self.dataset.at[index, "cell_corner_points"] = json.dumps(sc_junction_props.corners.tolist())
 
     def collect_sc_junction_sec_stat_props(self, index, sc_junction_props):
         # dataset.at[index, "junction_coverage_index"] = sc_junction_props.junction_coverage_index
@@ -137,3 +138,11 @@ class Collector:
             self.dataset.at[index, "neighbors_median_dif_2nd"] = neighborhood_props.median_dif_second_neighbors
             self.dataset.at[index, "neighbors_stddev_dif_2nd"] = neighborhood_props.var_dif_second_neighbors
             self.dataset.at[index, "neighbors_range_dif_2nd"] = neighborhood_props.range_dif_second_neighbors
+
+class SingleCellPropertyCollector:
+
+    def __init__(self):
+        pass
+
+    
+

@@ -1,6 +1,6 @@
 import numpy as np
 
-from polarityjam.controller.collector import Collector
+from polarityjam.controller.propertycollector import PropertyCollector
 from polarityjam.model.masks import MasksCollection, SingleCellMasksCollection
 from polarityjam.model.properties import SingleCellPropertiesCollection
 from polarityjam.polarityjam_logging import get_logger
@@ -20,7 +20,7 @@ class Extractor:
         self.img_organelle = self.get_image_organelle(self.img)
         self.filename = filename
         self.output_path = output_path
-        self.collector = Collector()
+        self.collector = PropertyCollector()
         self.masks = MasksCollection(cells_mask)
 
     @staticmethod
@@ -106,7 +106,7 @@ class Extractor:
                 continue
 
             sc_props = SingleCellPropertiesCollection()
-            sc_props.calc_sc_props(sc_masks, self.masks, self.img_marker, self.img_junction)
+            sc_props.set_sc_props(sc_masks, self.masks, self.img_marker, self.img_junction)
 
             self.collector.collect_sc_props(sc_props, index, self.filename, connected_component_label)
 

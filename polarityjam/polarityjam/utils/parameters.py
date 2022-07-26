@@ -13,6 +13,8 @@ min_cell_size = 50
 min_nucleus_size = 10
 min_organelle_size = 10
 
+dp_epsilon = 5
+
 ## spatial statistics
 feature_of_interest = "cell_area"
 

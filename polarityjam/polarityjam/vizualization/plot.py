@@ -1,3 +1,4 @@
+import json
 import math
 from pathlib import Path
 
@@ -6,12 +7,10 @@ import matplotlib as mpl
 import numpy as np
 import tifffile
 from matplotlib import pyplot as plt
-from skimage.future import graph
 
 from polarityjam.model.masks import get_single_cell_mask, get_outline_from_mask
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
-from polarityjam.utils.rag import orientation_graph_nf
 
 # for figure plot resolution  # todo: parameters?
 FIGURE_DPI = 300
@@ -431,6 +430,21 @@ def plot_marker_polarity(im_marker, cell_mask, single_cell_props, filename, outp
     # save output & close
     save_current_fig(parameters.graphics_output_format, output_path, filename, "_marker_polarity")
     plt.close(fig)
+
+
+def plot_corners(im_junction, single_cell_props, filename, output_path):
+    w, h = parameters.graphics_width, parameters.graphics_height
+    fig, ax = plt.subplots(1, figsize=(w, h))
+
+    # plot marker intensity
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    for index, row in single_cell_props.iterrows():
+        plt.scatter(np.array(json.loads(row["cell_corner_points"]))[:, 0],
+                    np.array(json.loads(row["cell_corner_points"]))[:, 1],
+                    [4]*len(np.array(json.loads(row["cell_corner_points"]))[:, 1]))
+
+    save_current_fig(parameters.graphics_output_format, output_path, filename, "_cell_corners")
 
 
 def plot_junction_polarity(im_junction, cell_mask, single_cell_props, filename, output_path):
@@ -887,11 +901,11 @@ def plot_ratio_method(im_junction, cell_mask, single_cell_props, filename, outpu
     plt.close(fig)
 
 
-def plot_adjacency_matrix(label_image, intensity_image):
-    # todo: needed?
-    rag = orientation_graph_nf(label_image)
-    out = graph.draw_rag(label_image, rag, intensity_image, node_color="#ffde00")
-    return out
+# def plot_adjacency_matrix(label_image, intensity_image):
+#    # todo: needed?
+#    rag = orientation_graph_nf(label_image)
+#    out = graph.draw_rag(label_image, rag, intensity_image, node_color="#ffde00")
+#    return out
 
 
 def plot_dataset(properties_ds, cell_mask, nuclei_mask, organelle_mask, img_marker, img_junction, filename,
@@ -946,6 +960,7 @@ def plot_dataset(properties_ds, cell_mask, nuclei_mask, organelle_mask, img_mark
             )
     if parameters.plot_junctions and img_junction is not None:
         plot_junction_polarity(img_junction, cell_mask, properties_ds, filename, output_path)
+        plot_corners(img_junction, properties_ds, filename, output_path)
 
     if parameters.plot_orientation:
         plot_eccentricity(img_junction, properties_ds, cell_mask, filename, output_path,

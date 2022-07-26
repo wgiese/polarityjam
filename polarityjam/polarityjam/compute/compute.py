@@ -1,3 +1,6 @@
+import collections
+import math
+
 import numpy as np
 import skimage.filters
 import skimage.measure
@@ -18,7 +21,7 @@ def compute_angle_deg(angle_rad):
 
 
 def compute_shape_orientation(orientation):
-    """Conputes the shape orientation with zero based on x-axis"""
+    """Computes the shape orientation with zero based on x-axis"""
     # note, the values of orientation from props are in [-pi/2,pi/2] with zero along the y-axis
     return np.pi / 2.0 + orientation
 
@@ -82,3 +85,16 @@ def compute_single_cell_prop(single_cell_mask, intensity=None):
     props = regions[-1]
 
     return props
+
+
+def straight_line_length(corners):
+    """Computes length between corners. Corner point assumed to be in the correct order."""
+    dist = []
+    for idx, c in enumerate(corners):
+        x = c
+        y = corners[idx + 1] if idx < (len(corners) - 1) else corners[0]
+
+        # dist between the corner to the next
+        dist.append(math.sqrt((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2))
+
+    return sum(dist)
