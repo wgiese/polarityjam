@@ -1,14 +1,13 @@
 import numpy as np
 
-from polarityjam.controller.collector import PropertyCollector, SingleCellPropertyCollector
-from polarityjam.model.masks import MasksCollection, SingleCellMasksCollection
-from polarityjam.model.properties import SingleCellPropertiesCollection
-from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils import parameters
 from polarityjam.compute.moran import run_morans
 from polarityjam.compute.neighborhood import k_neighbor_dif
-from polarityjam.vizualization.plot import plot_dataset
+from polarityjam.controller.collector import PropertyCollector, SingleCellPropertyCollector, SingleCellMaskCollector
+from polarityjam.model.masks import MasksCollection
+from polarityjam.polarityjam_logging import get_logger
+from polarityjam.utils import parameters
 from polarityjam.utils.rag import orientation_graph_nf, remove_islands
+from polarityjam.vizualization.plot import plot_dataset
 
 
 class Extractor:
@@ -90,8 +89,7 @@ class Extractor:
                 continue
 
             # get single cell masks
-            sc_masks = SingleCellMasksCollection(self.masks, connected_component_label)
-            sc_masks.calc_sc_masks(self.img_junction)
+            sc_masks = SingleCellMaskCollector().calc_sc_masks(self.masks, connected_component_label, self.img_junction)
 
             # threshold
             if self.threshold(
