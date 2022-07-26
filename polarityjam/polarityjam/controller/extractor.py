@@ -1,6 +1,6 @@
 import numpy as np
 
-from polarityjam.controller.propertycollector import PropertyCollector
+from polarityjam.controller.collector import PropertyCollector, SingleCellPropertyCollector
 from polarityjam.model.masks import MasksCollection, SingleCellMasksCollection
 from polarityjam.model.properties import SingleCellPropertiesCollection
 from polarityjam.polarityjam_logging import get_logger
@@ -105,10 +105,11 @@ class Extractor:
                 rag.remove_node(connected_component_label)
                 continue
 
-            sc_props = SingleCellPropertiesCollection()
-            sc_props.set_sc_props(sc_masks, self.masks, self.img_marker, self.img_junction)
+            sc_props_collection = SingleCellPropertyCollector().calc_sc_props(
+                sc_masks, self.img_marker, self.img_junction
+            )
 
-            self.collector.collect_sc_props(sc_props, index, self.filename, connected_component_label)
+            self.collector.collect_sc_props(sc_props_collection, index, self.filename, connected_component_label)
 
             # append feature of interest to the RAG node for being able to do further analysis
             foi_val = self.collector.dataset.at[index, parameters.feature_of_interest]

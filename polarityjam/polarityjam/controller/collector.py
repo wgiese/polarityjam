@@ -1,5 +1,13 @@
-import pandas as pd
 import json
+
+import pandas as pd
+
+from polarityjam.model.masks import SingleCellMasksCollection
+from polarityjam.model.properties import SingleCellCellProps, SingleCellNucleusProps, SingleCellOrganelleProps, \
+    SingleCellMarkerProps, SingleCellMarkerMembraneProps, SingleCellMarkerNucleiProps, SingleCellMarkerCytosolProps, \
+    SingleCellJunctionInterfaceProps, SingleCellJunctionProteinProps, SingleCellJunctionProteinCircularProps, \
+    SingleCellJunctionProps, SingleCellPropertiesCollection
+
 
 class PropertyCollector:
     """Collects features "as they come" in a large dataset. Not responsible for feature calculation!"""
@@ -47,8 +55,8 @@ class PropertyCollector:
         """Fills the dataset with the single cell nucleus properties."""
         self.dataset.at[index, "nuc_X"] = props.centroid[0]
         self.dataset.at[index, "nuc_Y"] = props.centroid[1]
-        self.dataset.at[index, "nuc_displacement_orientation_rad"] = props.nucleus_displacement_orientation_rad
-        self.dataset.at[index, "nuc_displacement_orientation_deg"] = props.nucleus_displacement_orientation_deg
+        self.dataset.at[index, "nuc_displacement_orientation_rad"] = props.nuc_displacement_orientation_rad
+        self.dataset.at[index, "nuc_displacement_orientation_deg"] = props.nuc_displacement_orientation_deg
         self.dataset.at[index, "nuc_shape_orientation"] = props.nuc_shape_orientation
         self.dataset.at[index, "nuc_major_axis_length"] = props.major_axis_length
         self.dataset.at[index, "nuc_minor_axis_length"] = props.minor_axis_length
@@ -70,6 +78,7 @@ class PropertyCollector:
         self.dataset.at[index, "cell_major_to_minor_ratio"] = props.cell_major_to_minor_ratio
         self.dataset.at[index, "cell_area"] = props.area
         self.dataset.at[index, "cell_perimeter"] = props.perimeter
+        self.dataset.at[index, "cell_corner_points"] = json.dumps(props.cell_corner_points.tolist())
 
     def collect_sc_organelle_props(self, index, organelle_props):
         """Fills the dataset with the single cell organelle properties."""
@@ -98,17 +107,16 @@ class PropertyCollector:
 
     def collect_sc_junction_props(self, index, sc_junction_props):
         """Fills the dataset with the single cell junction properties."""
-        junctions_centroid_x, junctions_centroid_y = sc_junction_props.circular_junction_props.weighted_centroid
+        junctions_centroid_x, junctions_centroid_y = sc_junction_props.sc_junction_protein_circular_props.weighted_centroid
 
         self.dataset.at[index, "junction_centroid_X"] = junctions_centroid_x
         self.dataset.at[index, "junction_centroid_Y"] = junctions_centroid_y
         self.dataset.at[index, "junction_perimeter"] = sc_junction_props.interface_perimeter
-        self.dataset.at[index, "junction_protein_area"] = sc_junction_props.junction_protein_area_props.area
+        self.dataset.at[index, "junction_protein_area"] = sc_junction_props.sc_junction_protein_props.area
         # dataset.at[index, "junction_fragmented_perimeter"] = sc_junction_props.junction_fragmented_perimeter
-        self.dataset.at[index, "junction_mean_expression"] = sc_junction_props.interface_props.mean_intensity
+        self.dataset.at[index, "junction_mean_expression"] = sc_junction_props.sc_junction_interface_props.mean_intensity
         self.dataset.at[
-            index, "junction_protein_intensity"] = sc_junction_props.interface_props.mean_intensity * sc_junction_props.interface_props.area
-        self.dataset.at[index, "cell_corner_points"] = json.dumps(sc_junction_props.corners.tolist())
+            index, "junction_protein_intensity"] = sc_junction_props.junction_protein_intensity
 
     def collect_sc_junction_sec_stat_props(self, index, sc_junction_props):
         # dataset.at[index, "junction_coverage_index"] = sc_junction_props.junction_coverage_index
@@ -139,10 +147,107 @@ class PropertyCollector:
             self.dataset.at[index, "neighbors_stddev_dif_2nd"] = neighborhood_props.var_dif_second_neighbors
             self.dataset.at[index, "neighbors_range_dif_2nd"] = neighborhood_props.range_dif_second_neighbors
 
+
 class SingleCellPropertyCollector:
 
     def __init__(self):
         pass
 
-    
+    def calc_sc_props(self, sc_masks: SingleCellMasksCollection, im_marker, im_junction):
+        """calculates all properties for the single cell"""
 
+        # properties for single cell
+        sc_cell_props = self.calc_sc_cell_props(sc_masks.sc_mask.astype(int))
+
+        # init optional properties
+        sc_nuc_props = None
+        sc_organelle_props = None
+        sc_marker_props = None
+        sc_marker_membrane_props = None
+        sc_marker_nuclei_props = None
+        sc_marker_cytosol_props = None
+        sc_junction_props = None
+
+        # properties for nucleus:
+        if sc_masks.sc_nucleus_mask is not None:
+            sc_nuc_props = self.calc_sc_nucleus_props(sc_masks.sc_nucleus_mask.astype(int), sc_cell_props)
+
+            # properties for organelle
+            if sc_nuc_props and sc_masks.sc_organelle_mask is not None:
+                sc_organelle_props = self.calc_sc_organelle_props(sc_masks.sc_organelle_mask.astype(int), sc_nuc_props)
+
+        # properties for marker
+        if im_marker is not None:
+            sc_marker_props = self.calc_sc_marker_props(sc_masks.sc_mask.astype(int), im_marker)
+            sc_marker_membrane_props = self.calc_sc_marker_membrane_props(sc_masks.sc_membrane_mask.astype(int), im_marker)
+
+            # properties for marker nuclei
+            if sc_masks.sc_nucleus_mask is not None:
+                sc_marker_nuclei_props = self.calc_sc_marker_nuclei_props(sc_masks.sc_nucleus_mask.astype(int), im_marker, sc_nuc_props, sc_marker_props)
+                sc_marker_cytosol_props = self.calc_sc_marker_cytosol_props(sc_masks.sc_cytosol_mask.astype(int), im_marker)
+
+        # properties for junctions
+        if im_junction is not None:
+            sc_junction_props = self.calc_sc_junction_props(
+                sc_masks.sc_mask.astype(int),
+                sc_masks.sc_membrane_mask.astype(int),
+                sc_masks.sc_junction_protein_area_mask.astype(int),
+                im_junction,
+                sc_masks.sc_junction_protein,
+                sc_cell_props.minor_axis_length
+            )
+
+        return SingleCellPropertiesCollection(
+            sc_cell_props,
+            sc_nuc_props,
+            sc_organelle_props,
+            sc_marker_props,
+            sc_marker_membrane_props,
+            sc_marker_nuclei_props,
+            sc_marker_cytosol_props,
+            sc_junction_props
+        )
+
+    @staticmethod
+    def calc_sc_cell_props(sc_mask):
+        return SingleCellCellProps(sc_mask)
+
+    @staticmethod
+    def calc_sc_nucleus_props(sc_nucleus_maks, sc_props):
+        return SingleCellNucleusProps(sc_nucleus_maks, sc_props)
+
+    @staticmethod
+    def calc_sc_organelle_props(sc_organelle_mask, nucleus_props):
+        return SingleCellOrganelleProps(sc_organelle_mask, nucleus_props)
+
+    @staticmethod
+    def calc_sc_marker_props(sc_mask, im_marker):
+        return SingleCellMarkerProps(sc_mask, im_marker)
+
+    @staticmethod
+    def calc_sc_marker_membrane_props(sc_membrane_mask, im_marker):
+        return SingleCellMarkerMembraneProps(sc_membrane_mask, im_marker)
+
+    @staticmethod
+    def calc_sc_marker_nuclei_props(sc_nucleus_mask, im_marker, nucleus_props, marker_props):
+        return SingleCellMarkerNucleiProps(sc_nucleus_mask, im_marker, nucleus_props, marker_props)
+
+    @staticmethod
+    def calc_sc_marker_cytosol_props(sc_cytosol_mask, im_marker):
+        return SingleCellMarkerCytosolProps(sc_cytosol_mask, im_marker)
+
+    @staticmethod
+    def calc_sc_junction_props(sc_mask, single_membrane_mask, single_junction_protein_area_mask,
+                               im_junction, im_junction_protein_single_cell, cell_minor_axis_length):
+
+        sc_junction_interface_props = SingleCellJunctionInterfaceProps(single_membrane_mask, im_junction)
+
+        sc_junction_protein_props = SingleCellJunctionProteinProps(single_junction_protein_area_mask,
+                                                                   im_junction_protein_single_cell)
+
+        sc_junction_protein_circular_props = SingleCellJunctionProteinCircularProps(im_junction_protein_single_cell,
+                                                                                    cell_minor_axis_length,
+                                                                                    sc_junction_interface_props.centroid)
+
+        return SingleCellJunctionProps(sc_junction_interface_props, sc_junction_protein_props,
+                                       sc_junction_protein_circular_props, sc_mask)
