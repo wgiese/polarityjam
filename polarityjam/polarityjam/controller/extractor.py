@@ -12,7 +12,7 @@ from polarityjam.vizualization.plot import plot_dataset
 
 class Extractor:
     def __init__(self):
-        self.segmentor = None
+        self.segmentor = None  # todo: this will become the segmentation module
         self.collector = PropertyCollector()
 
     @staticmethod
@@ -135,8 +135,8 @@ class Extractor:
 
         # mark the beginning of a new image that is potentially extracted
         self.collector.set_reset_index(collection)
-
-        plot_dataset(collection.dataset, masks.cell_mask_rem_island, masks.nuclei_mask,
-                     masks.organelle_mask, img_marker, img_junction, filename, output_path)
+        self.collector.add_out_path(collection, filename, output_path)
+        self.collector.add_img(collection, filename, img_nucleus, img_junction, img_marker)
+        self.collector.add_masks(collection, filename, masks)
 
         return collection

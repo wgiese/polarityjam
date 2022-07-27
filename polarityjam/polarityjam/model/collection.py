@@ -6,9 +6,9 @@ import pandas as pd
 class PropertiesCollection:
     def __init__(self):
         self.dataset = pd.DataFrame()
-        self.masks_list = []
-        self.filename_list = []
-        self.out_path_list = []
+        self.masks_dict = {}
+        self.out_path_dict = {}
+        self.img_channel_dict = {}
         self._index = 1
         self._reset_index = 1
 
@@ -27,7 +27,7 @@ class PropertiesCollection:
     def add_sc_marker_polarity_props(self, props):
         """Fills the dataset with the single cell marker properties."""
         self.dataset.at[self._index, "marker_mean_expr"] = props.mean_intensity
-        self.dataset.at[self._index, "marker_sum_expression"] = props.mean_intensity * props.area
+        self.dataset.at[self._index, "marker_sum_expression"] = props.mean_intensity * props.area  # todo: move elsewhere
         self.dataset.at[self._index, "marker_centroid_X"] = props.weighted_centroid[0]
         self.dataset.at[self._index, "marker_centroid_Y"] = props.weighted_centroid[1]
         self.dataset.at[self._index, "marker_centroid_orientation_rad"] = props.marker_centroid_orientation_rad
