@@ -7,7 +7,6 @@ from polarityjam.model.masks import MasksCollection
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
 from polarityjam.utils.rag import orientation_graph_nf, remove_islands
-from polarityjam.vizualization.plot import plot_dataset
 
 
 class Extractor:
