@@ -5,15 +5,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from polarityjam.compute.segmentation import load_or_get_cellpose_segmentation, get_image_for_segmentation
 from polarityjam.controller.extractor import Extractor
 from polarityjam.controller.plotter import Plotter
 from polarityjam.model.collection import PropertiesCollection
+from polarityjam.model.parameter import InputParameter, PlotParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils import parameters
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
-from polarityjam.vizualization.plot import plot_seg_channels, plot_cellpose_masks, set_figure_dpi
-from polarityjam.compute.segmentation import load_or_get_cellpose_segmentation, get_image_for_segmentation
+from polarityjam.vizualization.plot import set_figure_dpi
 
 
 def run(args):
@@ -72,32 +73,37 @@ def _run(infile, param, output_path, fileout_name):
     img = read_image(infile)
     img_seg = get_image_for_segmentation(param, img)
 
+    # plotter
+    params_plot = PlotParameter(param)
+    p = Plotter(params_plot)
+
     # plot input
-    plot_seg_channels(img_seg, output_path, fileout_name)
+    p.plot_seg_channels(img_seg, output_path, fileout_name)
 
     # basic segmentation
     cellpose_mask = load_or_get_cellpose_segmentation(param, img_seg, infile)
 
     # plot cellpose mask
-    plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
+    p.plot_cellpose_masks(img_seg, cellpose_mask, output_path, fileout_name)
 
     # feature extraction
-    e = Extractor()
+    params_input = InputParameter(param)
+    e = Extractor(params_input)
     c = PropertiesCollection()
-    collection = e.extract(img, cellpose_mask, fileout_name, output_path, c)
+    e.extract(img, cellpose_mask, fileout_name, output_path, c)
 
-    p = Plotter()
-    p.plot_collection(collection)
+    # vizualize
+    p.plot_collection(c)
 
-    get_logger().info("Head of created dataset: \n %s" % collection.dataset.head())
+    get_logger().info("Head of created dataset: \n %s" % c.dataset.head())
 
     # write output
     fileout_base, _ = os.path.splitext(fileout_name)
     fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
     get_logger().info("Writing features to disk: %s" % fileout_path)
-    collection.dataset.to_csv(str(fileout_path), index=False)
+    c.dataset.to_csv(str(fileout_path), index=False)
 
-    return collection.dataset, cellpose_mask
+    return c.dataset, cellpose_mask
 
 
 def run_stack(args):

@@ -71,6 +71,10 @@ class SingleCellNucleusProps(SingleCellProps):
         return compute_shape_orientation(self.orientation)  # TODO: should be nuc_shape_orientation_deg and rad ?
 
     @property
+    def nuc_shape_orientation_deg(self):
+        return compute_angle_deg(self.nuc_shape_orientation)
+
+    @property
     def nuc_major_to_minor_ratio(self):
         return self.major_axis_length / self.minor_axis_length
 

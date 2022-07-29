@@ -84,6 +84,7 @@ class PropertyCollector:
         # todo: check for duplication
         props_collection.masks_dict[filename] = masks
 
+
 class SingleCellPropertyCollector:
 
     def __init__(self):

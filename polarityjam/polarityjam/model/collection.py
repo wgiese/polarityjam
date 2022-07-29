@@ -1,5 +1,6 @@
 import json
 
+import numpy as np
 import pandas as pd
 
 
@@ -24,10 +25,23 @@ class PropertiesCollection:
     def reset_index(self):
         self._index = self._reset_index
 
+    def get_image_channel_by_img_name(self, img_name, channel) -> np.ndarray:
+        return self.img_channel_dict[img_name][channel]
+
+    def get_mask_by_img_name(self, img_name) -> np.ndarray:
+        return self.masks_dict[img_name]
+
+    def get_properties_by_img_name(self, img_name):
+        return self.dataset.loc[self.dataset["filename"] == img_name]
+
+    def get_out_path_by_name(self, img_name):
+        return self.out_path_dict[img_name]
+
     def add_sc_marker_polarity_props(self, props):
         """Fills the dataset with the single cell marker properties."""
         self.dataset.at[self._index, "marker_mean_expr"] = props.mean_intensity
-        self.dataset.at[self._index, "marker_sum_expression"] = props.mean_intensity * props.area  # todo: move elsewhere
+        self.dataset.at[
+            self._index, "marker_sum_expression"] = props.mean_intensity * props.area  # todo: move elsewhere
         self.dataset.at[self._index, "marker_centroid_X"] = props.weighted_centroid[0]
         self.dataset.at[self._index, "marker_centroid_Y"] = props.weighted_centroid[1]
         self.dataset.at[self._index, "marker_centroid_orientation_rad"] = props.marker_centroid_orientation_rad
@@ -40,6 +54,7 @@ class PropertiesCollection:
         self.dataset.at[self._index, "nuc_displacement_orientation_rad"] = props.nuc_displacement_orientation_rad
         self.dataset.at[self._index, "nuc_displacement_orientation_deg"] = props.nuc_displacement_orientation_deg
         self.dataset.at[self._index, "nuc_shape_orientation"] = props.nuc_shape_orientation
+        self.dataset.at[self._index, "nuc_shape_orientation_deg"] = props.nuc_shape_orientation_deg
         self.dataset.at[self._index, "nuc_major_axis_length"] = props.major_axis_length
         self.dataset.at[self._index, "nuc_minor_axis_length"] = props.minor_axis_length
         self.dataset.at[self._index, "nuc_area"] = props.area

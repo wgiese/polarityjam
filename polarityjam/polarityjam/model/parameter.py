@@ -7,11 +7,13 @@ from polarityjam.utils.io import read_parameters
 class Parameter:
 
     def __init__(self, *args, **kwargs):
-        if args == () and kwargs == {}:
-            # init with default values from resources
-            current_path = Path(os.path.dirname(os.path.realpath(__file__)))
-            param_base_file = Path(current_path).joinpath("..", "utils", "resources", "parameters.yml")
-            kwargs = read_parameters(param_base_file)
+        # init with default values from resources
+        current_path = Path(os.path.dirname(os.path.realpath(__file__)))
+        param_base_file = Path(current_path).joinpath("..", "utils", "resources", "parameters.yml")
+        args_init = read_parameters(param_base_file)
+
+        for key in args_init:
+            self._setattr(key, args_init[key])
 
         if args != ():
             for dictionary in args:
@@ -54,9 +56,6 @@ class SegmentationParameter(Parameter):
         self.estimated_cell_diameter = None
         self.use_gpu = None
         self.clear_border = None
-        self.min_cell_size = None
-        self.min_nucleus_size = None
-        self.min_organelle_size = None
 
         super().__init__(**attrs)
 
@@ -72,6 +71,9 @@ class InputParameter(Parameter):
         self.channel_expression_marker = None
         self.membrane_thickness = None
         self.feature_of_interest = None
+        self.min_cell_size = None
+        self.min_nucleus_size = None
+        self.min_organelle_size = None
 
         super().__init__(**attrs)
 
@@ -96,5 +98,6 @@ class PlotParameter(Parameter):
         self.dpi = None
         self.graphics_width = None
         self.graphics_height = None
+        self.membrane_thickness = None  # todo: remove me
 
         super().__init__(**attrs)

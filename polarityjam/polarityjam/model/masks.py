@@ -50,7 +50,7 @@ class MasksCollection:
     def set_nuclei_mask(self, img_nuclei):
         """Sets the nuclei mask."""
         nuclei_mask = None
-        if parameters.channel_nucleus >= 0:
+        if parameters.channel_nucleus >= 0:  # todo: extract me from model
             img_nuclei_blur = ndi.gaussian_filter(img_nuclei, sigma=3)
             nuclei_mask = np.where(img_nuclei_blur > skimage.filters.threshold_otsu(img_nuclei_blur), True, False)
             if self.cell_mask_rem_island is not None:
@@ -61,11 +61,11 @@ class MasksCollection:
 
     def set_organelle_mask(self, img_organelle):
         """Set the organelle mask."""
-        if self.cell_mask_rem_island is None:
+        if self.cell_mask_rem_island is None:  # todo: remove
             return None
 
         organelle_mask = None
-        if parameters.channel_organelle >= 0:
+        if parameters.channel_organelle >= 0:  # todo: extract me from model
             img_organelle_blur = ndi.gaussian_filter(img_organelle, sigma=3)
             organelle_mask_o = np.where(
                 img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False
@@ -76,7 +76,7 @@ class MasksCollection:
         return organelle_mask
 
 
-def get_single_cell_mask(connected_component_label, cell_mask):
+def get_single_cell_mask(cell_mask, connected_component_label):
     """Gets the single cell mask from a mask where each cell has an increasing connected component value."""
     return np.where(cell_mask == connected_component_label, 1, 0)  # convert connected_component_label to 1
 
