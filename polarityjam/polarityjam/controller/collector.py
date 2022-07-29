@@ -8,7 +8,6 @@ from polarityjam.model.properties import SingleCellCellProps, SingleCellNucleusP
     SingleCellMarkerProps, SingleCellMarkerMembraneProps, SingleCellMarkerNucleiProps, SingleCellMarkerCytosolProps, \
     SingleCellJunctionInterfaceProps, SingleCellJunctionProteinProps, SingleCellJunctionProteinCircularProps, \
     SingleCellJunctionProps, SingleCellPropertiesCollection
-from polarityjam.utils import parameters
 
 
 class PropertyCollector:
@@ -59,8 +58,8 @@ class PropertyCollector:
             props_collection.add_neighborhood_props(neighborhood_props)
             props_collection.increase_index()
 
-    def get_foi(self, props_collection):
-        return props_collection.dataset.at[props_collection.current_index() - 1, parameters.feature_of_interest]
+    def get_foi(self, props_collection, foi):
+        return props_collection.dataset.at[props_collection.current_index() - 1, foi]
 
     def reset_index(self, props_collection):
         props_collection.reset_index()
@@ -87,14 +86,14 @@ class PropertyCollector:
 
 class SingleCellPropertyCollector:
 
-    def __init__(self):
-        pass
+    def __init__(self, param):
+        self.param = param
 
     def calc_sc_props(self, sc_masks, im_marker, im_junction):
         """calculates all properties for the single cell"""
 
         # properties for single cell
-        sc_cell_props = self.calc_sc_cell_props(sc_masks.sc_mask.astype(int))
+        sc_cell_props = self.calc_sc_cell_props(sc_masks.sc_mask.astype(int), self.param)
 
         # init optional properties
         sc_nuc_props = None
@@ -133,7 +132,8 @@ class SingleCellPropertyCollector:
                 sc_masks.sc_membrane_mask.astype(int),
                 sc_masks.sc_junction_protein_area_mask.astype(int),
                 im_junction,
-                sc_cell_props.minor_axis_length
+                sc_cell_props.minor_axis_length,
+                self.param
             )
 
         return SingleCellPropertiesCollection(
@@ -148,8 +148,8 @@ class SingleCellPropertyCollector:
         )
 
     @staticmethod
-    def calc_sc_cell_props(sc_mask):
-        return SingleCellCellProps(sc_mask)
+    def calc_sc_cell_props(sc_mask, param):
+        return SingleCellCellProps(sc_mask, param)
 
     @staticmethod
     def calc_sc_nucleus_props(sc_nucleus_maks, sc_props):
@@ -177,7 +177,7 @@ class SingleCellPropertyCollector:
 
     @staticmethod
     def calc_sc_junction_props(sc_mask, single_membrane_mask, single_junction_protein_area_mask,
-                               im_junction, cell_minor_axis_length):
+                               im_junction, cell_minor_axis_length, param):
 
         im_junction_protein_single_cell = otsu_thresh_mask(single_membrane_mask, im_junction)
 
@@ -193,7 +193,7 @@ class SingleCellPropertyCollector:
         )
 
         return SingleCellJunctionProps(sc_junction_interface_props, sc_junction_protein_props,
-                                       sc_junction_protein_circular_props, sc_mask)
+                                       sc_junction_protein_circular_props, sc_mask, param)
 
 
 class SingleCellMaskCollector:
@@ -201,10 +201,10 @@ class SingleCellMaskCollector:
     def __init__(self):
         pass
 
-    def calc_sc_masks(self, masks, connected_component_label, im_junction):
+    def calc_sc_masks(self, masks, connected_component_label, im_junction, membrane_thickness):
         sc_mask = self.get_sc_mask(masks.cell_mask_rem_island, connected_component_label)
 
-        sc_membrane_mask = self.get_sc_membrane_mask(sc_mask, parameters.membrane_thickness)
+        sc_membrane_mask = self.get_sc_membrane_mask(sc_mask, membrane_thickness)
 
         # init optional sc masks
         sc_nucleus_mask = None

@@ -3,7 +3,6 @@ import skimage.filters
 from scipy import ndimage as ndi
 
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils import parameters
 
 
 class SingleCellMasksCollection:
@@ -49,29 +48,22 @@ class MasksCollection:
 
     def set_nuclei_mask(self, img_nuclei):
         """Sets the nuclei mask."""
-        nuclei_mask = None
-        if parameters.channel_nucleus >= 0:  # todo: extract me from model
-            img_nuclei_blur = ndi.gaussian_filter(img_nuclei, sigma=3)
-            nuclei_mask = np.where(img_nuclei_blur > skimage.filters.threshold_otsu(img_nuclei_blur), True, False)
-            if self.cell_mask_rem_island is not None:
-                nuclei_mask = nuclei_mask * self.cell_mask_rem_island
-            self.nuclei_mask = nuclei_mask
+        img_nuclei_blur = ndi.gaussian_filter(img_nuclei, sigma=3)
+        nuclei_mask = np.where(img_nuclei_blur > skimage.filters.threshold_otsu(img_nuclei_blur), True, False)
+        if self.cell_mask_rem_island is not None:
+            nuclei_mask = nuclei_mask * self.cell_mask_rem_island
+        self.nuclei_mask = nuclei_mask
 
         return nuclei_mask
 
     def set_organelle_mask(self, img_organelle):
         """Set the organelle mask."""
-        if self.cell_mask_rem_island is None:  # todo: remove
-            return None
-
-        organelle_mask = None
-        if parameters.channel_organelle >= 0:  # todo: extract me from model
-            img_organelle_blur = ndi.gaussian_filter(img_organelle, sigma=3)
-            organelle_mask_o = np.where(
-                img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False
-            )
-            organelle_mask = organelle_mask_o * self.cell_mask_rem_island
-            self.organelle_mask = organelle_mask
+        img_organelle_blur = ndi.gaussian_filter(img_organelle, sigma=3)
+        organelle_mask_o = np.where(
+            img_organelle_blur > skimage.filters.threshold_otsu(img_organelle_blur), True, False
+        )
+        organelle_mask = organelle_mask_o * self.cell_mask_rem_island
+        self.organelle_mask = organelle_mask
 
         return organelle_mask
 

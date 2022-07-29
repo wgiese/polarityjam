@@ -6,7 +6,6 @@ from polarityjam.compute.compute import map_single_cell_to_circle, compute_refer
     compute_angle_deg, compute_marker_vector_norm, compute_shape_orientation, \
     straight_line_length
 from polarityjam.compute.corner import get_corner
-from polarityjam.utils import parameters
 
 
 class SingleCellProps(RegionProperties):
@@ -32,7 +31,8 @@ class SingleCellProps(RegionProperties):
 
 class SingleCellCellProps(SingleCellProps):
 
-    def __init__(self, single_cell_mask):
+    def __init__(self, single_cell_mask, param):
+        self.param = param
         super().__init__(single_cell_mask)
 
     @property
@@ -46,7 +46,7 @@ class SingleCellCellProps(SingleCellProps):
 
     @property
     def cell_corner_points(self):
-        return get_corner(self._mask, parameters.dp_epsilon)
+        return get_corner(self._mask, self.param.dp_epsilon)
 
 
 class SingleCellNucleusProps(SingleCellProps):
@@ -183,15 +183,16 @@ class SingleCellJunctionProteinCircularProps(SingleCellProps):
 
 class SingleCellJunctionProps:
     def __init__(self, sc_junction_interface_props, sc_junction_protein_props, sc_junction_protein_circular_props,
-                 sc_mask):
+                 sc_mask, params):
         self.sc_mask = sc_mask
         self.sc_junction_interface_props = sc_junction_interface_props
         self.sc_junction_protein_props = sc_junction_protein_props
         self.sc_junction_protein_circular_props = sc_junction_protein_circular_props
+        self.params = params
 
     @property
     def straight_line_junction_length(self):
-        return straight_line_length(get_corner(self.sc_mask, parameters.dp_epsilon))
+        return straight_line_length(get_corner(self.sc_mask, self.params.dp_epsilon))
 
     @property
     def interface_perimeter(self):

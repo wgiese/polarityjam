@@ -11,7 +11,6 @@ from polarityjam.controller.plotter import Plotter
 from polarityjam.model.collection import PropertiesCollection
 from polarityjam.model.parameter import InputParameter, PlotParameter
 from polarityjam.polarityjam_logging import get_logger
-from polarityjam.utils import parameters
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
 from polarityjam.vizualization.plot import set_figure_dpi
@@ -53,21 +52,8 @@ def _finish(parameters, output_path):
     write_dict_to_yml(out_param, parameters)
 
 
-def _set_params(param):
-    # set parameters
-    for key in param.keys():
-        try:
-            setattr(parameters, str(key), param[key])
-        except KeyError as e:
-            get_logger().info("Key \"%s\"in parameters file specified that is unknown!" % str(key))
-            raise KeyError from e
-
-
 def _run(infile, param, output_path, fileout_name):
     create_path_recursively(output_path)
-
-    # set the parameters
-    _set_params(param)
 
     # read input
     img = read_image(infile)

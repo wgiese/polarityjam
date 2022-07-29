@@ -72,8 +72,11 @@ class Extractor:
 
         get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
-        masks.set_nuclei_mask(img_nucleus)
-        masks.set_organelle_mask(img_organelle)
+        if self.params.channel_nucleus >= 0:
+            masks.set_nuclei_mask(img_nucleus)
+
+        if self.params.channel_organelle >= 0:
+            masks.set_organelle_mask(img_organelle)
 
         excluded = 0
         # iterate through each unique segmented cell
@@ -84,7 +87,9 @@ class Extractor:
                 continue
 
             # get single cell masks
-            sc_masks = SingleCellMaskCollector().calc_sc_masks(masks, connected_component_label, img_junction)
+            sc_masks = SingleCellMaskCollector().calc_sc_masks(
+                masks, connected_component_label, img_junction, self.params.membrane_thickness
+            )
 
             # threshold
             if self.threshold(
@@ -98,14 +103,14 @@ class Extractor:
                 rag.remove_node(connected_component_label)
                 continue
 
-            sc_props_collection = SingleCellPropertyCollector().calc_sc_props(
+            sc_props_collection = SingleCellPropertyCollector(self.params).calc_sc_props(
                 sc_masks, img_marker, img_junction
             )
 
             self.collector.collect_sc_props(sc_props_collection, collection, filename, connected_component_label)
 
             # append feature of interest to the RAG node for being able to do further analysis
-            foi_val = self.collector.get_foi(collection)
+            foi_val = self.collector.get_foi(collection, self.params.feature_of_interest)
             rag.nodes[connected_component_label.astype('int')][self.params.feature_of_interest] = foi_val
 
             get_logger().info(

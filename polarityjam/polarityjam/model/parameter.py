@@ -74,6 +74,7 @@ class InputParameter(Parameter):
         self.min_cell_size = None
         self.min_nucleus_size = None
         self.min_organelle_size = None
+        self.dp_epsilon = None
 
         super().__init__(**attrs)
 

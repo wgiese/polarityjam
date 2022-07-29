@@ -15,6 +15,7 @@ min_organelle_size: 10
 
 ## spatial statistics
 feature_of_interest: cell_area
+dp_epsilon: 5
 
 ## plot options
 plot_junctions: True
