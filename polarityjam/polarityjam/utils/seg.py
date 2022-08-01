@@ -32,10 +32,10 @@ def get_cellpose_segmentation(parameters, im_seg, filepath):
     # masks, flows, styles, diams = model.eval(im_seg, channels=channels)
 
     if parameters["cp_model_type"] == "custom":
-        masks, flows, styles = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels)
+        masks, flows, styles = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"], channels=channels, flow_threshold=parameters["flow_threshold"])
     else:
         masks, flows, styles, diams = model.eval(im_seg, diameter=parameters["estimated_cell_diameter"],
-                                                 channels=channels)
+                                                 channels=channels, flow_threshold=parameters["flow_threshold"])
 
     if parameters["store_segmentation"]:
         segmentation_list = {"masks": masks}

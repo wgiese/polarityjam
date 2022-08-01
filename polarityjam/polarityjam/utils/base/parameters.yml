@@ -6,6 +6,8 @@ use_given_mask: True
 cp_model_type : "cyto"  # "cyto", "cyto2", "custom"
 cp_model_path : ""
 estimated_cell_diameter : 100
+estimated_cell_diameter : 100
+flow_threshold : 0.4 # default cellpose value for the flow threshold
 
 use_gpu:  False
 clear_border: True
