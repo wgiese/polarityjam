@@ -65,7 +65,7 @@ class Plotter:
 
         return [outlines_cell, outlines_mem_accumulated]
 
-    def plot_seg_channels(self, seg_img, output_path, filename):
+    def plot_seg_channels(self, seg_img, output_path, filename, close=False):
         """Plots the separate channels from the input file given."""
         get_logger().info("Plotting: input channels")
 
@@ -86,9 +86,11 @@ class Plotter:
                 ax.axis('off')
             ax.imshow(seg_img[:, :])
         plt.savefig(filename_out)  # todo: refactor to own safe fkt
-        plt.close(fig)
 
-    def plot_cellpose_masks(self, seg_img, cellpose_mask, output_path, filename):
+        if close:
+            plt.close(fig)
+
+    def plot_cellpose_masks(self, seg_img, cellpose_mask, output_path, filename, close=False):
         """Plots the cellpose segmentation output, together with the separate channels from the input image."""
         get_logger().info("Plotting: cellpose masks")
 
@@ -121,9 +123,10 @@ class Plotter:
             output_path, filename,
             "_cellpose_seg",
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_organelle_polarity(self, collection, img_name):
+    def plot_organelle_polarity(self, collection, img_name, close=False):
         im_junction = collection.get_image_channel_by_img_name(img_name, "junction")
         cell_mask = collection.get_mask_by_img_name(img_name).cell_mask_rem_island
         nuclei_mask = collection.get_mask_by_img_name(img_name).nuclei_mask
@@ -171,9 +174,10 @@ class Plotter:
             "_nuclei_organelle_vector",
             image=polarity_angle
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_nuc_displacement_orientation(self, collection, img_name):
+    def plot_nuc_displacement_orientation(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         nuclei_mask = collection.masks_dict[img_name].nuclei_mask
@@ -222,9 +226,10 @@ class Plotter:
             "_nucleus_displacement_orientation",
             image=nuc_polarity_angle
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_marker_expression(self, collection, img_name):
+    def plot_marker_expression(self, collection, img_name, close=False):
         im_marker = collection.img_channel_dict[img_name]["marker"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         single_cell_dataset = collection.dataset.loc[collection.dataset["filename"] == img_name]
@@ -289,9 +294,10 @@ class Plotter:
             img_name,
             "_marker_expression"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_marker_polarity(self, collection, img_name):
+    def plot_marker_polarity(self, collection, img_name, close=False):
         im_marker = collection.img_channel_dict[img_name]["marker"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         img_name = img_name
@@ -333,9 +339,10 @@ class Plotter:
         save_current_fig(
             self.params.graphics_output_format, collection.get_out_path_by_name(img_name), img_name, "_marker_polarity"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_marker_nucleus_orientation(self, collection, img_name):
+    def plot_marker_nucleus_orientation(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         nuclei_mask = collection.masks_dict[img_name].nuclei_mask
@@ -384,9 +391,10 @@ class Plotter:
             "_marker_nucleus_orientation",
             image=nuc_polarity_angle
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_junction_polarity(self, collection, img_name):
+    def plot_junction_polarity(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
 
@@ -431,9 +439,10 @@ class Plotter:
             img_name,
             "_junction_polarity"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_corners(self, collection, img_name):
+    def plot_corners(self, collection, img_name, close=False):
         fig, ax = self._get_figure(1)
 
         # plot marker intensity
@@ -446,8 +455,10 @@ class Plotter:
 
         save_current_fig(self.params.graphics_output_format, collection.out_path_dict[img_name], img_name,
                          "_cell_corners")
+        if close:
+            plt.close(fig)
 
-    def plot_eccentricity(self, collection, img_name):
+    def plot_eccentricity(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         nuclei_mask = collection.masks_dict[img_name].nuclei_mask
@@ -521,9 +532,10 @@ class Plotter:
         save_current_fig(
             self.params.graphics_output_format, collection.get_out_path_by_name(img_name), img_name, "_eccentricity"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_ratio_method(self, collection, img_name):
+    def plot_ratio_method(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
 
@@ -590,9 +602,10 @@ class Plotter:
             img_name,
             "_ratio_method"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_orientation(self, collection, img_name):
+    def plot_orientation(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
         nuclei_mask = collection.masks_dict[img_name].nuclei_mask
@@ -668,9 +681,10 @@ class Plotter:
             img_name,
             "_shape_orientation"
         )
-        plt.close(fig)
+        if close:
+            plt.close(fig)
 
-    def plot_collection(self, collection: PropertiesCollection):
+    def plot_collection(self, collection: PropertiesCollection, close=False):
         """Plots the properties dataset"""
         get_logger().info("Plotting...")
 
@@ -682,25 +696,25 @@ class Plotter:
             img_junction = collection.img_channel_dict[key]["junction"]
 
             if self.params.plot_polarity and nuclei_mask is not None and organelle_mask is not None:
-                self.plot_organelle_polarity(collection, key)
+                self.plot_organelle_polarity(collection, key, close)
                 if nuclei_mask is not None:
-                    self.plot_nuc_displacement_orientation(collection, key)
+                    self.plot_nuc_displacement_orientation(collection, key, close)
 
             if self.params.plot_marker and img_marker is not None:
-                self.plot_marker_expression(collection, key)
-                self.plot_marker_polarity(collection, key)
+                self.plot_marker_expression(collection, key, close)
+                self.plot_marker_polarity(collection, key, close)
                 if nuclei_mask is not None:
-                    self.plot_marker_nucleus_orientation(collection, key)
+                    self.plot_marker_nucleus_orientation(collection, key, close)
 
             if self.params.plot_junctions and img_junction is not None:
-                self.plot_junction_polarity(collection, key)
-                self.plot_corners(collection, key)
+                self.plot_junction_polarity(collection, key, close)
+                self.plot_corners(collection, key, close)
 
             if self.params.plot_orientation:
-                self.plot_eccentricity(collection, key)
+                self.plot_eccentricity(collection, key, close)
 
             if self.params.plot_ratio_method:
-                self.plot_ratio_method(collection, key)
+                self.plot_ratio_method(collection, key, close)
 
             if self.params.plot_cyclic_orientation:
-                self.plot_orientation(collection, key)
+                self.plot_orientation(collection, key, close)

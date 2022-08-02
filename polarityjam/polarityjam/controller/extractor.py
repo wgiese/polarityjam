@@ -15,6 +15,18 @@ class Extractor:
         self.segmentor = None  # todo: this will become the segmentation module
         self.collector = PropertyCollector()
 
+    def get_image_for_segmentation(self, img):
+        """Returns segmentation (junction, nucleus) if multichannel, else junction only."""
+        get_logger().info("Image shape: %s" % str(img.shape))
+
+        # add debug out output here
+        im_junction = self.get_image_junction(img)
+        im_nucleus = self.get_image_nucleus(img)
+        if im_nucleus is not None:
+            return np.array([im_junction, im_nucleus])
+        else:
+            return im_junction
+
     def threshold(self, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
         """Thresholds given single_cell_mask. Returns True if falls under threshold."""
         # TODO: check if this can be removed, we already remove small objects from the cellpose mask
@@ -34,24 +46,28 @@ class Extractor:
     def get_image_marker(self, img):
         """Gets the image of the marker channel specified in the self.params."""
         if self.params.channel_expression_marker >= 0:
+            get_logger().info("Marker channel at position: %s" % str(self.params.channel_expression_marker))
             return img[:, :, self.params.channel_expression_marker]
         return None
 
     def get_image_junction(self, img):
         """Gets the image of the junction channel specified in the self.params."""
         if self.params.channel_junction >= 0:
+            get_logger().info("Junction channel at position: %s" % str(self.params.channel_junction))
             return img[:, :, self.params.channel_junction]
         return None
 
     def get_image_nucleus(self, img):
         """Gets the image of the nucleus channel specified in the self.params."""
         if self.params.channel_nucleus >= 0:
+            get_logger().info("Nucleus channel at position: %s" % str(self.params.channel_nucleus))
             return img[:, :, self.params.channel_nucleus]
         return None
 
     def get_image_organelle(self, img):
         """Gets the image of the organelle channel specified in the self.params."""
         if self.params.channel_organelle >= 0:
+            get_logger().info("Organelle channel at position: %s" % str(self.params.channel_organelle))
             return img[:, :, self.params.channel_organelle]
         return None
 

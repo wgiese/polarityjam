@@ -34,8 +34,8 @@ class Parameter:
 
         cls(**params)
 
-    def __str__(self, indent=2):
-        s = '\n'
+    def __str__(self, indent=1):
+        s = '%s  \n' % self.__class__.__name__
         for attr in self.__dict__:
             for i in range(0, indent):
                 s += '\t'
@@ -56,6 +56,7 @@ class SegmentationParameter(Parameter):
         self.estimated_cell_diameter = None
         self.use_gpu = None
         self.clear_border = None
+        self.min_cell_size = None
 
         super().__init__(**attrs)
 
