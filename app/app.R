@@ -58,6 +58,9 @@ option_list <- list(
 )
 opt = parse_args(OptionParser(option_list = option_list))
 
+# Discussion of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
+# Color palettes Paul Tol: https://personal.sron.nl/~pault/
+
 #From Paul Tol: https://personal.sron.nl/~pault/
 Tol_bright <- c('#EE6677', '#228833', '#4477AA', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB')
 
@@ -74,17 +77,30 @@ vals <- reactiveValues(count=0)
 
 ###### UI: User interface #########
 
-ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta 0.2)",
+ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta version)",
 
 ### Panel 0: Data preparation
 
     tabPanel("Data preparation",
         sidebarLayout(
             sidebarPanel(
-                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
+
+                
+                #radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
+                radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
                 
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'example 1'",
+                   condition = "input.data_upload_form == 'upload data'",
+                   checkboxInput("terms_of_use", "I agree to terms of use", FALSE),
+                ),
+                 
+                conditionalPanel(
+                  condition = "input.terms_of_use == true",
+                  radioButtons("data_upload_source", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
+                ), 
+
+                conditionalPanel(
+                    condition = "(input.data_upload_source == 'single file') & (input.terms_of_use == true)",
                     fileInput("stackData", "Upload data file",
                             accept = c( "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -93,19 +109,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                     checkboxInput("header_correlation", "File upload", TRUE),
                 ),
 
-
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'single file'",
-                    fileInput("stackData", "Upload data file",
-                            accept = c( "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv",".xlsx")),
-                            tags$hr(),
-                    checkboxInput("header_correlation", "File upload", TRUE),
-                ),
-
-                conditionalPanel(
-                    condition = "input.data_upload_form == 'folder'",
+                    condition = "(input.data_upload_source == 'folder') & (input.terms_of_use == true)",
                     shinyDirButton("dir", "Input directory", "Upload"),
                     verbatimTextOutput("dir", placeholder = TRUE),
                     actionButton("refreshStack", "Refresh"),
@@ -113,7 +118,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 
 
                 conditionalPanel(
-                    condition = "input.data_upload_form == 'key file'",
+                    condition = "(input.data_upload_source == 'key file') & (input.terms_of_use == true)",
                     fileInput("keyData", "Upload catalogue",
                             accept = c( "text/csv",
                             "text/comma-separated-values,text/plain",
@@ -159,7 +164,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             # Show a plot of the generated distribution
             mainPanel(
                 tabsetPanel(
-                    tabPanel("Table", tableOutput("merged_stack"))
+                    tabPanel("Data", htmlOutput("terms_of_use_text"), tableOutput("merged_stack"))
                 )
             )
         )
@@ -174,27 +179,12 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 #                shinyDirButton("dir", "Input directory", "Upload"),
 #                verbatimTextOutput("dir", placeholder = TRUE),
 #                actionButton("refreshStack", "Refresh"),
-                sliderInput("bins",
-                            "Number of bins:",
-                            min = 4,
-                            max = 36,
-                            value = 12),
-                sliderInput("min_eccentricity",
-                            "Mininum eccentricity",
-                            min = 0,
-                            max = 1,
-                            step = 0.1,
-                            value = 0.0),
-                sliderInput("min_nuclei_golgi_dist",
-                            "Minimum nuclei golgi distance",
-                            min = 0,
-                            max = 10,
-                            step = 1,
-                            value = 0),
-                selectInput("feature_select", "Choose a feature:",
-                            choices = c("organelle_orientation", "cell_shape_orientation",
-                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
-                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
+
+                selectInput("feature_select", "Choose a feature:", choices = ""),
+#                selectInput("feature_select", "Choose a feature:",
+#                            choices = c("organelle_orientation", "cell_shape_orientation",
+#                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
+#                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
                 selectInput("stats_method", "Choose a stats test", 
                             choices = c("None", "Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test")),
                 conditionalPanel(
@@ -212,11 +202,39 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                                 choices = c("95% CI of the mean","90% CI of the mean","50% CI of the mean", 
                                 "circular standard deviation", "angular standard deviation"))
                 ),
-                checkboxInput("kde_plot", "KDE plot", FALSE),
-                checkboxInput("scatter_plot", "Scatter plot", FALSE),
+
                 checkboxInput("histogram_plot", "Histogram plot", TRUE),
+                conditionalPanel(
+                  condition = "input.histogram_plot == true",
+                  sliderInput("bins",
+                            "Number of bins:",
+                            min = 4,
+                            max = 36,
+                            value = 12),
+                ),
+                checkboxInput("scatter_plot", "Scatter plot", FALSE),
+                checkboxInput("kde_plot", "KDE plot", FALSE),
+                
                 checkboxInput("area_scaled", "area scaled histogram", TRUE),
                 #checkboxInput("left_axial", "hemirose on left", FALSE),
+                
+                checkboxInput("filter_data", "filter data", FALSE),
+                conditionalPanel(
+                  condition = "input.filter_data == true",
+                  sliderInput("min_eccentricity",
+                            "Mininum eccentricity",
+                            min = 0,
+                            max = 1,
+                            step = 0.1,
+                            value = 0.0),
+                  sliderInput("min_nuclei_golgi_dist",
+                            "Minimum nuclei golgi distance",
+                            min = 0,
+                            max = 10,
+                            step = 1,
+                            value = 0),
+                ),
+                
  
                 selectInput("plot_mode", "Choose data modality:",
                             choices = c("circular", "semicircular", "linear")),
@@ -248,8 +266,8 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 
                 selectInput("dataset", "Choose a dataset:",
                             choices = c("statistics_file","merged_plot_file","multi_plot_file")),
-                selectInput("image_file_format", "Choose image file format:",
-                            choices = c(".pdf",".eps",".png")),
+                #selectInput("image_file_format", "Choose image file format:",
+                #            choices = c(".pdf",".eps",".png")),
                 downloadButton("downloadData", "Download")
             ),
                 
@@ -257,18 +275,20 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
             mainPanel(
                 tabsetPanel(
 #                    tabPanel("Table", tableOutput("merged_stack")),
-                    tabPanel("Plot", downloadButton("downloadMergedPlotPDF", "Download pdf-file"), 
+                    tabPanel("Plot", downloadButton("downloadMultiPlotPDF", "Download pdf-file"), 
+                           downloadButton("downloadMultiPlotEPS", "Download eps-file"), 
+                           downloadButton("downloadMultiPlotSVG", "Download svg-file"), 
+                           downloadButton("downloadMultiPlotPNG", "Download png-file"),
+                           div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("multi_dist_plot", height="120%"))),
+                           #textOutput("parameter_error"),
+                           NULL,
+                    ),
+                    tabPanel("MergedPlot", downloadButton("downloadMergedPlotPDF", "Download pdf-file"), 
                             downloadButton("downloadMergedPlotEPS", "Download eps-file"), 
                             downloadButton("downloadMergedPlotSVG", "Download svg-file"), 
                             downloadButton("downloadMergedPlotPNG", "Download png-file"),
                             div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("merged_plot", height="120%"))),
-                            NULL,
-                    ),
-                    tabPanel("MultiPlot", downloadButton("downloadMultiPlotPDF", "Download pdf-file"), 
-                            downloadButton("downloadMultiPlotEPS", "Download eps-file"), 
-                            downloadButton("downloadMultiPlotSVG", "Download svg-file"), 
-                            downloadButton("downloadMultiPlotPNG", "Download png-file"),
-                            div(`data-spy`="affix", `data-offset-top`="10", withSpinner(plotOutput("multi_dist_plot", height="120%"))),
+                            textOutput("parameter_error"),
                             NULL,
                     ),
                     tabPanel("Statistics", tableOutput("merged_statistics"))
@@ -290,15 +310,28 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
 #                            ".csv",".xlsx")),
 #                            tags$hr(),
 #                checkboxInput("header_correlation", "File upload", TRUE),
-                selectInput("feature_select_1", "Choose a feature 1:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
-                selectInput("feature_select_2", "Choose a feature 2:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                selectInput("feature_select_1", "Choose a feature:", choices = ""),
+                selectInput("feature_select_2", "Choose a feature:", choices = ""),
+                #selectInput("feature_select_1", "Choose a feature 1:",
+                #            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
+                #selectInput("feature_select_2", "Choose a feature 2:",
+                #            choices = c("organelle_orientation","major_axis_shape_orientation","major_axis_nucleus_orientation","eccentricity","mean_expression","area","perimeter")),
                 selectInput("datasetSingleImage", "Download:",
                             choices = c("results_file","statistics_file","orientation_plot", "rose_histogram")),
                 #tags$hr(),
                 selectInput("corr_plot_option", "Choose a plot option:",
                             choices = c("correlation plot","spoke plot")),
+                
+                conditionalPanel(
+                    condition = "input.corr_plot_option == 'correlation plot'",
+                    checkboxInput ("center_corr_plot", "center correlation plot", TRUE),
+                ),
+                conditionalPanel(
+                    condition = "input.corr_plot_option == 'spoke plot'",
+                    numericInput ("spoke_subsample_n", "Subsample every n-th row:", value=1, min = 1, max = 50, step = 1)
+                ),
+
+
                 numericInput ("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
                 numericInput ("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
                 numericInput ("plot_height_corr", "Height (# pixels): ", value = 600),
@@ -325,49 +358,67 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
       
 ### Panel C: Comparison statistics
 
-    tabPanel("Compare",                    
-        sidebarLayout(
-            sidebarPanel(
-#                fileInput("control_condition", "Control condition",
-#                            accept = c( "text/csv",
-#                            "text/comma-separated-values,text/plain",
-#                            ".csv")),    
-#                tags$hr(),
-#                checkboxInput("header_cond1", "File upload", TRUE),
-                
-#                fileInput("condition_2", "Condition 2",
-#                            accept = c( "text/csv",
-#                            "text/comma-separated-values,text/plain",
-#                            ".csv")), 
-#                tags$hr(),
-#                checkboxInput("header_cond2", "File upload", TRUE),
-#                sliderInput("bins_comparison",
-#                            "Number of bins:",
-#                            min = 1,
-#                            max = 30,
-#                            value = 12),
+tabPanel("Compare",                    
+         sidebarLayout(
+           sidebarPanel(
+             #                fileInput("control_condition", "Control condition",
+             #                            accept = c( "text/csv",
+             #                            "text/comma-separated-values,text/plain",
+             #                            ".csv")),    
+             #                tags$hr(),
+             #                checkboxInput("header_cond1", "File upload", TRUE),
+             
+             #                fileInput("condition_2", "Condition 2",
+             #                            accept = c( "text/csv",
+             #                            "text/comma-separated-values,text/plain",
+             #                            ".csv")), 
+             #                tags$hr(),
+             #                checkboxInput("header_cond2", "File upload", TRUE),
+             #                sliderInput("bins_comparison",
+             #                            "Number of bins:",
+             #                            min = 1,
+             #                            max = 30,
+             #                            value = 12),
+             
+             
+             selectInput("control_condition", "control condition", choices = ""),
+             selectInput("feature_comparison", "Choose a feature:",
+                         choices = c("organelle_orientation","major_axis_shape_orientation",
+                                     "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
+                                     "mean_expression","marker_polarity","area","perimeter")),
+             checkboxInput("kde_comparison", "KDE plot", FALSE),
+             checkboxInput("histogram_comparison", "Histogram plot", TRUE),
+             #                checkboxInput("split_view_comparison", "Split view", TRUE),
+           ),
+           mainPanel(
+             #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+             tabsetPanel(
+               tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
+               tabPanel("CDF Plot", plotOutput("CDFPlot")), 
+               tabPanel("Statistics", tableOutput("comparison_statistics"))
+             )
+           )
+         )
+      ),
 
-                
-                selectInput("control_condition", "control condition", choices = ""),
-                selectInput("feature_comparison", "Choose a feature:",
-                            choices = c("organelle_orientation","major_axis_shape_orientation",
-                            "major_axis_nucleus_orientation","eccentricity","major_over_minor_ratio",
-                            "mean_expression","marker_polarity","area","perimeter")),
-                checkboxInput("kde_comparison", "KDE plot", FALSE),
-                checkboxInput("histogram_comparison", "Histogram plot", TRUE),
-#                checkboxInput("split_view_comparison", "Split view", TRUE),
-            ),
-            mainPanel(
-                #tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                tabsetPanel(
-                    tabPanel("Plot", plotOutput("comparison_plot", height = "1000px")),
-                    tabPanel("CDF Plot", plotOutput("CDFPlot")), 
-                    tabPanel("Statistics", tableOutput("comparison_statistics"))
-                )
-            )
+### Panel D: Terms of Use
+
+tabPanel("Terms of Use",
+      sidebarLayout(
+        sidebarPanel(
+          checkboxInput("terms_of_use_all", "I agree to the terms of use", FALSE),
+        ),
+      mainPanel(
+        tabsetPanel(
+          tabPanel("Text", htmlOutput("terms_of_use_text_all"))
         )
+      )
     )
+  )
+
 )
+
+
 
 
 
@@ -490,6 +541,10 @@ server <- function(input, output, session) {
     #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
         updateSelectInput(session, "sample_col", choices = var_list, selected="label")
         updateSelectInput(session, "condition_col", choices = var_list, selected="filename")
+        updateSelectInput(session, "feature_select", choices = var_list, selected="cell_shape_orientation")
+        updateSelectInput(session, "feature_select_1", choices = var_list, selected="cell_shape_orientation")
+        updateSelectInput(session, "feature_select_2", choices = var_list, selected="nuc_shape_orientation")
+        updateSelectInput(session, "feature_comparison", choices = var_list, selected="nuclei_golgi_polarity")
     #    #updateSelectInput(session, "filter_column", choices = var_list, selected="none")
     })
 
@@ -506,9 +561,9 @@ server <- function(input, output, session) {
     if (input$data_upload_form == "example 1") {
         results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
     }
-    else if ( (input$data_upload_form == "single file") & !is.null(inFileStackData)  ) {
+    else if ( (input$data_upload_source == "single file") & !is.null(inFileStackData)  ) {
         results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
-    } else if (input$data_upload_form == "folder") {
+    } else if (input$data_upload_source == "folder") {
         datapath <- stack_data_info$datapath 
         
         file_list <- list.files(datapath)
@@ -534,7 +589,7 @@ server <- function(input, output, session) {
             results_all_df$experimental_condition <- input$exp_condition
         }
 
-    } else if ((input$data_upload_form == "key file") & !is.null(input$keyData) ) {
+    } else if ((input$data_upload_source == "key file") & !is.null(input$keyData) ) {
         results_all_df <-data.frame()
         print("key data path")
         print(input$keyData$datapath)
@@ -542,9 +597,20 @@ server <- function(input, output, session) {
         print(key_file)
 
         for (i in 1:nrow(key_file)){
-            data_path <- key_file[i,"feature_table"]
+
+            
+            #data_path <- key_file[i,"feature_table"]
+            data_path <- key_file[i,"folder_name"]
+            
+            short_name <- key_file[i,"short_name"]
+
             print("data_path")
             print(data_path)
+
+            data_path <- paste0(data_path, "merged_table_", short_name, ".csv")
+            print("file_path")
+            print(data_path)
+
             #split_path <- SplitPath(input$keyData)$dirname
             #print(split_path)
             results_df <- read.csv(data_path)
@@ -605,11 +671,47 @@ server <- function(input, output, session) {
   # end of merged stack function
   
   
+  output$terms_of_use_text <- renderText({
+    "
+    function that the merged stack of polarity data and angles in table format
+    "
+    if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
+    #if ((input$data_upload_form == "upload data")) {
+      #HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
+      #HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
+      HTML("<p>  <font size='+2'> Terms of Use </font><br>
+           Text </p>")
+      
+      } else {
+      
+    }
+  })
+  
+  output$terms_of_use_text_all <- renderText({
+    "
+    function that the merged stack of polarity data and angles in table format
+    "
+
+      #if ((input$data_upload_form == "upload data")) {
+      #HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
+      #HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
+      HTML("<p>  <font size='+2'> Terms of Use </font><br>
+           Text </p>")
+
+  })
+  
+  
   output$merged_stack <- renderTable({
     "
     function that the merged stack of polarity data and angles in table format
     "
-    mergedStack()
+    if ((input$data_upload_form == "upload data") & (input$terms_of_use == FALSE) ) {
+      #data.frame( "Info" = c("Dear user, data upload is currently not possible in the online version.", 
+      #                       "Please download the Rshiny app from \n and run locally."))
+      
+    } else {
+      mergedStack()
+    }
   })
   
   
@@ -891,10 +993,47 @@ server <- function(input, output, session) {
   
     output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     
-        p <-merged_plot()
-        p
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        #parameters[input$feature_select][[1]][1]
+        
+        if (input$feature_select %in% names(parameters)) {
+            p <-merged_plot()
+            p
+        }
+        else {
+        
+        }
+
+        #if (input$feature_select == "filename") {
+#
+#        }        
+#        else {
+#            p <-merged_plot()
+#            p
+#        }   
+    })  
+   
+    output$parameter_error <- renderText({
+    
+        parameters <- fromJSON(file = "parameters/parameters.json")
+        #parameters[input$feature_select][[1]][1]
+        #if (input$feature_select == "filename") {
+        #    print("Plotting of this parameter is not supported.")
+        #}        
+        #else {
+       # 
+       # }
+        
+        if (input$feature_select %in% names(parameters)) {
+        
+        }
+        else {
+            print("Plotting of this parameter is not supported.")
+        }
+ 
     })  
   
+
     multi_plot <- reactive({
     
         source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
@@ -1291,6 +1430,8 @@ server <- function(input, output, session) {
     plot_correlation <- reactive({
       
         parameters <- fromJSON(file = "parameters/parameters.json")
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
       
         text_size <- input$text_size_corr
 
@@ -1311,23 +1452,133 @@ server <- function(input, output, session) {
         feature_2_values <- unlist(correlation_data[feature_2])
         feature_2_values_ <- correlation_data[feature_2]*180.0/pi
         
-        feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
-        feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+        #feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+        #feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
         
         feature_1_name <- parameters[input$feature_select_1][[1]][3]
         feature_2_name <- parameters[input$feature_select_2][[1]][3]
 
-        res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+        print("feature_values")
 
+        if (parameters[input$feature_select_1][[1]][2] == "axial") {
+          
+          res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+          mean_dir_1 = circ.mean(feature_1_values)
+          mean_dir_2 = circ.mean(feature_2_values)
+          
+          if (mean_dir_1 < 0.0) {
+            mean_dir_1 <- mean_dir_1 + 2.0*pi
+          }
+        
+          if (mean_dir_2 < 0.0) {
+            mean_dir_2 <- mean_dir_2 + 2.0*pi
+          }
+
+
+          print("Mean directions")
+          print(mean_dir_1)
+          print(mean_dir_2)
+          
+          #if ( mean_dir_1 < pi/2.0) {
+          #  feature_1_values_ <- feature_1_values_ - pi  
+          #}
+
+
+          #if ( mean_dir_2 < pi/2.0) {
+          #  feature_2_values_ <- feature_2_values_ - pi  
+          #}
+        
+          #if ( mean_dir_1 > 3.0*pi/2.0) {
+          #  feature_1_values_ <- feature_1_values_ - pi  
+          #}
+
+
+          #if ( mean_dir_2 > 3.0*pi/2.0) {
+          #  
+          #  feature_2_values_ <- feature_2_values_ - pi  
+          #}
+
+          feature_1_values_sin <- sin(correlation_data[feature_1] - mean_dir_1)
+          feature_2_values_sin <- sin(correlation_data[feature_2] - mean_dir_2)
+
+          #feature_1_values_ <- 180.0*(correlation_data[feature_1] - mean_dir_1)/pi
+          #feature_2_values_ <- 180.0*(correlation_data[feature_2] - mean_dir_2)/pi
+
+          #for (i in 1:length(feature_1_values)) {
+          #  if (feature_1_values[i] > mean_dir_1 + pi ) {
+          #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] - 2.0*pi)/pi  
+          #  }  
+          #  if (feature_1_values[i] < mean_dir_1 - pi ) {
+          #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] + 2.0*pi)/pi  
+          #  } 
+          #}
+
+          if ( (mean_dir_1 < pi/2.0) | (mean_dir_1 > 3.0*pi/2.0)) {
+            for (i in 1:length(feature_2_values)) {
+              if (feature_1_values[i] > pi) {
+                correlation_data[i,feature_1] <- correlation_data[i,feature_1] - 2.0*pi  
+              }  
+            }
+            feature_1_values_ <- correlation_data[feature_1]*180.0/pi
+          }
+
+
+
+          if ( (mean_dir_2 < pi/2.0) | (mean_dir_2 > 3.0*pi/2.0)) {
+            for (i in 1:length(feature_2_values)) {
+              if (feature_2_values[i] > pi) {
+                correlation_data[i,feature_2] <- correlation_data[i,feature_2] - 2.0*pi  
+              }  
+            }
+            feature_2_values_ <- correlation_data[feature_2]*180.0/pi
+          }
+
+          reg_coeff <- signif(res$r, digits = 3)
+          
+          plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))  
+          #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))  
+          #plot_df <- as.data.frame(c(correlation_data[paste0(feature_1,"_shift")],  correlation_data[paste0(feature_2,"_shift")]))  
+        
+          }   else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+          
+          res = circ.cor(feature_1_values, feature_2_values, test=TRUE)
+          mean_dir_1 = circ.mean(feature_1_values)
+          mean_dir_2 = circ.mean(feature_2_values)
+          
+          print("Mean directions")
+          print(mean_dir_1)
+          print(mean_dir_2)
+          
+          reg_coeff <- signif(res$r, digits = 3)
+          
+          #reg_coeff <- res$r
+          #p_value <- res$p.value
+          
+          plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+          
+        } else {
+
+        }
+
+        
         print(res)
         print(str(res))
-        p_value <- signif(res$p.value, digits = 3)
-        reg_coeff <- signif(res$r, digits = 3)
+        p_value_ <- signif(res$p.value, digits = 3)
+        
+        if (p_value_ < 0.001) {
+            p_value <- "P < 0.001"
+        } else if (p_value_ < 0.01) {
+            p_value <- "P < 0.01"
 
-        #reg_coeff <- res$r
-        #p_value <- res$p.value
+        } else {
+            p_value <- p_value_
+        }
+            
 
-        plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+
+        
+        
+        
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
         #plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
@@ -1361,6 +1612,14 @@ server <- function(input, output, session) {
         text_size <- input$text_size_corr
         
         correlation_data <- mergedStack()       
+
+        if (input$spoke_subsample_n > 1) {
+            N <- nrow(correlation_data) %/% input$spoke_subsample_n
+            if (nrow(correlation_data) > N){
+                correlation_data <- correlation_data[sample(nrow(correlation_data), N), ]
+            }
+        }
+
 
         feature_1 <- parameters[input$feature_select_1][[1]][1]
         feature_2 <- parameters[input$feature_select_2][[1]][1]
@@ -1581,25 +1840,26 @@ server <- function(input, output, session) {
     
         results_all_df <- mergedStack()
     
-        for(row_nr in 1:nrow(results_all_df)) {
-            row <- results_all_df[row_nr,]
-      a <- row$major_axis_length
-      b <- row$minor_axis_length
-      
-      eccentricity <- sqrt(1.0 - b*b/(a*a))
-      results_all_df[row_nr,"eccentricity"] = eccentricity 
-    }
+#        for(row_nr in 1:nrow(results_all_df)) {
+#            row <- results_all_df[row_nr,]
+#      a <- row$major_axis_length
+#      b <- row$minor_axis_length
+#      
+#      eccentricity <- sqrt(1.0 - b*b/(a*a))
+#      results_all_df[row_nr,"eccentricity"] = eccentricity 
+#    }
     
-    threshold <- input$min_eccentricity
-    if ("eccentricity" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
-    }
-    threshold <- input$min_nuclei_golgi_dist
-    if ("distance" %in% colnames(results_all_df)){
-      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
-    }
+#    threshold <- input$min_eccentricity
+#    if ("eccentricity" %in% colnames(results_all_df)){
+#      results_all_df <- subset(results_all_df, results_all_df$eccentricity> threshold)
+#    }
+#    threshold <- input$min_nuclei_golgi_dist
+#    if ("distance" %in% colnames(results_all_df)){
+#      results_all_df <- subset(results_all_df, results_all_df$distance > threshold)
+#    }
     
-    feature <- parameters[input$feature_select][[1]][1]
+    #feature <- parameters[input$feature_select][[1]][1]
+    feature <- parameters[input$feature_comparison][[1]][1]
     condition_col <- input$condition_col   
 
     condition_list <- unlist(unique(results_all_df[condition_col]))
@@ -1746,6 +2006,14 @@ server <- function(input, output, session) {
         control_condition <- input$control_condition
         condition_list <- unlist(unique(data[condition_col]))
         
+        source(file = paste0(getwd(),"/src/plot_functions.R"), local=T)
+        source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
+    
+        parameters <- fromJSON(file = "parameters/parameters.json")
+
+        
+        feature <- parameters[input$feature_comparison][[1]][1]
+
         res <- data.frame(matrix(ncol = length(condition_list) + 1, nrow = 0))
         cols <- c("Test","Control")
 
@@ -1786,9 +2054,11 @@ server <- function(input, output, session) {
             
             #print("Struct of Watson test object")
             #print(str(watson.two(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad, alpha=0.05, plot=TRUE)))
-        
-            watson1 <- watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad)
-            out <- capture.output(watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad))
+            condition_values <- unlist(condition_data[feature])
+            control_values <- unlist(control_data[feature])
+            #watson1 <- watson.two.test(condition_data$organelle_orientation_rad, control_data$organelle_orientation_rad)
+            watson1 <- watson.two.test(condition_values, control_values)
+            out <- capture.output(watson.two.test(condition_values, control_values))
             print(out)
             p_value <- out[5]
             res[1,condition] <- p_value
