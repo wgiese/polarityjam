@@ -125,6 +125,9 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                             ".csv",".xlsx")),
                             tags$hr(),
                     checkboxInput("header_correlation_key", "File upload", TRUE),
+                    shinyDirButton("dir_key", "Input directory", "Upload"),
+                    verbatimTextOutput("dir_key", placeholder = TRUE),
+                    actionButton("refreshStack", "Refresh"),
                 ),
 
                 checkboxInput("subsample_data", "Subsample data", FALSE),
@@ -265,7 +268,7 @@ ui <- navbarPage("Polarity JaM - a web app for visualizing cell polarity, juncti
                 numericInput ("plot_width_A", "Width (# pixels):", value = 1280),
 
                 selectInput("dataset", "Choose a dataset:",
-                            choices = c("statistics_file","merged_plot_file","multi_plot_file")),
+                            choices = c("statistics_file", "merged_plot_file", "multi_plot_file")),
                 #selectInput("image_file_format", "Choose image file format:",
                 #            choices = c(".pdf",".eps",".png")),
                 downloadButton("downloadData", "Download")
@@ -491,10 +494,18 @@ server <- function(input, output, session) {
     'dir',
     roots = volumes#,
   )
-  
+  #volumes <- loadVolumes_key()
+  #print("Volumes")
+  #print(volumes)
+  shinyDirChoose(
+    input,
+    'dir_key',
+    roots = volumes#,
+  )
+
   dir <- reactive(input$dir)
   stack_data_info <- reactiveValues(datapath = getwd())
-  
+ 
   output$dir <- renderText({
     print(stack_data_info$datapath)
     stack_data_info$datapath
@@ -515,6 +526,29 @@ server <- function(input, output, session) {
                  #  file.path(paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
  
                })
+    dir_key <- reactive(input$dir_key)
+    key_data_info <- reactiveValues(datapath = getwd())
+ 
+    output$dir_key <- renderText({
+        print(key_data_info$datapath)
+        key_data_info$datapath
+    })
+  
+    observeEvent(ignoreNULL = TRUE,
+               eventExpr = {
+                 input$dir_key
+               },
+               handlerExpr = {
+               if (!"path" %in% names(dir_key())) return()
+
+                rootdir_key <- normalizePath(paste(volumes[input$dir_key[[2]]][[1]]))
+                key_data_info$datapath <- file.path(rootdir_key,paste(unlist(dir_key()$path[-1]), collapse = .Platform$file.sep))
+                 
+                 #home <- normalizePath("~")
+                 #stack_data_info$datapath <-
+                 #  file.path(paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
+ 
+    })
   
     observe({
 
@@ -596,26 +630,67 @@ server <- function(input, output, session) {
         key_file <- read.csv(input$keyData$datapath, header = input$header_correlation)
         print(key_file)
 
+        print("data_root")
+        data_root <- key_data_info$datapath
+        print(data_root)        
+
+        
         for (i in 1:nrow(key_file)){
 
-            
+
             #data_path <- key_file[i,"feature_table"]
-            data_path <- key_file[i,"folder_name"]
-            
+            folder_path <- key_file[i,"folder_name"]
             short_name <- key_file[i,"short_name"]
+            data_path <- paste0(data_root, "/",  short_name, "/")             
 
-            print("data_path")
+            print("Data path")
             print(data_path)
 
-            data_path <- paste0(data_path, "merged_table_", short_name, ".csv")
-            print("file_path")
-            print(data_path)
+            if (dir.exists(data_path)) {
+                file_list <- list.files(data_path)
+                print("File_list")
+                print(file_list)
+    
+                counter <- 1
+                plist <- list()
+                tag <- FALSE
+        
+                for (file_name in file_list[1:length(file_list)]){
+                
+                    print("File name")
+                    print(file_list)                
+
+                    if (file_ext(file_name) == "csv") {
+                        results_df <- read.csv(paste0(data_path,"/",file_name))
+                        results_df <- cbind(results_df,  data.frame("short_name" = rep(short_name, nrow(results_df))) )
+                        results_all_df  <- rbind(results_all_df, results_df )
+                    }
+                }
+            } else {
+
+                print("Directory does not exist")
+            }
+
+            
+        
+            #if (length(results_all_df) > 1) {
+            #    results_all_df$datapath <- datapath
+            #    results_all_df$experimental_condition <- input$exp_condition
+            #}
+
+
+            #print("data_path")
+            #print(data_path)
+
+            #data_path <- paste0(data_path, "merged_table_", short_name, ".csv")
+            #print("file_path")
+            #print(data_path)
 
             #split_path <- SplitPath(input$keyData)$dirname
             #print(split_path)
-            results_df <- read.csv(data_path)
-            results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
-            results_all_df  <- rbind(results_all_df, results_df )
+            #results_df <- read.csv(data_path)
+            #results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
+            #results_all_df  <- rbind(results_all_df, results_df )
         }
 
     } else {
