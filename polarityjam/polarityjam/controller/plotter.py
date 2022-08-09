@@ -14,7 +14,7 @@ from polarityjam.vizualization.plot import _add_single_cell_polarity_vector, \
     _add_title, \
     save_current_fig, _add_cell_eccentricity, \
     _calc_nuc_eccentricity, _add_nuclei_eccentricity, _add_single_cell_eccentricity_axis, _add_cell_orientation, \
-    _calc_nuc_orientation, _add_nuclei_orientation, _add_single_cell_orientation_degree_axis
+    _calc_nuc_orientation, _add_nuclei_orientation, _add_single_cell_orientation_degree_axis, _add_scalebar
 
 # for figure plot resolution  # todo: parameters?
 CELL_OUTLINE_INTENSITY = 30
@@ -165,6 +165,11 @@ class Plotter:
 
         # set title and ax limits
         _add_title(ax, "organelle orientation", im_junction, self.params.show_graphics_axis)
+
+        # plot scale bar
+        if self.params.plot_scalebar:
+            _add_scalebar(ax, self.params.length_scalebar_microns , self.params.pixel_to_micron_ratio)
+
 
         # save output & close
         save_current_fig(

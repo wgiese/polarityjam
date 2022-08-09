@@ -6,6 +6,7 @@ import matplotlib as mpl
 import numpy as np
 import tifffile
 from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from polarityjam.polarityjam_logging import get_logger
 
@@ -65,6 +66,22 @@ def _add_colorbar(fig, cax, ax, yticks, label):
     color_bar.set_label(label)
     color_bar.ax.set_yticks(yticks)
 
+def _add_scalebar(ax, length_scalebar_microns , pixel_to_micron_ratio):
+
+    length_scalebar_pixels = length_scalebar_microns/ pixel_to_micron_ratio
+    text = "%s mu m" % length_scalebar_microns
+
+    scalebar = AnchoredSizeBar(ax.transData,
+                           length_scalebar_microns, text, 'lower right', 
+                           pad=0.1,
+                           color='white',
+                           frameon=False,
+                           size_vertical=5)
+                            #,
+                           #fontproperties=fontprops)
+
+    ax.add_artist(scalebar)
+    
 
 def _add_cell_eccentricity(fig, ax, im_junction, cell_mask, cell_eccentricity):
     v_min = 0.0

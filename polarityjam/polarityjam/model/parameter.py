@@ -65,7 +65,7 @@ class InputParameter(Parameter):
 
     def __init__(self, attrs=None):
         if attrs is None:
-            attrs = {}
+           attrs = {}
         self.channel_junction = None
         self.channel_nucleus = None
         self.channel_organelle = None
@@ -95,6 +95,9 @@ class PlotParameter(Parameter):
         self.outline_width = None
         self.show_polarity_angles = None
         self.show_graphics_axis = None
+        self.pixel_to_micron_ratio = None
+        self.plot_scalebar = None
+        self.length_scalebar_microns = None
 
         self.graphics_output_format = None
         self.dpi = None

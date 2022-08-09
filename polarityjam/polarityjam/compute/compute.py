@@ -51,14 +51,25 @@ def map_single_cell_to_circle(sc_protein_area, x_centroid, y_centroid, r):
 
         # correct for wrong x axis alignment (bottom left corner is (0,0), not top left)
         new_x = x_centroid - (new_x - x_centroid)
-
-        # count
-        if (int(new_x), int(new_y)) not in circular_img_count.keys():
-            circular_img_count[int(new_x), int(new_y)] = 1
-        else:
-            circular_img_count[int(new_x), int(new_y)] += 1
-
-        circular_img[int(new_x), int(new_y)] += sc_protein_area[x, y]
+        new_x = int(new_x)
+        new_y = int(new_y)
+    
+        # count, TODO: check why new_x and new_y are sometimes out of the image boundaries
+        if (new_x in range(0,circular_img.shape[0]))  and (new_y in range(0,circular_img.shape[1])):
+            circular_img[int(new_x), int(new_y)] += sc_protein_area[x, y]
+            if (int(new_x), int(new_y)) not in circular_img_count.keys():
+                circular_img_count[int(new_x), int(new_y)] = 1
+            else:
+                circular_img_count[int(new_x), int(new_y)] += 1
+        #else:
+        #    print("Circular image coords out of bounds")
+        #    print("x: ", int(new_x), ", y:", int(new_y))
+#        if (int(new_x), int(new_y)) not in circular_img_count.keys():
+#            circular_img_count[int(new_x), int(new_y)] = 1
+#        else:
+#            circular_img_count[int(new_x), int(new_y)] += 1
+#
+#        circular_img[int(new_x), int(new_y)] += sc_protein_area[x, y]
 
     # calculate mean
     for k in circular_img_count.keys():
