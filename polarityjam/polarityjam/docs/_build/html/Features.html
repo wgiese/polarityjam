@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Features &mdash; polarityjam  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Visualizations" href="Visualizations.html" />
+    <link rel="prev" title="Usage" href="Usage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> polarityjam
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="whatis.html">What is polarityjam?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#single-cell-features">Single cell features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nucleus-features">Nucleus features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#organelle-features">Organelle features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#marker-features">Marker features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#junction-features">Junction features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#neighborhood-features">Neighborhood features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#group-features">Group features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Visualizations.html">Visualizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Methods.html">Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index/modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Contribute.html">Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">polarityjam</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Features</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Features.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="features">
+<h1>Features<a class="headerlink" href="#features" title="Permalink to this heading"></a></h1>
+<p>The following table gives an overview of all available features with an explanation and an example output (depending on
+your image an parameter configuration the number of features you get might vary). The features can be structured in
+several categories:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 15%" />
+<col style="width: 71%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Configuration</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>single cell features</p></td>
+<td><p>always</p></td>
+<td><p>The general features extracted from the image.</p></td>
+</tr>
+<tr class="row-odd"><td><p>nucleus features*</p></td>
+<td><p>nucleus channel given</p></td>
+<td><p>All features belonging to the nucleus of the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>organelle features*</p></td>
+<td><p>organelle channel given</p></td>
+<td><p>All features belonging to the organelle of a cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>junction features*</p></td>
+<td><p>junction channel given</p></td>
+<td><p>All features belonging to the junctions of a cell</p></td>
+</tr>
+<tr class="row-even"><td><dl class="simple">
+<dt>marker features*</dt><dd><ul class="simple">
+<li><p>marker membrane features</p></li>
+<li><p>marker nucleus features</p></li>
+<li><p>marker cytosol features</p></li>
+</ul>
+</dd>
+</dl>
+</td>
+<td><p>expression marker channel given</p></td>
+<td><p>All features belonging to the expression marker. If a nucleus channel is given, marker nucleus features and marker cytosol features are automatically appended.</p></td>
+</tr>
+<tr class="row-odd"><td><p>neighborhood features</p></td>
+<td><p>always</p></td>
+<td><p>Statistical properties of a feature of interest (FOI) specified. Includes neighborhood statistics. Feature of Interest (FOI) must be specified. Default is “area”.</p></td>
+</tr>
+<tr class="row-even"><td><p>group features</p></td>
+<td><p>always</p></td>
+<td><p>Group properties. Image wise. Includes Morans I correlation analysis. Feature of interest (FOI) must be specified.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Features highlighted with a * are optional.</p>
+</div>
+<section id="single-cell-features">
+<h2>Single cell features<a class="headerlink" href="#single-cell-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 83%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Featue</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>filename</p></td>
+<td><p>The filename where the cell was found.</p></td>
+</tr>
+<tr class="row-odd"><td><p>label</p></td>
+<td><p>The cellpose segmentation label of the particular cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>cell_X</p></td>
+<td><p>The X coordinate of the center of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>cell_Y</p></td>
+<td><p>The Y coordinate of the center of the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>cell_shape_orientation</p></td>
+<td><p>Long axis of ellipsoid fit of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>cell_major_axis_length</p></td>
+<td><p>Length of the major axis of the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>cell_minor_axis_length</p></td>
+<td><p>Length of the minor axis of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>cell_eccentricity</p></td>
+<td><p>Value for the elongation of the cell. Between 0 and 1, where 0 correspond to a perfect circular cell and 1 for a strongly elongated cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>cell_major_to_minor_ratio</p></td>
+<td><p>Ratio between the major and the minor axis of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>cell_area</p></td>
+<td><p>The area of the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>cell_perimeter</p></td>
+<td><p>The perimeter of the cell.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="nucleus-features">
+<h2>Nucleus features<a class="headerlink" href="#nucleus-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 81%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>nuc_X</p></td>
+<td><p>X position of the cell nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>nuc_Y</p></td>
+<td><p>Y position of the cell nucleus.</p></td>
+</tr>
+<tr class="row-even"><td><p>nuc_displacement_orientation_rad</p></td>
+<td><p>The displacement orientation of the nucleus from the center of the cell in rad</p></td>
+</tr>
+<tr class="row-odd"><td><p>nuc_displacement_orientation_deg</p></td>
+<td><p>The displacement orientation of the nucleus from the center of the cell in deg</p></td>
+</tr>
+<tr class="row-even"><td><p>nuc_shape_orientation</p></td>
+<td><p>Long axis of ellipsoid fit of the nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>nuc_major_axis_length</p></td>
+<td><p>The length of the major axis of the nucleus.</p></td>
+</tr>
+<tr class="row-even"><td><p>nuc_minor_axis_length</p></td>
+<td><p>The length of the minor axis of the nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>nuc_area</p></td>
+<td><p>The area of the nucleus.</p></td>
+</tr>
+<tr class="row-even"><td><p>nuc_perimeter_nuc</p></td>
+<td><p>The perimeter of the nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>nuc_eccentricity</p></td>
+<td><p>Value for the elongation of the nucleus. Between 0 and 1, where 0 correspond to a perfect cicular nucleus and 1 for a strongly elongated nucleus.</p></td>
+</tr>
+<tr class="row-even"><td><p>nuc_major_to_minor_ratio</p></td>
+<td><p>Ratio between the major and the minor axis of the nucleus.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="organelle-features">
+<h2>Organelle features<a class="headerlink" href="#organelle-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>organelle_X_golgi</p></td>
+<td><p>The X coordinate of the center of the cell organelle.</p></td>
+</tr>
+<tr class="row-odd"><td><p>organelle_Y_golgi</p></td>
+<td><p>The Y coordinate of the center of the cell organelle.</p></td>
+</tr>
+<tr class="row-even"><td><p>organelle_distance</p></td>
+<td><p>Distance from cell organelle to the nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>organelle_orientation_rad</p></td>
+<td><p>The orientation in rad of the organelle to the nucleus</p></td>
+</tr>
+<tr class="row-even"><td><p>organelle_orientation_deg</p></td>
+<td><p>The orientation in deg of the organelle to the nucleus</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="marker-features">
+<h2>Marker features<a class="headerlink" href="#marker-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>marker_mean_expr</p></td>
+<td><p>Mean expression of the channel with the marker.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_sum_expr</p></td>
+<td><p>The absolute sum of the expression of the marker.</p></td>
+</tr>
+<tr class="row-even"><td><p>marker_centroid_X</p></td>
+<td><p>The X coordinate of the center of the marker expression.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_centroid_Y</p></td>
+<td><p>The Y coordinate of the center of the marker expression.</p></td>
+</tr>
+<tr class="row-even"><td><p>marker_polarity_rad</p></td>
+<td><p>Intrinsic asymmetry of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_polarity_deg</p></td>
+<td><p>Intrinsic asymmetry of the cell.</p></td>
+</tr>
+<tr class="row-even"><td><p>marker_mean_expression_mem</p></td>
+<td><p>Mean membrane expression.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_sum_expression_mem</p></td>
+<td><p>The absolut sum of the membrane expression.</p></td>
+</tr>
+<tr class="row-even"><td><p>marker_mean_expression_nuc</p></td>
+<td><p>The mean expression of the nucleus.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_sum_expression_nuc</p></td>
+<td><p>The absolut sum of the nucleus expression.</p></td>
+</tr>
+<tr class="row-even"><td><p>marker_mean_expression_cyt</p></td>
+<td><p>The mean expression of the cell cytosol.</p></td>
+</tr>
+<tr class="row-odd"><td><p>marker_sum_expression_cyt</p></td>
+<td><p>The absolut sum of the cell cytosol expression.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="junction-features">
+<h2>Junction features<a class="headerlink" href="#junction-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>junction_centroid_X</p></td>
+<td><p>The X coordinate of the center of the junction expression.</p></td>
+</tr>
+<tr class="row-odd"><td><p>junction_centroid_Y</p></td>
+<td><p>The Y coordinate of the center of the junction expression.</p></td>
+</tr>
+<tr class="row-even"><td><p>junction_perimeter</p></td>
+<td><p>The perimeter of the junction area.</p></td>
+</tr>
+<tr class="row-odd"><td><p>junction_protein_area</p></td>
+<td><p>The area with junction protein expression.</p></td>
+</tr>
+<tr class="row-even"><td><p>junction_mean_intensity</p></td>
+<td><p>The mean junction intensity value.</p></td>
+</tr>
+<tr class="row-odd"><td><p>junction_protein_intensity</p></td>
+<td><p>The mean protein intensity by area.</p></td>
+</tr>
+<tr class="row-even"><td><p>junction_interface_occupancy</p></td>
+<td><p>The  ratio between junction area and junction protein area.</p></td>
+</tr>
+<tr class="row-odd"><td><p>junction_intensity_per_interface_area</p></td>
+<td><p>tba</p></td>
+</tr>
+<tr class="row-even"><td><p>junction_cluster_density</p></td>
+<td><p>ratio of junction protein intensity and junction protein area</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="neighborhood-features">
+<h2>Neighborhood features<a class="headerlink" href="#neighborhood-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>neighbors_cell</p></td>
+<td><p>The absolut number of neighbors of the cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p>neighbors_mean_dif_1st</p></td>
+<td><p>Mean difference of the feature of interest to all first neighbors.</p></td>
+</tr>
+<tr class="row-even"><td><p>neighbors_median_dif_1st</p></td>
+<td><p>Median difference of the feature of interest to all first neighbors.</p></td>
+</tr>
+<tr class="row-odd"><td><p>neighbors_stddev_dif_1st</p></td>
+<td><p>Standard derivation of the difference of the feature of interest to all first neighbors.</p></td>
+</tr>
+<tr class="row-even"><td><p>neighbors_range_dif_1st</p></td>
+<td><p>Maximal range of difference of the feature of interest to all first neighbors.</p></td>
+</tr>
+<tr class="row-odd"><td><p>neighbors_mean_dif_2nd</p></td>
+<td><p>Mean difference of the feature of interest to all second neighbors.</p></td>
+</tr>
+<tr class="row-even"><td><p>neighbors_median_dif_2nd</p></td>
+<td><p>Median difference of the feature of interest to all second neighbors.</p></td>
+</tr>
+<tr class="row-odd"><td><p>neighbors_stddev_dif_2nd</p></td>
+<td><p>Standard derivation of the difference of the feature of interest to all second neighbors.</p></td>
+</tr>
+<tr class="row-even"><td><p>neighbors_range_dif_2nd</p></td>
+<td><p>Maximal range of difference of the feature of interest to all second neighbors.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="group-features">
+<h2>Group features<a class="headerlink" href="#group-features" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature</p></th>
+<th class="head"><p>Explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>morans_i</p></td>
+<td><p>Statistical correlation analysis</p></td>
+</tr>
+<tr class="row-odd"><td><p>morans_p_norm</p></td>
+<td><p>P-norm of the correlation analysis.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Usage.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Visualizations.html" class="btn btn-neutral float-right" title="Visualizations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Jan Philipp Albrecht, Wolfgang Giese.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
