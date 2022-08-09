@@ -795,108 +795,112 @@ server <- function(input, output, session) {
     reactive function that reads a stack of spreadsheet and returns a data frame 
     with descriptive statistics including circular mean, circular standard deviation 
     and nearest neighbours for the merged stack of data
+
+    TODO: rework threhsolding
+
     "
     
     results_df <- mergedStack()
     
-    #inFileStackData <- input$stackData
 
-    #if (!is.null(inFileStackData))
-    #   results_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
-
-    print("Data Frame:")
+    print("Data Frame in merged statistics:")
     print(head(results_df))
-    
-    #threshold <- input$max_golgi_nuclei_distance
-    #if ("distance" %in% colnames(results_df)){
-    #  results_df <- subset(results_df, results_df$distance < threshold)
-    #}
     
     source(file = paste0(getwd(),"/src/circular_statistics.R"), local=T)
     parameters <- fromJSON(file = "parameters/parameters.json")
+    
+    condition_col <- input$condition_col
+    condition_list <- unlist(unique(results_df[condition_col]))
 
     feature <- parameters[input$feature_select][[1]][1]
 
-    threshold <- input$min_nuclei_golgi_dist
-    if ("organelle_distance" %in% colnames(results_df)){
-      results_df <- subset(results_df, results_df$distance > threshold)
+#    threshold <- input$min_nuclei_golgi_dist
+#    if ("organelle_distance" %in% colnames(results_df)){
+#      results_df <- subset(results_df, results_df$distance > threshold)
+#    }
+
+    statistics_df <- as.data.frame(matrix(ncol = length(condition_list) + 2 , nrow=0))
+    cols <- c("entity")
+    for (condition in condition_list) {
+      cols <- c(cols,condition)
+      
     }
-
-    statistics_df <- as.data.frame(matrix(nrow=5,ncol=3))
-    colnames(statistics_df) <- c("entity", "value") #, "comment")
-
+    cols <- c(cols,"description")
+    
+    
+    colnames(statistics_df) <- cols #c("entity", "value") #, "comment")
+    
+    print("Colnames")
+    print(colnames(statistics_df))
+    #print("Feature property")
+    #print(parameters[input$feature_select][[1]][2])
     if (parameters[input$feature_select][[1]][2] == "axial") {
-        statistics_df <- as.data.frame(matrix(nrow=10,ncol=3))
-        colnames(statistics_df) <- c("entity", "value", "description") #, "comment")
 
-        x_data <- unlist(results_df[feature])*180.0/pi
-        statistics <- compute_circular_statistics(results_df, feature, parameters)
-        print("Statistics")
-        print(statistics)
+        #statistics_df <- as.data.frame(matrix(nrow=10,ncol=3))
+        #colnames(statistics_df) <- c("entity", "value", "description") #, "comment")
 
-        p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
-        #if (statistics[1,"rayleigh_test"] < 0.001)
-        #    p_value <- "p < 0.001"
-        p_value_mu <- signif(statistics[1,"v_test"], digits = 3)
-        #if (statistics[1,"rayleigh_test_mu"] < 0.001)
-        #    p_value_mu <- "p < 0.001"
+
+        for (condition in condition_list) {
+            condition_data <- subset(results_df, results_df[condition_col] == condition)        
+            print("Condition subset: ")
+            print(head(condition_data))
+            
+            x_data <- unlist(condition_data[feature])*180.0/pi
+            statistics <- compute_circular_statistics(condition_data, feature, parameters)
+            print("Statistics")
+            print(statistics)
+
+            p_value <- signif(statistics[1,"rayleigh_test"], digits = 3)
+            #if (statistics[1,"rayleigh_test"] < 0.001)
+            #    p_value <- "p < 0.001"
+            p_value_mu <- signif(statistics[1,"v_test"], digits = 3)
+            #if (statistics[1,"rayleigh_test_mu"] < 0.001)
+            #    p_value_mu <- "p < 0.001"
      
 
-        ind <-1
-        statistics_df[ind,1] <- "number of cells"
-        statistics_df[ind,2] <- nrow(results_df)
+            ind <-1
+            statistics_df[ind,1] <- "number of cells"
+            statistics_df[ind,condition] <- nrow(condition_data)
         
-        ind <- ind + 1
-        statistics_df[ind,1] <- "mean (degree)"
-        statistics_df[ind,2] <- signif(statistics[1,"mean"], digits = 3)
+            ind <- ind + 1
+            statistics_df[ind,1] <- "mean (degree)"
+            statistics_df[ind,condition] <- signif(statistics[1,"mean"], digits = 3)
         
-        ind <- ind + 1
-        statistics_df[ind,1] <- "polarity index"
-        statistics_df[ind,2] <- signif(statistics[1,"polarity_index"], digits = 3)
+            ind <- ind + 1
+            statistics_df[ind,1] <- "polarity index"
+            statistics_df[ind,condition] <- signif(statistics[1,"polarity_index"], digits = 3)
         
-        ind <- ind + 1
-        statistics_df[ind,1] <- "signed polarity index (mean = 180)"
-        statistics_df[ind,2] <- signif(statistics[1,"signed_polarity_index"], digits = 3)
+            ind <- ind + 1
+            statistics_df[ind,1] <- "signed polarity index (mean = 180)"
+            statistics_df[ind,condition] <- signif(statistics[1,"signed_polarity_index"], digits = 3)
 
-        ind <- ind + 1
-        statistics_df[ind,1] <- "angular standard deviation"
-        statistics_df[ind,2] <- signif(statistics[1,"std_angular"],digits = 3)
-        statistics_df[ind,3] <- "angular standard deviation, takes values in [0,sqrt(2)], see https://doi.org/10.18637/jss.v031.i10 for more info."
+            ind <- ind + 1
+            statistics_df[ind,1] <- "angular standard deviation"
+            statistics_df[ind,condition] <- signif(statistics[1,"std_angular"],digits = 3)
+            #statistics_df[ind,3] <- "angular standard deviation, takes values in [0,sqrt(2)], see https://doi.org/10.18637/jss.v031.i10 for more info."
 
-        ind <- ind + 1
-        statistics_df[ind,1] <- "circular standard deviation"
-        statistics_df[ind,2] <- signif(statistics[1,"std_circular"], digits = 3)
-        statistics_df[ind,3] <- "circular standard deviation, takes values in [0,inf], see https://doi.org/10.18637/jss.v031.i10 for more info."
+            ind <- ind + 1
+            statistics_df[ind,1] <- "circular standard deviation"
+            statistics_df[ind,condition] <- signif(statistics[1,"std_circular"], digits = 3)
+            #statistics_df[ind,3] <- "circular standard deviation, takes values in [0,inf], see https://doi.org/10.18637/jss.v031.i10 for more info."
 
-        ind <- ind + 1
-        statistics_df[ind,1] <- "95% confidence interval of the mean, lower limit: "
-        statistics_df[ind,2] <- signif(statistics[1,"ci_95_lower_limit"], digits = 3)
+            ind <- ind + 1
+            statistics_df[ind,1] <- "95% confidence interval of the mean, lower limit: "
+            statistics_df[ind,condition] <- signif(statistics[1,"ci_95_lower_limit"], digits = 3)
 
-        ind <- ind + 1
-        statistics_df[ind,1] <- "95% confidence interval of the mean, upper limit: "
-        statistics_df[ind,2] <- signif(statistics[1,"ci_95_upper_limit"], digits = 3)
+            ind <- ind + 1
+            statistics_df[ind,1] <- "95% confidence interval of the mean, upper limit: "
+            statistics_df[ind,condition] <- signif(statistics[1,"ci_95_upper_limit"], digits = 3)
 
-        ind <- ind + 1
-        statistics_df[ind,1] <- "Rayleigh test, p-value:"
-        statistics_df[ind,2] <- p_value
+            ind <- ind + 1
+            statistics_df[ind,1] <- "Rayleigh test, p-value:"
+            statistics_df[ind,condition] <- p_value
         
-        ind <- ind + 1
-        statistics_df[ind,1] <- "V-test p-value (cond. mean = 180): "
-        statistics_df[ind,2] <- p_value_mu
+            ind <- ind + 1
+            statistics_df[ind,1] <- "V-test p-value (cond. mean = 180): "
+            statistics_df[ind,condition] <- p_value_mu
 
-
-
-
-
-        #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
-        #values <- c( nrow(results_df), statistics[1,"mean"],  statistics[1,"polarity_index"], statistics[1,"rayleigh_test"], 0.0) # statistics[1,"rayleigh_test_mu"])
-        
-        #print("entity")
-        #print(entity)
-        #print("value")
-        #print(values)
-        
-        #statistics_df <- data.frame(entity,values)
+        }
 
     }
     else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -927,49 +931,6 @@ server <- function(input, output, session) {
         statistics_df[4,2] <- signif(statistics[1,"median"], digits = 3)
 
     }
-    
-    #values <- compute_polarity_index(results_df)
-    #print(values)
-    #polarity_index <- values[["polarity_index"]]
-    ##signed_polarity_index <- values[["signed_polarity_index"]]
-    #angle_mean_deg <- values[["angle_mean_deg"]]
-    
-    #angle_degree <- conversion.circular(results_df$angle_deg, units = "degrees", zero = 0, modulo = "2pi")
-    
-    #variance_degree  <- var(angle_degree)
-    #mean_degree <- mean.circular(angle_degree)
-    #rayleigh_test_res <- r.test(results_df$angle_deg, degree = TRUE)
-    #rayleigh_test_mu_res <- v0.test(results_df$angle_deg, mu0 = 180.0, degree = TRUE)
-    #rayleigh_test <- rayleigh_test_res$p.value
-    #rayleigh_test_mu <- rayleigh_test_mu_res$p.value
-    ###print(struct(rayleight_test))
-    ##print(struct(rayleight_test_mu))
-    #sd_degree  <- sd(angle_degree)
-    #median_degree  <- median(angle_degree)
-    
-    ##entity <- c("nucleus-golgi pairs", "circular sample mean (degree)",  "circular standard deviation (degree)", "circular median (degree)", "polarity index")
-    ##value <- c(nrow(results_df), angle_mean_deg , sd_degree , median_degree, polarity_index)
-    
-    #print("Values in data frame")
-    #print(angle_mean_deg)
-    #print(polarity_index)
-    #print(rayleigh_test)
-    #print(rayleigh_test_mu)
-    
-    #angle_mean_deg <- statistics
-    #polarity_index <- 0
-    #rayleigh_test <- 0
-    #rayleigh_test_mu <- 0
-    
-    #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
-    
-    #value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
-    
-    
-    #entity <- c("cells", "circular sample mean (degree)", "polarity index", "Rayleigh test (p-value)", "Rayleigh test with mu=180 (p-value)")
-    #value <- c(nrow(results_df), angle_mean_deg ,  polarity_index, rayleigh_test, rayleigh_test_mu)
-
-    #statistics_df <- data.frame(entity,values)
     
     statistics_df
     

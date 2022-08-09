@@ -22,7 +22,12 @@ compute_circular_mean <- function(circular_data) {
 compute_circular_statistics <- function(data, feature, parameters) {
 
     circular_data <- unlist(data[feature])
-  
+    print("Feature")
+    print(feature)
+    print("Data")
+    print(head(data))
+    print("Circular data")
+    print(circular_data)
     sin_sum <- 0.0
     cos_sum <- 0.0
     polarity_index <- 0.0
