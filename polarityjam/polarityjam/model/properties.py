@@ -127,18 +127,18 @@ class SingleCellMarkerMembraneProps(SingleCellProps):
 
 
 class SingleCellMarkerNucleiProps(SingleCellProps):
-    def __init__(self, single_nucleus_mask, im_marker, nucleus_props, marker_props):
+    def __init__(self, single_nucleus_mask, im_marker, sc_nucleus_props, sc_marker_props):
         super().__init__(single_nucleus_mask, im_marker)
-        self._nucleus_props = nucleus_props
-        self._marker_props = marker_props
+        self._sc_nucleus_props = sc_nucleus_props
+        self._sc_marker_props = sc_marker_props
 
     @property
     def marker_nucleus_orientation_rad(self):
         return compute_reference_target_orientation_rad(
-            self._nucleus_props.centroid[0],
-            self._nucleus_props.centroid[1],
-            self._marker_props.centroid[0],
-            self._marker_props.centroid[0]
+            self._sc_nucleus_props.centroid[0],
+            self._sc_nucleus_props.centroid[1],
+            self._sc_marker_props.centroid[0],
+            self._sc_marker_props.centroid[1]
         )
 
     @property

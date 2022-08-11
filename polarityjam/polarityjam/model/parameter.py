@@ -10,7 +10,7 @@ class Parameter:
         # init with default values from resources
         current_path = Path(os.path.dirname(os.path.realpath(__file__)))
         param_base_file = Path(current_path).joinpath("..", "utils", "resources", "parameters.yml")
-        args_init = read_parameters(param_base_file)
+        args_init = read_parameters(str(param_base_file))
 
         for key in args_init:
             self._setattr(key, args_init[key])
@@ -65,7 +65,7 @@ class InputParameter(Parameter):
 
     def __init__(self, attrs=None):
         if attrs is None:
-           attrs = {}
+            attrs = {}
         self.channel_junction = None
         self.channel_nucleus = None
         self.channel_organelle = None

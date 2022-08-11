@@ -12,10 +12,8 @@ from polarityjam.model.weights import W
 # pointing to a commit, not to main for reproducibility
 class Moran(object):
     """Moran's I Global Autocorrelation Statistic
-
     Parameters
     ----------
-
     y               : array
                       variable measured across n spatial units
     w               : W
@@ -31,7 +29,6 @@ class Moran(object):
     two_tailed      : boolean
                       If True (default) analytical p-values for Moran are two
                       tailed, otherwise if False, they are one-tailed.
-
     Attributes
     ----------
     y            : array
@@ -89,15 +86,38 @@ class Moran(object):
                    (if permutations>0)
                    p-value based on standard normal approximation from
                    permutations
-
     Notes
     -----
     Technical details and derivations can be found in :cite:`cliff81`.
-
-
     Examples
     --------
-
+    >>> import libpysal
+    >>> w = libpysal.io.open(libpysal.examples.get_path("stl.gal")).read()
+    >>> f = libpysal.io.open(libpysal.examples.get_path("stl_hom.txt"))
+    >>> y = np.array(f.by_col['HR8893'])
+    >>> from esda.moran import Moran
+    >>> mi = Moran(y,  w)
+    >>> round(mi.I, 3)
+    0.244
+    >>> mi.EI
+    -0.012987012987012988
+    >>> mi.p_norm
+    0.00027147862770937614
+    SIDS example replicating OpenGeoda
+    >>> w = libpysal.io.open(libpysal.examples.get_path("sids2.gal")).read()
+    >>> f = libpysal.io.open(libpysal.examples.get_path("sids2.dbf"))
+    >>> SIDR = np.array(f.by_col("SIDR74"))
+    >>> mi = Moran(SIDR,  w)
+    >>> round(mi.I, 3)
+    0.248
+    >>> mi.p_norm
+    0.0001158330781489969
+    One-tailed
+    >>> mi_1 = Moran(SIDR,  w, two_tailed=False)
+    >>> round(mi_1.I, 3)
+    0.248
+    >>> round(mi_1.p_norm, 4)
+    0.0001
     """
 
     def __init__(
@@ -448,7 +468,20 @@ def _swap_ending(s, ending, delim='_'):
 
 
 def run_morans(rag, foi):
-    """Run morans I, measure of spatial correlation and significance."""
+    """Run morans I, measure of spatial correlation and significance.
+
+    Parameters
+    ----------
+    rag     :   RAG
+                Region adjacency graph. (https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_rag.html)
+    foi     :   string
+                feature of interest
+
+    Returns
+    -------
+    Morans I class object.
+
+    """
     get_logger().info("Calculating morans I group statistic...")
 
     # extract FOI and weights

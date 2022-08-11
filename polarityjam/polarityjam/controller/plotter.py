@@ -168,8 +168,7 @@ class Plotter:
 
         # plot scale bar
         if self.params.plot_scalebar:
-            _add_scalebar(ax, self.params.length_scalebar_microns , self.params.pixel_to_micron_ratio)
-
+            _add_scalebar(ax, self.params.length_scalebar_microns, self.params.pixel_to_micron_ratio)
 
         # save output & close
         save_current_fig(

@@ -156,8 +156,8 @@ class SingleCellPropertyCollector:
         return SingleCellNucleusProps(sc_nucleus_maks, sc_props)
 
     @staticmethod
-    def calc_sc_organelle_props(sc_organelle_mask, nucleus_props):
-        return SingleCellOrganelleProps(sc_organelle_mask, nucleus_props)
+    def calc_sc_organelle_props(sc_organelle_mask, sc_nucleus_props):
+        return SingleCellOrganelleProps(sc_organelle_mask, sc_nucleus_props)
 
     @staticmethod
     def calc_sc_marker_props(sc_mask, im_marker):
@@ -168,8 +168,8 @@ class SingleCellPropertyCollector:
         return SingleCellMarkerMembraneProps(sc_membrane_mask, im_marker)
 
     @staticmethod
-    def calc_sc_marker_nuclei_props(sc_nucleus_mask, im_marker, nucleus_props, marker_props):
-        return SingleCellMarkerNucleiProps(sc_nucleus_mask, im_marker, nucleus_props, marker_props)
+    def calc_sc_marker_nuclei_props(sc_nucleus_mask, im_marker, sc_nucleus_props, sc_marker_props):
+        return SingleCellMarkerNucleiProps(sc_nucleus_mask, im_marker, sc_nucleus_props, sc_marker_props)
 
     @staticmethod
     def calc_sc_marker_cytosol_props(sc_cytosol_mask, im_marker):
