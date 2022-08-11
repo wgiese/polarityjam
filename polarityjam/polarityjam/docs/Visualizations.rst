@@ -21,7 +21,7 @@ showing the given channel configuration and the corresponding segmentation. An e
 Here, first image (from left to right) is the junction channel, second the nuclei channel, and third the
 segmentation mask.
 
-.. image:: images/get_started_sphinx.png
+.. image:: images/060721_EGM2_18dyn_02_cellpose_seg.png
    :width: 600
 
 
@@ -34,6 +34,9 @@ eccentricity actually is a non-negative real number that uniquely characterizes 
 Since cells are closed and always form at most an ellipse the value can never be larger than or equal to 1.
 Hence, the eccentricity here is a value ranging from 0 (here: blue) to close to 1 (here: red).
 
+.. image:: images/060721_EGM2_18dyn_02_eccentricity.png
+   :width: 600
+
 
 Organelle polarity
 ------------------
@@ -45,9 +48,15 @@ In the other case, when the nuclei is positioned to the right, the angle becomes
 The vector is depicted in white, the nucleus contour in blue and the golgi area in red. Additionally,
 a color gradient transparently tints the cells based on their organelle polarity angle.
 
+.. image:: images/060721_EGM2_18dyn_02_nuclei_organelle_vector.png
+   :width: 600
+
 Ratio method
 ------------
 TBA
+
+.. image:: images/060721_EGM2_18dyn_02_ratio_method.png
+   :width: 600
 
 Cell shape and nuclei shape orientation
 ---------------------------------------
@@ -55,6 +64,10 @@ The shape and nuclei orientation plot shows the angle that spans between the hor
 axis of the cell, where an angle of 0 means the major axis of the cell is perfectly horizontal.
 Because a cell has no head and tail the angle can only span from 0° to maximal 180°. For visual aid, a color
 gradient colors the cell based on the value of its orientation.
+
+.. image:: images/060721_EGM2_18dyn_02_shape_orientation.png
+   :width: 600
+
 
 Marker expression
 -----------------
@@ -64,6 +77,9 @@ This is shown in the following plot in the first image. Additionally, the mean i
 visualized in the second image. This graphical representation highly depends on the parameter
 "membrane thickness" which should be set appropriately. The mean intensity of the nucleus is shown in
 the third image and is only present if a nucleus channel is provided.
+
+.. image:: images/060721_EGM2_18dyn_02_marker_expression.png
+   :width: 600
 
 
 Marker polarity
@@ -75,6 +91,10 @@ The angle between the center of the cell (green dot) and the weighted center of 
 center is positioned on the same horizontal height and to the right of the center of the cell. The value takes 180
 if the weighted marker center is position to the left, but still on the same horizontal axis.
 
+.. image:: images/060721_EGM2_18dyn_02_marker_polarity.png
+   :width: 600
+
+
 Junction polarity
 -----------------
 
@@ -82,3 +102,6 @@ The same analysis as has been done for the marker polarity with the marker chann
 with the junction channel. Again, the angle between center of the cell and the weighted center of the
 junction channel can be calculated. The result can be visualized in the same way as before and is shown
 in the image below.
+
+.. image:: images/060721_EGM2_18dyn_02_junction_polarity.png
+   :width: 600

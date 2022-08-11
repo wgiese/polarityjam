@@ -28,7 +28,7 @@ Execute the following steps to manually install the polarityjam feature extracti
     pip install -e polarityjam
 
 
-.. note::
+.. tip::
 
     It is strongly recommended to have a working `conda <https://anaconda.com/>`_ installation and to operate in an activated environment!
 
@@ -40,7 +40,7 @@ The R-shiny web app further analyses the results of the feature extraction proce
 There are several statistics available which parameters can be adapted during runtime to immediately
 observe the change in the corresponding visualization.
 Thus, Exploring the data and relieving interesting patterns is heavily facilitated.
-To get to know more about the statics continue reading or visit the :ref:`method <Method>` section.
+To get to know more about the statics continue reading or visit the :any:`Methods <Methods>` section.
 
 
 

@@ -23,8 +23,9 @@ Feature Extraction Pipeline
 The feature extraction pipeline lets you extract relevant features from your image(s) and collect
 them in a csv file. Optionally, the user can choose between several options to visualize the input
 images(s) and have a first look at the result of the information extraction process. If you want to
-know what features can be extracted visit the ** usage** section. If you want to know more about the
-features, visualizations and methodology behind this process check out the method section.
+know what features can be extracted visit the `Usage <Usage>`_ section.
+If you want to know more about the features, visualizations and methodology behind
+this process check out the method section.
 
 Often, an analysis performed is barely reproducible due to missing information about version,
 specific parameters and more. To be able to repeat the extraction process at a later point in time
@@ -40,5 +41,6 @@ Online Service
 --------------
 
 Once the feature extraction process is finished, the information can be statistically analysed to
-discover structural patterns. Easiest way to achieve this is to use the service hosted at polarityjam.com by simply uploading the
-csv from the feature extraction process. Alternatively, the app can also be executed locally.
+discover structural patterns. Easiest way to achieve this is to use the service hosted at
+`www.polarityjam.com <www.polarityjam.com>`_ by simply uploading the csv from the feature
+extraction process. Alternatively, the app can also be executed locally.

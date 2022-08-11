@@ -5,8 +5,33 @@
 
 Welcome to polarityjam's documentation!
 =======================================
+.. role:: raw-html(raw)
+    :format: html
 
-Here you find everything you need to know about Polarityjam, whether you are user, contributor or administrator.
+.. container:: twocol
+
+   .. container:: leftside
+
+      .. image:: images/polarityjam_logo.png
+         :width: 300
+         :align: center
+
+   .. container:: rightside
+
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+
+      Polarityjam is a software suite to study endothelial cell behavior and more.
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+      Explore the `software suite <whatis>`_ here!
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+      :raw-html:`<br />`
+
 
 .. toctree::
    :maxdepth: 2
@@ -19,16 +44,15 @@ Here you find everything you need to know about Polarityjam, whether you are use
    Visualizations
    API
    Methods
-   Modules <index/modules>
    Contribute
 
+..
+   Indices and tables
+   ==================
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   * :ref:`genindex`
+   * :ref:`modindex`
+   * :ref:`search`
 
 
 .. note::

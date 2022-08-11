@@ -1,0 +1,8 @@
+div.leftside {
+    width: 414px;
+    float: left;
+}
+
+div.rightside {
+    margin-left: 425px;
+}
