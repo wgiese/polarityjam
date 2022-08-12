@@ -28,6 +28,10 @@ class Parameter:
         if hasattr(self, key):
             setattr(self, key, val)
 
+    def reset(self):
+        for key in self.__dict__:
+            self._setattr(key, None)
+
     @classmethod
     def from_yml(cls, path):
         params = read_parameters(path)
@@ -51,14 +55,35 @@ class SegmentationParameter(Parameter):
         self.manually_annotated_mask = None
         self.store_segmentation = None
         self.use_given_mask = None
-        self.cp_model_type = None
-        self.cp_model_path = None
+        self.model_type = None
+        self.model_path = None
         self.estimated_cell_diameter = None
         self.use_gpu = None
         self.clear_border = None
         self.min_cell_size = None
 
         super().__init__(**attrs)
+
+
+class ImageParameter(Parameter):
+
+    def __init__(self, attrs=None):
+        if attrs is None:
+            attrs = {}
+        self.channel_junction = None
+        self.channel_nucleus = None
+        self.channel_organelle = None
+        self.channel_expression_marker = None
+
+        super().__init__(**attrs)
+
+    def __len__(self):
+        c = 0
+        for key in self.__dict__:
+            if getattr(self, key) is not None:
+                c += 1
+
+        return c
 
 
 class InputParameter(Parameter):

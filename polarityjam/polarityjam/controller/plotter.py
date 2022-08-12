@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from polarityjam.model.collection import PropertiesCollection
 from polarityjam.model.masks import get_single_cell_mask, get_outline_from_mask
-from polarityjam.model.parameter import PlotParameter
+from polarityjam.model.parameter import PlotParameter, ImageParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.vizualization.plot import _add_single_cell_polarity_vector, \
     _add_title, \
@@ -65,20 +65,21 @@ class Plotter:
 
         return [outlines_cell, outlines_mem_accumulated]
 
-    def plot_seg_channels(self, seg_img, output_path, filename, close=False):
+    def plot_channels(self, seg_img, seg_img_params: ImageParameter, output_path, filename, close=False):
+        # todo: rewrite to "plot_channels" and plot based on seg_img_params
         """Plots the separate channels from the input file given."""
         get_logger().info("Plotting: input channels")
 
         output_path = Path(output_path)
         filename_out = str(output_path.joinpath(filename + "_seg.png"))
-        if len(seg_img.shape) > 2:
+        if seg_img_params.channel_junction is not None and seg_img_params.channel_nucleus is not None:
             fig, ax = plt.subplots(1, 2)
             if not self.params.show_graphics_axis:
                 ax[0].axis('off')
                 ax[1].axis('off')
-            ax[0].imshow(seg_img[0, :, :])
+            ax[0].imshow(seg_img[seg_img_params.channel_junction, :, :])
             ax[0].set_title("junction channel")
-            ax[1].imshow(seg_img[1, :, :])
+            ax[1].imshow(seg_img[seg_img_params.channel_nucleus, :, :])
             ax[1].set_title("nuclei channel")
         else:
             fig, ax = plt.subplots()
@@ -90,9 +91,10 @@ class Plotter:
         if close:
             plt.close(fig)
 
-    def plot_cellpose_masks(self, seg_img, cellpose_mask, output_path, filename, close=False):
+    def plot_mask(self, seg_img, mask, output_path, filename, close=False):
         """Plots the cellpose segmentation output, together with the separate channels from the input image."""
-        get_logger().info("Plotting: cellpose masks")
+        # todo: rewrite to "plot based on seg_img_params
+        get_logger().info("Plotting: segmentation masks")
 
         # figure and axes
         w, h = self.params.graphics_width, self.params.graphics_height
@@ -104,14 +106,14 @@ class Plotter:
             ax[1].imshow(seg_img[1, :, :])
             ax[1].set_title("nuclei channel")
             ax[2].imshow(seg_img[0, :, :])
-            ax[2].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
-            ax[2].set_title("cellpose segmentation")
+            ax[2].imshow(mask, cmap=plt.cm.Set3, alpha=0.5)
+            ax[2].set_title("segmentation")
         else:
             fig, ax = plt.subplots(1, 2, figsize=(2 * w, h))
             ax[0].imshow(seg_img[:, :])
             ax[0].set_title("junction channel")
-            ax[1].imshow(cellpose_mask, cmap=plt.cm.Set3, alpha=0.5)
-            ax[1].set_title("cellpose segmentation")
+            ax[1].imshow(mask, cmap=plt.cm.Set3, alpha=0.5)
+            ax[1].set_title("segmentation")
 
         if not self.params.show_graphics_axis:
             for ax_ in ax:

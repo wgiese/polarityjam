@@ -5,30 +5,80 @@ import numpy as np
 import skimage
 from skimage import morphology
 
-from polarityjam.model.parameter import SegmentationParameter
+from polarityjam.model.parameter import SegmentationParameter, ImageParameter
 from polarityjam.polarityjam_logging import get_logger
+
+from abc import ABCMeta, abstractmethod
 
 
 class Segmenter:
+    """Abstract class for an object performing a segmentation procedure."""
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def __init__(self, params: SegmentationParameter):
+        self.params = params
+
+    @abstractmethod
+    def segment(self, img, path=None):
+        """Should perform segmentation and return a mask image. path can point to a model to load."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def prepare(self, img, input_parameter: ImageParameter):
+        """Should perform preparation for a given image to perform the segmentation. Should return prepared image
+        and its parameters.
+        """
+        raise NotImplementedError
+
+
+class CellposeSegmenter(Segmenter):
 
     def __init__(self, params: SegmentationParameter):
         self.params = params
 
-    def get_cellpose_model(self):
+    def segment(self, img, path=None):
+        self._load_or_get_cellpose_segmentation(img, path)
+
+    def prepare(self, img, img_parameter: ImageParameter):
+        get_logger().info("Image shape: %s" % str(img.shape))
+
+        params_prep_img = ImageParameter()
+        params_prep_img.reset()
+
+        im_junction = None
+        im_nucleus = None
+
+        if img_parameter.channel_junction >= 0:
+            get_logger().info("Junction channel at position: %s" % str(img_parameter.channel_junction))
+            im_junction = img[:, :, img_parameter.channel_junction]
+            params_prep_img.channel_junction = 0
+
+        if img_parameter.channel_nucleus >= 0:
+            get_logger().info("Nucleus channel at position: %s" % str(img_parameter.channel_nucleus))
+            im_nucleus = img[:, :, img_parameter.channel_nucleus]
+            params_prep_img.channel_nucleus = 1
+
+        if im_nucleus is not None:
+            return np.array([im_junction, im_nucleus]), params_prep_img
+        else:
+            return im_junction, params_prep_img
+
+    def _get_cellpose_model(self):
         """Gets the specified cellpose model"""
 
-        if self.params.cp_model_type == "custom":
-            model = cellpose.models.CellposeModel(gpu=self.params.use_gpu, pretrained_model=self.params.cp_model_path)
+        if self.params.model_type == "custom":
+            model = cellpose.models.CellposeModel(gpu=self.params.use_gpu, pretrained_model=self.params.model_path)
         else:
-            model = cellpose.models.Cellpose(gpu=self.params.use_gpu, model_type=self.params.cp_model_type)
+            model = cellpose.models.Cellpose(gpu=self.params.use_gpu, model_type=self.params.model_type)
 
         return model
 
-    def get_cellpose_segmentation(self, im_seg, filepath):
+    def _get_cellpose_segmentation(self, im_seg, filepath):
         """Gets the cellpose segmentation. Expects im_seg to have junction channel first, then nucleus channel."""
         get_logger().info("Calculate cellpose segmentation. This might take some time...")
 
-        model = self.get_cellpose_model()
+        model = self._get_cellpose_model()
         if im_seg.ndim > 1:
             channels = [1, 2]
         else:
@@ -36,7 +86,7 @@ class Segmenter:
 
         # masks, flows, styles, diams = model.eval(im_seg, channels=channels)
 
-        if self.params.cp_model_type == "custom":
+        if self.params.model_type == "custom":
             masks, flows, styles = model.eval(im_seg, diameter=self.params.estimated_cell_diameter, channels=channels)
         else:
             masks, flows, styles, diams = model.eval(im_seg, diameter=self.params.estimated_cell_diameter,
@@ -44,14 +94,14 @@ class Segmenter:
 
         if self.params.store_segmentation:
             segmentation_list = {"masks": masks}
-            segmentation, _ = self.get_segmentation_file_name(filepath)
+            segmentation, _ = self._get_segmentation_file_name(filepath)
 
             get_logger().info("Storing cellpose segmentation: %s" % segmentation)
             np.save(str(segmentation), segmentation_list, allow_pickle=True)
 
         return masks
 
-    def get_segmentation_file_name(self, filepath):
+    def _get_segmentation_file_name(self, filepath):
         stem = Path(filepath).stem
 
         suffix = "_seg.npy"
@@ -61,9 +111,9 @@ class Segmenter:
 
         return segmentation, stem
 
-    def load_or_get_cellpose_segmentation(self, img_seg, filepath):
+    def _load_or_get_cellpose_segmentation(self, img_seg, filepath):
         get_logger().info("Look up cellpose segmentation...")
-        segmentation, _ = self.get_segmentation_file_name(filepath)
+        segmentation, _ = self._get_segmentation_file_name(filepath)
 
         if segmentation.exists() and self.params.use_given_mask:
             get_logger().info("Load cellpose segmentation...")
@@ -73,7 +123,7 @@ class Segmenter:
             cellpose_mask = cellpose_seg.item()['masks']
 
         else:
-            cellpose_mask = self.get_cellpose_segmentation(img_seg, filepath)
+            cellpose_mask = self._get_cellpose_segmentation(img_seg, filepath)
 
         if self.params.clear_border:
             cellpose_mask_clear_border = skimage.segmentation.clear_border(cellpose_mask)

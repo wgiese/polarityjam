@@ -15,18 +15,6 @@ class Extractor:
         self.segmentor = None  # todo: this will become the segmentation module
         self.collector = PropertyCollector()
 
-    def get_image_for_segmentation(self, img):
-        """Returns segmentation (junction, nucleus) if multichannel, else junction only."""
-        get_logger().info("Image shape: %s" % str(img.shape))
-
-        # add debug out output here
-        im_junction = self.get_image_junction(img)
-        im_nucleus = self.get_image_nucleus(img)
-        if im_nucleus is not None:
-            return np.array([im_junction, im_nucleus])
-        else:
-            return im_junction
-
     def threshold(self, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
         """Thresholds given single_cell_mask. Returns True if falls under threshold."""
         # TODO: check if this can be removed, we already remove small objects from the cellpose mask
@@ -71,7 +59,7 @@ class Extractor:
             return img[:, :, self.params.channel_organelle]
         return None
 
-    def extract(self, img, cells_mask, filename, output_path, collection):  # cells_mask = is going to be segementor
+    def extract(self, img, cells_mask, filename, output_path, collection):
         """ Extracts the features from an input image."""
 
         img_marker = self.get_image_marker(img)

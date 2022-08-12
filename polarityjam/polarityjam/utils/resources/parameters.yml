@@ -7,8 +7,8 @@ manually_annotated_mask : ""  # in case a manually annotated cellpose mask exist
 store_segmentation : False
 use_given_mask : True
 
-cp_model_type : "cyto"  # "cyto", "cyto2", "custom"
-cp_model_path : ""
+model_type : "cyto"  # "cyto", "cyto2", "custom"
+model_path : ""
 estimated_cell_diameter : 100
 
 use_gpu :  False

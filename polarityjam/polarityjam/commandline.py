@@ -7,9 +7,9 @@ import pandas as pd
 
 from polarityjam.controller.extractor import Extractor
 from polarityjam.controller.plotter import Plotter
-from polarityjam.controller.segmenter import Segmenter
+from polarityjam.controller.segmenter import CellposeSegmenter
 from polarityjam.model.collection import PropertiesCollection
-from polarityjam.model.parameter import InputParameter, PlotParameter, SegmentationParameter
+from polarityjam.model.parameter import InputParameter, PlotParameter, SegmentationParameter, ImageParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
@@ -57,29 +57,32 @@ def _run(infile, param, output_path, fileout_name):
 
     # read input
     img = read_image(infile)
+    params_img = ImageParameter(param)
 
-    # extractor
+    # inputParams
     params_input = InputParameter(param)
-    e = Extractor(params_input)
-    img_seg = e.get_image_for_segmentation(img)
 
     # plotter
     params_plot = PlotParameter(param)
     p = Plotter(params_plot)
 
-    # plot input
-    p.plot_seg_channels(img_seg, output_path, fileout_name, True)
-
     # segmenter
     params_seg = SegmentationParameter(param)
-    s = Segmenter(params_seg)
-    mask = s.load_or_get_cellpose_segmentation(img_seg, infile)
+    s = CellposeSegmenter(params_seg)
+
+    # prepare segmentation and plot
+    img_seg, img_seg_params = s.prepare(img, params_img)
+    p.plot_channels(img_seg, img_seg_params, output_path, fileout_name, True)
+
+    # segment
+    mask = s.segment(img_seg, infile)
 
     # plot cellpose mask
-    p.plot_cellpose_masks(img_seg, mask, output_path, fileout_name)
+    p.plot_mask(img_seg, mask, output_path, fileout_name)
 
     # feature extraction
     c = PropertiesCollection()
+    e = Extractor(params_input)
     e.extract(img, mask, fileout_name, output_path, c)
 
     # visualize
