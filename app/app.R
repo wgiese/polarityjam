@@ -48,10 +48,9 @@ library(FNN)
 library(tidyverse)
 library(CircStats)
 library(readxl)
-library(fs)
+#library(fs)
 library(rjson)
 library(optparse)
-# library(DescTools)
 
 option_list <- list(
   make_option(c("-p", "--port"), type = "integer", default = 8888)
@@ -78,7 +77,7 @@ vals <- reactiveValues(count = 0)
 ###### UI: User interface #########
 
 ui <- navbarPage(
-  "Polarity JaM - a web app for visualizing cell polarity, junction and morphology data (beta version)",
+  "Polarity JaM - a web app for visualizing cell polarity, junction and morphology data",
 
   ### Panel 0: Data preparation
 
@@ -86,7 +85,6 @@ ui <- navbarPage(
     "Data preparation",
     sidebarLayout(
       sidebarPanel(
-
 
         # radioButtons("data_upload_form", "Data from:", choices = list("example 1", "single file", "folder", "key file"), selected = "example 1"),
         radioButtons("data_upload_form", "Data from:", choices = list("example 1", "upload data"), selected = "example 1"),
@@ -131,40 +129,29 @@ ui <- navbarPage(
           verbatimTextOutput("dir_key", placeholder = TRUE),
           actionButton("refreshStack", "Refresh"),
         ),
+
+        # in case of a very large spreadsheet file, the rows can be subsampled. In this case only every n-th row is selected.
         checkboxInput("subsample_data", "Subsample data", FALSE),
         conditionalPanel(
           condition = "input.subsample_data == true",
           numericInput("subsample_n", "Select every n-th row:", value = 1, min = 1, max = 50, step = 1)
         ),
 
-        # conditionalPanel(
-        #    condition = "input.data_upload_form == 'folder'",
-        #    shinyDirButton("dir", "Input directory", "Upload"),
-        #    verbatimTextOutput("dir", placeholder = TRUE),
-        #    actionButton("refreshStack", "Refresh"),
-        # ),
-
-
+        # 
         selectInput("sample_col", "Identifier of samples", choices = ""),
         selectInput("condition_col", "Identifier of conditions", choices = ""),
+        
+        #TODO: needs to be implemented
+        selectInput("filter_column", "Filter based on this parameter:", choices = ""),
+        #TODO: needs to be implemented
+        selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE),
         selectInput("dataset_merged", "Choose a dataset:",
           choices = c("merged_file")
         ),
         downloadButton("downloadProcessedData", "Download")
       ),
 
-
-
-      # conditionalPanel(condition = "input.tidyInput==true",
-      #    selectInput("x_var", "Select variable for x-axis", choices = ""),
-      #    selectInput("y_var", "Select variable for y-axis", choices = ""),
-      #    selectInput("g_var", "Identifier of samples", choices = ""),
-      #    selectInput("c_var", "Identifier of conditions", choices = ""),
-      #    selectInput("filter_column", "Filter based on this parameter:", choices = ""),
-      #    selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE)
-      # ),
-
-      # Show a plot of the generated distribution
+      # TODO: Add Terms of Use text
       mainPanel(
         tabsetPanel(
           tabPanel("Data", htmlOutput("terms_of_use_text"), tableOutput("merged_stack"))
@@ -174,26 +161,17 @@ ui <- navbarPage(
   ),
 
 
-  ### Panel A: Image stack histogram
+  ### Panel A: Image stack analysis
 
   tabPanel(
     "Image stack analysis",
     sidebarLayout(
       sidebarPanel(
-        #                shinyDirButton("dir", "Input directory", "Upload"),
-        #                verbatimTextOutput("dir", placeholder = TRUE),
-        #                actionButton("refreshStack", "Refresh"),
-
         selectInput("feature_select", "Choose a feature:", choices = ""),
-        #                selectInput("feature_select", "Choose a feature:",
-        #                            choices = c("organelle_orientation", "cell_shape_orientation",
-        #                            "major_axis_nucleus_orientation", "eccentricity", "major_over_minor_ratio",
-        #                            "mean_expression", "mean_expression_nuc", "marker_polarity", "area", "perimeter")),
         selectInput("stats_method", "Choose a stats test",
           choices = c("None", "Rayleigh uniform", "V-Test", "Rao's Test", "Watson's Test")
         ),
         conditionalPanel(
-          # condition = "input.stats_method %in% c('V-Test')",
           condition = "input.stats_method == 'V-Test'",
           numericInput("cond_mean_direction",
             "Conditional mean direction",
@@ -431,12 +409,9 @@ ui <- navbarPage(
 )
 
 
-
-
-
 loadVolumes <- function(exclude = "") {
   "This function returns all volumes in a named list.
-  TODO: check if built-in function would also work"
+  TODO: check if built-in function would also work."
 
   osSystem <- Sys.info()["sysname"]
   if (osSystem == "Darwin") {
@@ -498,14 +473,12 @@ server <- function(input, output, session) {
   volumes <- loadVolumes()
   print("Volumes")
   print(volumes)
+  
   shinyDirChoose(
     input,
     "dir",
     roots = volumes # ,
   )
-  # volumes <- loadVolumes_key()
-  # print("Volumes")
-  # print(volumes)
   shinyDirChoose(
     input,
     "dir_key",
@@ -566,12 +539,6 @@ server <- function(input, output, session) {
   )
 
   observe({
-
-    # if (is.data.frame(mergedStack())) {
-    #    print("Not a data frame")
-    #    var_list <- c("none")
-    # }
-    # else {
     var_names <- colnames(mergedStack())
     print("var_names")
     print(var_names)
@@ -584,16 +551,15 @@ server <- function(input, output, session) {
     print("var_list")
     print(var_list)
     # }
-    #    #        updateSelectInput(session, "color_list", choices = var_list)
-    #    #updateSelectInput(session, "y_var", choices = var_list, selected="Value")
-    #    #updateSelectInput(session, "x_var", choices = var_list, selected="Time")
+ 
     updateSelectInput(session, "sample_col", choices = var_list, selected = "label")
     updateSelectInput(session, "condition_col", choices = var_list, selected = "filename")
     updateSelectInput(session, "feature_select", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_1", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_2", choices = var_list, selected = "nuc_shape_orientation")
     updateSelectInput(session, "feature_comparison", choices = var_list, selected = "nuclei_golgi_polarity")
-    #    #updateSelectInput(session, "filter_column", choices = var_list, selected="none")
+    updateSelectInput(session, "filter_column", choices = var_list, selected="none")
+    updateSelectInput(session, "filter_column", choices = var_list, selected="none")
   })
 
 
@@ -746,7 +712,10 @@ server <- function(input, output, session) {
     #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     # }
 
-
+#    sample_col <- input$sample_col
+#    print(sample_col)
+#    results_all_df <- results_all_df[!is.na(results_all_df[sample_col]),]
+    results_all_df <- na.omit(results_all_df)
     results_all_df
   })
   # end of merged stack function
@@ -838,10 +807,6 @@ server <- function(input, output, session) {
     # print(parameters[input$feature_select][[1]][2])
     if (parameters[input$feature_select][[1]][2] == "axial") {
 
-      # statistics_df <- as.data.frame(matrix(nrow=10,ncol=3))
-      # colnames(statistics_df) <- c("entity", "value", "description") #, "comment")
-
-
       for (condition in condition_list) {
         condition_data <- subset(results_df, results_df[condition_col] == condition)
         print("Condition subset: ")
@@ -858,8 +823,6 @@ server <- function(input, output, session) {
         p_value_mu <- signif(statistics[1, "v_test"], digits = 3)
         # if (statistics[1,"rayleigh_test_mu"] < 0.001)
         #    p_value_mu <- "p < 0.001"
-
-
         ind <- 1
         statistics_df[ind, 1] <- "number of cells"
         statistics_df[ind, condition] <- nrow(condition_data)
@@ -903,18 +866,72 @@ server <- function(input, output, session) {
         statistics_df[ind, condition] <- p_value_mu
       }
     } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
-      statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+      #statistics <- compute_2_axial_statistics(results_df, feature, parameters)
 
-      p_value <- signif(statistics[1, "rayleigh_test"], digits = 3)
+      #p_value <- signif(statistics[1, "rayleigh_test"], digits = 3)
 
-      statistics_df[1, 1] <- "cells"
-      statistics_df[1, 2] <- nrow(results_df)
-      statistics_df[2, 1] <- "mean (degree)"
-      statistics_df[2, 2] <- signif(statistics[1, "mean"], digits = 3)
-      statistics_df[3, 1] <- "polarity index"
-      statistics_df[3, 2] <- signif(statistics[1, "polarity_index"], digits = 3)
-      statistics_df[4, 1] <- "Rayleigh test, p-value:"
-      statistics_df[4, 2] <- p_value
+      #statistics_df[1, 1] <- "cells"
+      #statistics_df[1, 2] <- nrow(results_df)
+      #statistics_df[2, 1] <- "mean (degree)"
+      #statistics_df[2, 2] <- signif(statistics[1, "mean"], digits = 3)
+      #statistics_df[3, 1] <- "polarity index"
+      #statistics_df[3, 2] <- signif(statistics[1, "polarity_index"], digits = 3)
+      #statistics_df[4, 1] <- "Rayleigh test, p-value:"
+      #statistics_df[4, 2] <- p_value
+      for (condition in condition_list) {
+        condition_data <- subset(results_df, results_df[condition_col] == condition)
+        print("Condition subset: ")
+        print(head(condition_data))
+        
+        x_data <- unlist(condition_data[feature]) * 180.0 / pi
+        statistics <- compute_2_axial_statistics(condition_data, feature, parameters)
+        print("Statistics")
+        print(statistics)
+        
+        p_value <- signif(statistics[1, "rayleigh_test"], digits = 3)
+        # if (statistics[1,"rayleigh_test"] < 0.001)
+        #    p_value <- "p < 0.001"
+
+        ind <- 1
+        statistics_df[ind, 1] <- "number of cells"
+        statistics_df[ind, condition] <- nrow(condition_data)
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "mean (degree)"
+        statistics_df[ind, condition] <- signif(statistics[1, "mean"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "polarity index"
+        statistics_df[ind, condition] <- signif(statistics[1, "polarity_index"], digits = 3)
+        
+        #ind <- ind + 1
+        #statistics_df[ind, 1] <- "signed polarity index (mean = 180)"
+        #statistics_df[ind, condition] <- signif(statistics[1, "signed_polarity_index"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "angular standard deviation"
+        statistics_df[ind, condition] <- signif(statistics[1, "std_angular"], digits = 3)
+        # statistics_df[ind,3] <- "angular standard deviation, takes values in [0,sqrt(2)], see https://doi.org/10.18637/jss.v031.i10 for more info."
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "circular standard deviation"
+        statistics_df[ind, condition] <- signif(statistics[1, "std_circular"], digits = 3)
+        # statistics_df[ind,3] <- "circular standard deviation, takes values in [0,inf], see https://doi.org/10.18637/jss.v031.i10 for more info."
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "95% confidence interval of the mean, lower limit: "
+        statistics_df[ind, condition] <- signif(statistics[1, "ci_95_lower_limit"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "95% confidence interval of the mean, upper limit: "
+        statistics_df[ind, condition] <- signif(statistics[1, "ci_95_upper_limit"], digits = 3)
+        
+        ind <- ind + 1
+        statistics_df[ind, 1] <- "Rayleigh test, p-value:"
+        statistics_df[ind, condition] <- p_value
+        
+      }
+      
     } else {
       statistics <- compute_linear_statistics(results_df, feature, parameters)
 
