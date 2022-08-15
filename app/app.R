@@ -1341,7 +1341,7 @@ server <- function(input, output, session) {
 
   output$downloadMergedPlotPDF <- downloadHandler(
     filename <- function() {
-      paste("PolarityJaM_Merged_", Sys.time(), ".pdf", sep = "")
+      paste(paste0("PolarityJaM_", input$featue_select,"_Merged_"), Sys.time(), ".pdf", sep = "")
     },
     content <- function(file) {
       pdf(file, width = input$plot_width_A / 72, height = input$plot_height_A / 72)
@@ -1377,7 +1377,7 @@ server <- function(input, output, session) {
 
   output$downloadMergedPlotPNG <- downloadHandler(
     filename <- function() {
-      paste("PolarityJaM_Merged_", Sys.time(), ".png", sep = "")
+      paste("PolarityJaM_", input$feature_select, "_Merged_", Sys.time(), ".png", sep = "")
     },
     content <- function(file) {
       png(file, width = input$plot_width_A * 4, height = input$plot_height_A * 4, res = 300)
@@ -1431,7 +1431,7 @@ server <- function(input, output, session) {
 
   output$downloadMultiPlotPNG <- downloadHandler(
     filename <- function() {
-      paste("PolarityJaM_Multi_", Sys.time(), ".png", sep = "")
+      paste("PolarityJaM_", input$feature_select, "_Multi_", Sys.time(), ".png", sep = "")
     },
     content <- function(file) {
       png(file, width = input$plot_width_A * 4, height = input$plot_height_A * 4, res = 300)
