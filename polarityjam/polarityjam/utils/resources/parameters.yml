@@ -1,6 +1,6 @@
 ## physical parameters
+length_unit: "pixel" # "microns"
 pixel_to_micron_ratio : 1.0
-
 
 ## cellpose/segmentation parameters
 manually_annotated_mask : ""  # in case a manually annotated cellpose mask exists specify suffix here
@@ -38,7 +38,7 @@ dpi : 300
 graphics_width : 5 # figure width in inches
 graphics_height : 5 # figure height in inches
 
-plot_scalebar : True
+plot_scalebar : False
 length_scalebar_microns : 10.0
 
 # channel parameters
