@@ -461,6 +461,11 @@ class Plotter:
                         np.array(json.loads(row["cell_corner_points"]))[:, 1],
                         [4] * len(np.array(json.loads(row["cell_corner_points"]))[:, 1]))
 
+        ax.set_title("cell corners")
+
+        if not self.params.show_graphics_axis:
+            ax.axis('off')
+
         save_current_fig(self.params.graphics_output_format, collection.out_path_dict[img_name], img_name,
                          "_cell_corners")
         if close:

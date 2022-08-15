@@ -1,4 +1,3 @@
-import unittest
 from pathlib import Path
 
 import networkx as nx
@@ -50,28 +49,6 @@ class TestFunctions(TestCommon):
 
         # assert correct type
         self.assertEqual(type(np.array(0)), type(r))
-
-    @unittest.skip("Rewrite")
-    def test_get_image_for_segmentation_case_junctions(self):
-        # prepare
-        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
-
-        # call
-        r = get_image_for_segmentation(self.parameters, img)
-
-        # assert
-        self.assertEqual((2, 1024, 1024), r.shape)
-
-    @unittest.skip("Rewrite")
-    def test_get_image_for_segmentation_case_segmentation(self):
-        self.parameters["channel_nucleus"] = -1
-        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
-
-        # call
-        r = get_image_for_segmentation(self.parameters, img)
-
-        # expect junctions channel only
-        self.assertEqual((1024, 1024), r.shape)
 
     def test_morans_i_anti_correlation(self):
         # prepare anti-correlation sample
