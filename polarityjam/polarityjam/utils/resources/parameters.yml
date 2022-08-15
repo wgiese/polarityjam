@@ -33,7 +33,7 @@ outline_width : 2
 show_polarity_angles : True
 show_graphics_axis : False
 
-graphics_output_format : ['png', 'pdf'] # 'png', 'pdf', 'svg'
+graphics_output_format : ['png'] # 'png', 'pdf', 'svg'
 dpi : 300
 graphics_width : 5 # figure width in inches
 graphics_height : 5 # figure height in inches

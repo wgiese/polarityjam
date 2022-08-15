@@ -4,15 +4,14 @@ from polarityjam.compute.moran import run_morans
 from polarityjam.compute.neighborhood import k_neighbor_dif
 from polarityjam.controller.collector import PropertyCollector, SingleCellPropertyCollector, SingleCellMaskCollector
 from polarityjam.model.masks import MasksCollection
-from polarityjam.model.parameter import InputParameter
+from polarityjam.model.parameter import RuntimeParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.rag import orientation_graph_nf, remove_islands
 
 
 class Extractor:
-    def __init__(self, params: InputParameter):
+    def __init__(self, params: RuntimeParameter):
         self.params = params
-        self.segmentor = None  # todo: this will become the segmentation module
         self.collector = PropertyCollector()
 
     def threshold(self, single_cell_mask, single_nucleus_mask=None, single_organelle_mask=None):
@@ -31,41 +30,45 @@ class Extractor:
 
         return False
 
-    def get_image_marker(self, img):
-        """Gets the image of the marker channel specified in the self.params."""
-        if self.params.channel_expression_marker >= 0:
-            get_logger().info("Marker channel at position: %s" % str(self.params.channel_expression_marker))
-            return img[:, :, self.params.channel_expression_marker]
+    @staticmethod
+    def get_image_marker(img, img_params):
+        """Gets the image of the marker channel specified in the img_params."""
+        if img_params.channel_expression_marker >= 0:
+            get_logger().info("Marker channel at position: %s" % str(img_params.channel_expression_marker))
+            return img[:, :, img_params.channel_expression_marker]
         return None
 
-    def get_image_junction(self, img):
-        """Gets the image of the junction channel specified in the self.params."""
-        if self.params.channel_junction >= 0:
-            get_logger().info("Junction channel at position: %s" % str(self.params.channel_junction))
-            return img[:, :, self.params.channel_junction]
+    @staticmethod
+    def get_image_junction(img, img_params):
+        """Gets the image of the junction channel specified in the img_params."""
+        if img_params.channel_junction >= 0:
+            get_logger().info("Junction channel at position: %s" % str(img_params.channel_junction))
+            return img[:, :, img_params.channel_junction]
         return None
 
-    def get_image_nucleus(self, img):
-        """Gets the image of the nucleus channel specified in the self.params."""
-        if self.params.channel_nucleus >= 0:
-            get_logger().info("Nucleus channel at position: %s" % str(self.params.channel_nucleus))
-            return img[:, :, self.params.channel_nucleus]
+    @staticmethod
+    def get_image_nucleus(img, img_params):
+        """Gets the image of the nucleus channel specified in the img_params."""
+        if img_params.channel_nucleus >= 0:
+            get_logger().info("Nucleus channel at position: %s" % str(img_params.channel_nucleus))
+            return img[:, :, img_params.channel_nucleus]
         return None
 
-    def get_image_organelle(self, img):
-        """Gets the image of the organelle channel specified in the self.params."""
-        if self.params.channel_organelle >= 0:
-            get_logger().info("Organelle channel at position: %s" % str(self.params.channel_organelle))
-            return img[:, :, self.params.channel_organelle]
+    @staticmethod
+    def get_image_organelle(img, img_params):
+        """Gets the image of the organelle channel specified in the img_params."""
+        if img_params.channel_organelle >= 0:
+            get_logger().info("Organelle channel at position: %s" % str(img_params.channel_organelle))
+            return img[:, :, img_params.channel_organelle]
         return None
 
-    def extract(self, img, cells_mask, filename, output_path, collection):
+    def extract(self, img, img_params, cells_mask, filename, output_path, collection):
         """ Extracts the features from an input image."""
 
-        img_marker = self.get_image_marker(img)
-        img_junction = self.get_image_junction(img)
-        img_nucleus = self.get_image_nucleus(img)
-        img_organelle = self.get_image_organelle(img)
+        img_marker = self.get_image_marker(img, img_params)
+        img_junction = self.get_image_junction(img, img_params)
+        img_nucleus = self.get_image_nucleus(img, img_params)
+        img_organelle = self.get_image_organelle(img, img_params)
 
         masks = MasksCollection(cells_mask)
 
@@ -76,10 +79,10 @@ class Extractor:
 
         get_logger().info("Number of RAG nodes: %s " % len(list(rag.nodes)))
 
-        if self.params.channel_nucleus >= 0:
+        if img_params.channel_nucleus >= 0:
             masks.set_nuclei_mask(img_nucleus)
 
-        if self.params.channel_organelle >= 0:
+        if img_params.channel_organelle >= 0:
             masks.set_organelle_mask(img_organelle)
 
         excluded = 0

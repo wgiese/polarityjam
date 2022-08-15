@@ -9,7 +9,7 @@ from polarityjam.controller.extractor import Extractor
 from polarityjam.controller.plotter import Plotter
 from polarityjam.controller.segmenter import CellposeSegmenter
 from polarityjam.model.collection import PropertiesCollection
-from polarityjam.model.parameter import InputParameter, PlotParameter, SegmentationParameter, ImageParameter
+from polarityjam.model.parameter import RuntimeParameter, PlotParameter, SegmentationParameter, ImageParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.utils.io import read_parameters, read_image, get_tif_list, read_key_file, \
     get_doc_file_prefix, write_dict_to_yml, create_path_recursively
@@ -60,7 +60,7 @@ def _run(infile, param, output_path, fileout_name):
     params_img = ImageParameter(param)
 
     # inputParams
-    params_input = InputParameter(param)
+    params_input = RuntimeParameter(param)
 
     # plotter
     params_plot = PlotParameter(param)
@@ -78,12 +78,12 @@ def _run(infile, param, output_path, fileout_name):
     mask = s.segment(img_seg, infile)
 
     # plot cellpose mask
-    p.plot_mask(img_seg, mask, output_path, fileout_name)
+    p.plot_mask(mask, img_seg, img_seg_params, output_path, fileout_name)
 
     # feature extraction
     c = PropertiesCollection()
     e = Extractor(params_input)
-    e.extract(img, mask, fileout_name, output_path, c)
+    e.extract(img, params_img, mask, fileout_name, output_path, c)
 
     # visualize
     p.plot_collection(c)

@@ -39,11 +39,9 @@ class Parameter:
         cls(**params)
 
     def __str__(self, indent=1):
-        s = '%s  \n' % self.__class__.__name__
+        s = '%s:  \n' % self.__class__.__name__
         for attr in self.__dict__:
-            for i in range(0, indent):
-                s += '\t'
-            s += (attr + ':\t' + str(getattr(self, attr))) + '\n'
+            s += '{:<30}{:<40}\n'.format(attr, str(getattr(self, attr)))
         return s
 
 
@@ -86,15 +84,11 @@ class ImageParameter(Parameter):
         return c
 
 
-class InputParameter(Parameter):
+class RuntimeParameter(Parameter):
 
     def __init__(self, attrs=None):
         if attrs is None:
             attrs = {}
-        self.channel_junction = None
-        self.channel_nucleus = None
-        self.channel_organelle = None
-        self.channel_expression_marker = None
         self.membrane_thickness = None
         self.feature_of_interest = None
         self.min_cell_size = None

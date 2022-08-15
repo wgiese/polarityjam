@@ -71,7 +71,7 @@ class Plotter:
         get_logger().info("Plotting: input channels")
 
         output_path = Path(output_path)
-        filename_out = str(output_path.joinpath(filename + "_seg.png"))
+        filename_out = str(output_path.joinpath(filename + "_channels.png"))
         if seg_img_params.channel_junction is not None and seg_img_params.channel_nucleus is not None:
             fig, ax = plt.subplots(1, 2)
             if not self.params.show_graphics_axis:
@@ -91,15 +91,16 @@ class Plotter:
         if close:
             plt.close(fig)
 
-    def plot_mask(self, seg_img, mask, output_path, filename, close=False):
-        """Plots the cellpose segmentation output, together with the separate channels from the input image."""
-        # todo: rewrite to "plot based on seg_img_params
+    def plot_mask(self, mask, seg_img, seg_img_params, output_path, filename, close=False):
+        """Plots the segmentation mask, together with the separate channels from the input image.
+        """
+        # todo: rewrite to plot based on seg_img_params
         get_logger().info("Plotting: segmentation masks")
 
         # figure and axes
         w, h = self.params.graphics_width, self.params.graphics_height
 
-        if len(seg_img.shape) > 2:
+        if seg_img_params.channel_junction is not None and seg_img_params.channel_nucleus is not None:
             fig, ax = plt.subplots(1, 3, figsize=(3 * w, h))
             ax[0].imshow(seg_img[0, :, :])
             ax[0].set_title("junction channel")
@@ -112,6 +113,7 @@ class Plotter:
             fig, ax = plt.subplots(1, 2, figsize=(2 * w, h))
             ax[0].imshow(seg_img[:, :])
             ax[0].set_title("junction channel")
+            ax[1].imshow(seg_img[:, :])
             ax[1].imshow(mask, cmap=plt.cm.Set3, alpha=0.5)
             ax[1].set_title("segmentation")
 
@@ -123,7 +125,7 @@ class Plotter:
         save_current_fig(
             self.params.graphics_output_format,
             output_path, filename,
-            "_cellpose_seg",
+            "_segmentation",
         )
         if close:
             plt.close(fig)

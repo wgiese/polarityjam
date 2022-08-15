@@ -35,10 +35,11 @@ class Segmenter:
 class CellposeSegmenter(Segmenter):
 
     def __init__(self, params: SegmentationParameter):
+        super().__init__(params)
         self.params = params
 
     def segment(self, img, path=None):
-        self._load_or_get_cellpose_segmentation(img, path)
+        return self._load_or_get_cellpose_segmentation(img, path)
 
     def prepare(self, img, img_parameter: ImageParameter):
         get_logger().info("Image shape: %s" % str(img.shape))
