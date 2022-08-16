@@ -55,6 +55,7 @@ class TestIntegration(TestCommon):
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(1, num_csv)
 
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack(self):
         in_path = str(self.get_test_image_folder("gn").joinpath("set_2"))
         param_file = str(self.get_test_parameter_file("parameters_golgi_nuclei.yml"))
