@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import yaml
 
-from polarityjam.feature_extraction import get_image_for_segmentation, morans_data_prep, run_morans
+from polarityjam.compute.moran import run_morans
 from polarityjam.test.test_common import TestCommon
 from polarityjam.utils.io import read_parameters, read_image
 
@@ -50,26 +50,6 @@ class TestFunctions(TestCommon):
         # assert correct type
         self.assertEqual(type(np.array(0)), type(r))
 
-    def test_get_image_for_segmentation_case_junctions(self):
-        # prepare
-        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
-
-        # call
-        r = get_image_for_segmentation(self.parameters, img)
-
-        # assert
-        self.assertEqual((2, 1024, 1024), r.shape)
-
-    def test_get_image_for_segmentation_case_segmentation(self):
-        self.parameters["channel_nucleus"] = -1
-        img = read_image(self.get_test_image_path("060721_EGM2_18dyn_01.tif"))
-
-        # call
-        r = get_image_for_segmentation(self.parameters, img)
-
-        # expect junctions channel only
-        self.assertEqual((1024, 1024), r.shape)
-
     def test_morans_i_anti_correlation(self):
         # prepare anti-correlation sample
         graph = nx.grid_2d_graph(10, 10)
@@ -90,8 +70,7 @@ class TestFunctions(TestCommon):
                         nx.set_node_attributes(graph, {(i, j): 0}, name="morani")
 
         # run morans i
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # check the output
         self.assertEqual(-1, mr_i.I)
@@ -110,8 +89,7 @@ class TestFunctions(TestCommon):
                     empty_int[i, j] = 0
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertAlmostEqual(0, mr_i.I, delta=0.3)
@@ -128,8 +106,7 @@ class TestFunctions(TestCommon):
                 nx.set_node_attributes(graph, {(i, j): rand_int}, name="morani")
 
         # run
-        feature_list, weights = morans_data_prep(graph, "morani")
-        mr_i = run_morans(feature_list, weights)
+        mr_i = run_morans(graph, "morani")
 
         # assert
         self.assertEqual(1, mr_i.I)

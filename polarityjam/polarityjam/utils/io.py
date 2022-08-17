@@ -16,10 +16,22 @@ CALL_TIME = None
 
 
 def read_parameters(parameter_file):
-    """Reads in default parameters and replaces user defined parameters."""
+    """Reads in default parameters and replaces user defined parameters.
+
+
+    Parameters
+    ----------
+    parameter_file:     string
+                        Path to the parameter file.
+
+    Returns
+    -------
+    dictionary where all missing parameter values are replaced with the default values.
+
+    """
     current_path = Path(os.path.dirname(os.path.realpath(__file__)))
 
-    param_base_file = Path(current_path).joinpath("base", "parameters.yml")
+    param_base_file = Path(current_path).joinpath("resources", "parameters.yml")
 
     with open(param_base_file, 'r') as yml_f:
         parameters = yaml.safe_load(yml_f)
@@ -35,7 +47,18 @@ def read_parameters(parameter_file):
 
 
 def read_image(filename):
-    """Reads an image and reshapes to channel last."""
+    """Reads an RGB or grayscale image with the scikit-learn library. Swaps axis if channels are not on last position.
+
+    Parameters
+    ----------
+    filename:   string
+                Path to the image.
+
+    Returns
+    -------
+    image with channels on last position.
+
+    """
     img_ = skimage.io.imread(filename)
 
     if len(img_.shape) <= 2:
@@ -83,7 +106,19 @@ def read_key_file(path):
 
 
 def list_files_recursively(path, root=None, relative=False) -> list:
-    """Lists all files in a repository recursively"""
+    """Lists all files in a repository recursively
+
+
+    Parameters
+    ----------
+    path
+    root
+    relative
+
+    Returns
+    -------
+
+    """
     path = Path(path)
     if not root:
         root = path

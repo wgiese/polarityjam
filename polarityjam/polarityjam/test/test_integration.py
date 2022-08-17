@@ -49,12 +49,13 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(df.shape[0], 97, delta=10)
 
         # number of features should not change
-        self.assertEqual(38, df.shape[1])
+        self.assertEqual(63, df.shape[1])
 
         # only one csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(1, num_csv)
 
+    @unittest.skipIf(platform.system().lower() == 'windows', "Plotting too memory extensive. Skipping test!")
     def test_run_stack(self):
         in_path = str(self.get_test_image_folder("gn").joinpath("set_2"))
         param_file = str(self.get_test_parameter_file("parameters_golgi_nuclei.yml"))
@@ -76,8 +77,8 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(99, df2.shape[0], delta=10)
 
         # number of features should not change
-        self.assertEqual(38, df1.shape[1])
-        self.assertEqual(38, df2.shape[1])
+        self.assertEqual(63, df1.shape[1])
+        self.assertEqual(63, df2.shape[1])
 
         # two csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
@@ -107,9 +108,9 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(58, df3.shape[0], delta=7)
 
         # number of features should not change
-        self.assertEqual(47, df1.shape[1])
-        self.assertEqual(47, df2.shape[1])
-        self.assertEqual(47, df3.shape[1])
+        self.assertEqual(58, df1.shape[1])
+        self.assertEqual(58, df2.shape[1])
+        self.assertEqual(58, df3.shape[1])
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
         self.assertEqual(3, num_csv)
@@ -140,9 +141,9 @@ class TestIntegration(TestCommon):
         self.assertAlmostEqual(29, df3.shape[0], delta=4)
 
         # number of features should not change
-        self.assertEqual(30, df1.shape[1])
-        self.assertEqual(30, df2.shape[1])
-        self.assertEqual(30, df3.shape[1])
+        self.assertEqual(40, df1.shape[1])
+        self.assertEqual(40, df2.shape[1])
+        self.assertEqual(40, df3.shape[1])
 
         # three csv file in output
         num_csv = len(glob.glob(str(Path(out_path).joinpath("*.csv"))))
