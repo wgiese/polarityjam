@@ -68,9 +68,10 @@ def _add_colorbar(fig, cax, ax, yticks, label):
 
 
 def _add_scalebar(ax, length_scalebar_microns, pixel_to_micron_ratio):
-    length_scalebar_pixels = length_scalebar_microns / pixel_to_micron_ratio
-    text = "%s mu m" % length_scalebar_microns
-
+    length_scalebar_pixels = length_scalebar_microns * pixel_to_micron_ratio
+    #text = "%s mu m" % length_scalebar_microns
+    text = str(length_scalebar_microns) + ' ' + r'$\mu m$'
+    
     scalebar = AnchoredSizeBar(ax.transData,
                                length_scalebar_microns, text, 'lower right',
                                pad=0.1,
