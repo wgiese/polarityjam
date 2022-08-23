@@ -1447,10 +1447,13 @@ server <- function(input, output, session) {
   ### Panel B
 
   plot_correlation <- reactive({
+    
+    
     parameters <- fromJSON(file = "parameters/parameters.json")
     source(file = paste0(getwd(), "/src/plot_functions.R"), local = T)
     source(file = paste0(getwd(), "/src/circular_statistics.R"), local = T)
-
+    source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+    
     text_size <- input$text_size_corr
 
     # inFileCorrelationData <- input$correlationData
@@ -1463,8 +1466,12 @@ server <- function(input, output, session) {
 
     correlation_data <- mergedStack() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
 
+    
+    
     feature_1 <- parameters[input$feature_select_1][[1]][1]
     feature_2 <- parameters[input$feature_select_2][[1]][1]
+    
+    
     feature_1_values <- unlist(correlation_data[feature_1])
     feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
     feature_2_values <- unlist(correlation_data[feature_2])
@@ -1476,6 +1483,8 @@ server <- function(input, output, session) {
     feature_1_name <- parameters[input$feature_select_1][[1]][3]
     feature_2_name <- parameters[input$feature_select_2][[1]][3]
 
+    conditions <- correlation_data[input$condition_col]
+    
     print("feature_values")
 
     if (parameters[input$feature_select_1][[1]][2] == "axial") {
@@ -1517,6 +1526,7 @@ server <- function(input, output, session) {
 
       feature_1_values_sin <- sin(correlation_data[feature_1] - mean_dir_1)
       feature_2_values_sin <- sin(correlation_data[feature_2] - mean_dir_2)
+      
 
       # feature_1_values_ <- 180.0*(correlation_data[feature_1] - mean_dir_1)/pi
       # feature_2_values_ <- 180.0*(correlation_data[feature_2] - mean_dir_2)/pi
@@ -1552,7 +1562,7 @@ server <- function(input, output, session) {
 
       reg_coeff <- signif(res$r, digits = 3)
 
-      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_, conditions))
       # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
       # plot_df <- as.data.frame(c(correlation_data[paste0(feature_1,"_shift")],  correlation_data[paste0(feature_2,"_shift")]))
     } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
@@ -1569,7 +1579,7 @@ server <- function(input, output, session) {
       # reg_coeff <- res$r
       # p_value <- res$p.value
 
-      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
+      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_, conditions))
     } else {
 
     }
@@ -1596,9 +1606,13 @@ server <- function(input, output, session) {
     # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
     # plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
     # colnames(plot_df) <- c(feature_1_name, feature_2_name)
-    colnames(plot_df) <- c("x", "y")
-    p <- ggplot(plot_df, aes(x = x, y = y)) +
-      geom_point(color = "black", size = input$marker_size_corr) +
+    
+    
+    # condition_list <- unlist(unique(correlation_data[input$condition_col]))
+    
+    colnames(plot_df) <- c("x", "y", "condition")
+    p <- ggplot(plot_df, aes(x = x, y = y, color = condition)) +
+      geom_point(size = input$marker_size_corr) +
       theme_minimal(base_size = text_size) # theme_bw()
     p <- p + theme(aspect.ratio = 3 / 3)
     p <- p + ggtitle(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
