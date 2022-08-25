@@ -33,6 +33,7 @@
     "junction_interface_occupancy": ["junction_interface_occupancy", "linear", "junction interface occupancy"],
     "junction_intensity_per_interface_area": ["junction_intensity_per_interface_area", "linear", "junction intensity per interface area"],
     "junction_cluster_density": ["junction_cluster_density", "linear", "junction cluster density"],
+    "neighbors_cell": ["neighbors_cell", "linear", "number of neighbours"],
     "neighbors_mean_dif_1st": ["neighbors_mean_dif_1st", "linear", "1st neighbors mean"],
     "neighbors_median_dif_1st": ["neighbors_median_dif_1st", "linear", "1st neighbors median"],
     "neighbors_stddev_dif_1st": ["neighbors_stddev_dif_1st", "linear", "1st neighbors std dev"],

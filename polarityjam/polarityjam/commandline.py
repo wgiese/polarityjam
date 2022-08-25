@@ -212,9 +212,11 @@ def run_key(args):
             summary_df.at[offset + file_index, "cell_number"] = len(np.unique(cellpose_mask))
 
         offset = offset + len(file_list)
-        merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
-        get_logger().info("Writing merged features to disk: %s" % merged_file)
-        merged_properties_df.to_csv(merged_file, index=False)
+        
+        # remove merged table
+        #merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
+        #get_logger().info("Writing merged features to disk: %s" % merged_file)
+        #merged_properties_df.to_csv(merged_file, index=False)
 
     summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
     get_logger().info("Writing summary table to disk: %s" % summary_df_path)
