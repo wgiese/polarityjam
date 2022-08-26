@@ -1487,6 +1487,13 @@ server <- function(input, output, session) {
     
     print("feature_values")
 
+    if (parameters[input$feature_select_1][[1]][2] != "linear" && parameters[input$feature_select_2][[1]][2] != "linear") {
+      
+      p <- plot_circular_circular(correlation_data, input, parameters, plot_nr = 0, text_size = 24) 
+      
+    }
+    
+
     if (parameters[input$feature_select_1][[1]][2] == "axial") {
       res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
       mean_dir_1 <- circ.mean(feature_1_values)
