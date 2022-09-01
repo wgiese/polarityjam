@@ -202,7 +202,7 @@ ui <- navbarPage(
         checkboxInput("scatter_plot", "Scatter plot", FALSE),
         checkboxInput("kde_plot", "KDE plot", FALSE),
         checkboxInput("area_scaled", "area scaled histogram", TRUE),
-        # checkboxInput("left_axial", "hemirose on left", FALSE),
+        # checkboxInput("left_directional", "hemirose on left", FALSE),
 
         checkboxInput("filter_data", "filter data", FALSE),
         conditionalPanel(
@@ -805,7 +805,7 @@ server <- function(input, output, session) {
     print(colnames(statistics_df))
     # print("Feature property")
     # print(parameters[input$feature_select][[1]][2])
-    if (parameters[input$feature_select][[1]][2] == "axial") {
+    if (parameters[input$feature_select][[1]][2] == "directional") {
 
       for (condition in condition_list) {
         condition_data <- subset(results_df, results_df[condition_col] == condition)
@@ -865,8 +865,8 @@ server <- function(input, output, session) {
         statistics_df[ind, 1] <- "V-test p-value (cond. mean = 180): "
         statistics_df[ind, condition] <- p_value_mu
       }
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
-      #statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+    } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
+      #statistics <- compute_undirectional_statistics(results_df, feature, parameters)
 
       #p_value <- signif(statistics[1, "rayleigh_test"], digits = 3)
 
@@ -884,7 +884,7 @@ server <- function(input, output, session) {
         print(head(condition_data))
         
         x_data <- unlist(condition_data[feature]) * 180.0 / pi
-        statistics <- compute_2_axial_statistics(condition_data, feature, parameters)
+        statistics <- compute_undirectional_statistics(condition_data, feature, parameters)
         print("Statistics")
         print(statistics)
         
@@ -1001,26 +1001,26 @@ server <- function(input, output, session) {
     print("Feature:")
     print(feature)
 
-    if (parameters[input$feature_select][[1]][2] == "axial") {
-      print("Axial feature!")
+    if (parameters[input$feature_select][[1]][2] == "directional") {
+      print("directional feature!")
 
 
       x_data <- unlist(results_all_df[feature]) * 180.0 / pi
       statistics <- compute_circular_statistics(results_all_df, feature, parameters)
       plot_title <- parameters[input$feature_select][[1]][3]
       p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, 0, text_size)
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+    } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
       x_data <- results_all_df[feature]
-      statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
-      # if (input$left_axial) {
-      #  x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+      statistics <- compute_undirectional_statistics(results_all_df, feature, parameters)
+      # if (input$left_directional) {
+      #  x_data <- unlist(transform_undirectional(input,x_data))*180.0/pi
       # } else {
       #  x_data <- unlist(results_all_df[feature])*180.0/pi
       # }
-      x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+      x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
 
       plot_title <- parameters[input$feature_select][[1]][3]
-      p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, 0, text_size)
+      p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, 0, text_size)
     } else {
       x_data <- unlist(results_all_df[feature])
       statistics <- compute_linear_statistics(results_all_df, feature, parameters)
@@ -1189,24 +1189,24 @@ server <- function(input, output, session) {
       # }
 
 
-      if (parameters[input$feature_select][[1]][2] == "axial") {
+      if (parameters[input$feature_select][[1]][2] == "directional") {
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         # statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature]) * 180.0 / pi
         print(paste0("Length of filename", toString(i)))
 
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
-      } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+      } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
         x_data <- results_df[feature]
         # print(x_data)
-        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
-        # if (input$left_axial) {
-        x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+        statistics <- compute_undirectional_statistics(results_df, feature, parameters)
+        # if (input$left_directional) {
+        x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
         # } else {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         # }
         # plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
+        p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, i, text_size)
       } else {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
@@ -1494,7 +1494,7 @@ server <- function(input, output, session) {
     }
     
 
-    if (parameters[input$feature_select_1][[1]][2] == "axial") {
+    if (parameters[input$feature_select_1][[1]][2] == "directional") {
       res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
       mean_dir_1 <- circ.mean(feature_1_values)
       mean_dir_2 <- circ.mean(feature_2_values)
@@ -1572,7 +1572,7 @@ server <- function(input, output, session) {
       plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_, conditions))
       # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
       # plot_df <- as.data.frame(c(correlation_data[paste0(feature_1,"_shift")],  correlation_data[paste0(feature_2,"_shift")]))
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+    } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
       res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
       mean_dir_1 <- circ.mean(feature_1_values)
       mean_dir_2 <- circ.mean(feature_2_values)
@@ -1961,24 +1961,24 @@ server <- function(input, output, session) {
       # }
 
 
-      if (parameters[input$feature_select][[1]][2] == "axial") {
+      if (parameters[input$feature_select][[1]][2] == "directional") {
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         # statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature]) * 180.0 / pi
         print(paste0("Length of filename", toString(i)))
 
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
-      } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+      } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
         x_data <- results_df[feature]
         # print(x_data)
-        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
-        # if (input$left_axial) {
-        x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+        statistics <- compute_undirectional_statistics(results_df, feature, parameters)
+        # if (input$left_directional) {
+        x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
         # } else {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         # }
         # plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
+        p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, i, text_size)
       } else {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)

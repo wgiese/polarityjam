@@ -17,7 +17,7 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
   
   res <- compute_correlation(feature_1_values, parameters[input$feature_select_1][[1]][2], feature_2_values, parameters[input$feature_select_2][[1]][2]) 
 #  for (i in 1:length(circular_data)) {
-#    circular_data[i] <- 2.0 * p_axial_data[i]
+#    circular_data[i] <- 2.0 * p_directional_data[i]
 #    angle <- circular_data[i]
 #    sin_sum <- sin_sum + sin(angle)
 #    cos_sum <- cos_sum + cos(angle)
@@ -84,9 +84,9 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
   
 }
 
-compute_mean_circular <- function(feature_values, mode = "axial") {
+compute_mean_circular <- function(feature_values, mode = "directional") {
   mean_dir <- 0.0
-  if ( mode == "axial") {
+  if ( mode == "directional") {
     mean_dir <- circ.mean(feature_values)
     
     if (mean_dir < 0.0) {
@@ -113,18 +113,18 @@ compute_mean_circular <- function(feature_values, mode = "axial") {
 }
 
 
-compute_correlation <- function(feature_1_values, mode_1 = "axial", feature_2_values, mode_2 = "axial") {
+compute_correlation <- function(feature_1_values, mode_1 = "directional", feature_2_values, mode_2 = "directional") {
   
   feature_1_values_ <- feature_1_values
   feature_2_values_ <- feature_2_values
   
-  if ( mode_1 == "2-axial") {
+  if ( mode_1 == "undirectional") {
     for (i in 1:length(feature_1_values)) {
       feature_1_values_[i] <- 2.0 *feature_1_values[i]
     }
   }
   
-  if ( mode_2== "axial") {
+  if ( mode_2== "directional") {
     for (i in 1:length(feature_values)) {
       feature_2_values_[i] <- 2.0 *feature_2_values[i]
     }

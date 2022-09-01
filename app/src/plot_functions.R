@@ -1,14 +1,14 @@
 
-transform_2_axial <- function(input, feature_2_axial) {
-  feature_2_axial <- unlist(feature_2_axial)
-  feature_transformed <- feature_2_axial
+transform_undirectional <- function(input, feature_undirectional) {
+  feature_undirectional <- unlist(feature_undirectional)
+  feature_transformed <- feature_undirectional
 
   if (input$hemi_rose_options == "left") {
-    for (i in 1:length(feature_2_axial)) {
-      if (feature_2_axial[i] < pi / 2.0) {
-        feature_transformed[i] <- feature_2_axial[i] + pi
+    for (i in 1:length(feature_undirectional)) {
+      if (feature_undirectional[i] < pi / 2.0) {
+        feature_transformed[i] <- feature_undirectional[i] + pi
       } else {
-        feature_transformed[i] <- feature_2_axial[i]
+        feature_transformed[i] <- feature_undirectional[i]
       }
     }
   }
@@ -64,7 +64,7 @@ select_color <- function(parameters, input, plot_nr) {
 }
 
 
-# rose_plot_2_axial <- function(feature_2_axial)
+# rose_plot_undirectional <- function(feature_undirectional)
 
 rose_plot_circular <- function(parameters, input, statistics, feature_circular, plot_title, plot_nr = 0, text_size = 24) {
   bin_size <- 360 / input$bins
@@ -268,7 +268,7 @@ compare_plot_circular <- function(parameters, input, statistics, feature_circula
 
 
 
-rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title, plot_nr = 0, text_size = 24) {
+rose_plot_undirectional <- function(parameters, input, statistics, feature_circular, plot_title, plot_nr = 0, text_size = 24) {
   bin_size <- 360 / input$bins
   # plot_title <- parameters[input$feature_select][[1]][3]
 
@@ -340,7 +340,7 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
   }
 
   if (input$hemi_rose_options == "left") {
-    # if (input$left_axial) {
+    # if (input$left_directional) {
     print(statistics[1, "mean"])
     if (statistics[1, "mean"] < 90.0) {
       statistics[1, "mean"] <- statistics[1, "mean"] + 180.0
@@ -432,7 +432,7 @@ rose_plot_2_axial <- function(parameters, input, statistics, feature_circular, p
   return(p)
 }
 
-compare_plot_2_axial <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
+compare_plot_undirectional <- function(parameters, input, statistics, feature_circular, plot_title, text_size = 24) {
   bin_size <- 360 / input$bins
   # plot_title <- parameters[input$feature_select][[1]][3]
 
@@ -468,7 +468,7 @@ compare_plot_2_axial <- function(parameters, input, statistics, feature_circular
     p <- p + scale_y_sqrt()
   }
 
-  if (input$left_axial) {
+  if (input$left_directional) {
     print(statistics[1, "mean"])
     if (statistics[1, "mean"] < 90.0) {
       statistics[1, "mean"] <- statistics[1, "mean"] + 180.0
