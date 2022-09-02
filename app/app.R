@@ -333,7 +333,8 @@ ui <- navbarPage(
             downloadButton("downloadPlotPNG", "Download png-file"),
             div(`data-spy` = "affix", `data-offset-top` = "10", withSpinner(plotOutput("correlation_plot", height = "120%"))),
             NULL,
-          )
+          ),
+          tabPanel("Statistics", tableOutput("correlation_statistics"))
           # plotOutput("correlation_plot", height = "1000px")),#,
           # tabPanel("Spoke Plot", plotOutput("spoke_plot", height = "1000px"))#,
           # tabPanel("Statistics", tableOutput("singleImageStatistics"))
@@ -1493,6 +1494,18 @@ server <- function(input, output, session) {
       
  
   })
+  
+  output$correlation_statistics <- renderTable(
+    {
+      "
+    function that shows the descriptive statistics of the merged data stack in table format
+    "
+      
+      statistics_df <- mergedStatistics()
+      statistics_df
+    },
+    digits = 3
+  )
 
   width <- reactive({
     input$plot_width_corr
