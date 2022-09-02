@@ -10,54 +10,62 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
   feature_1_name <- parameters[input$feature_select_1][[1]][3]
   feature_2_name <- parameters[input$feature_select_2][[1]][3]
   
+  mode_1 <- parameters[input$feature_select_1][[1]][2]
+  mode_2 <- parameters[input$feature_select_2][[1]][2]
+  
   conditions <- correlation_data[input$condition_col]
   
-  mean_dir_1 <- compute_mean_circular(feature_1_values, parameters[input$feature_select_1][[1]][2])
-  mean_dir_2 <- compute_mean_circular(feature_2_values, parameters[input$feature_select_2][[1]][2])
+  mean_dir_1 <- compute_mean_circular(feature_1_values, mode_1)
+  mean_dir_2 <- compute_mean_circular(feature_2_values, mode_2)
   
-  res <- compute_correlation(feature_1_values, parameters[input$feature_select_1][[1]][2], feature_2_values, parameters[input$feature_select_2][[1]][2]) 
-#  for (i in 1:length(circular_data)) {
-#    circular_data[i] <- 2.0 * p_directional_data[i]
-#    angle <- circular_data[i]
-#    sin_sum <- sin_sum + sin(angle)
-#    cos_sum <- cos_sum + cos(angle)
-#  }
-
-  res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
-  #mean_dir_1 <- circ.mean(feature_1_values)
-  #mean_dir_2 <- circ.mean(feature_2_values)
-  #
-  #if (mean_dir_1 < 0.0) {
-  #  mean_dir_1 <- mean_dir_1 + 2.0 * pi
-  #}
-#  
-  #if (mean_dir_2 < 0.0) {
-  #  mean_dir_2 <- mean_dir_2 + 2.0 * pi
-  #}
+  res <- compute_correlation(feature_1_values, mode_1, feature_2_values, mode_2) 
   
   print("Mean directions")
   print(mean_dir_1)
   print(mean_dir_2)
   
-  feature_1_values_sin <- sin(correlation_data[feature_1] - mean_dir_1)
-  feature_2_values_sin <- sin(correlation_data[feature_2] - mean_dir_2)
   
-  if ((mean_dir_1 < pi / 2.0) | (mean_dir_1 > 3.0 * pi / 2.0)) {
-    for (i in 1:length(feature_2_values)) {
-      if (feature_1_values[i] > pi) {
-        correlation_data[i, feature_1] <- correlation_data[i, feature_1] - 2.0 * pi
+  if (input$center_corr_plot == TRUE) {
+  
+    if (mode_1 == "directional") {
+      if ((mean_dir_1 < pi / 2.0) | (mean_dir_1 > 3.0 * pi / 2.0)) {
+        for (i in 1:length(feature_2_values)) {
+          if (feature_1_values[i] > pi) {
+            correlation_data[i, feature_1] <- correlation_data[i, feature_1] - 2.0 * pi
+          }
+        }
+        feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
+      }
+    } else if (mode_1 == "undirectional") {
+      if ((mean_dir_1 < pi / 4.0) | (mean_dir_1 > 3.0 * pi / 4.0)) {
+        for (i in 1:length(feature_2_values)) {
+          if (feature_1_values[i] > pi/2.0) {
+            correlation_data[i, feature_1] <- correlation_data[i, feature_1] -  pi
+          }
+        }
+        feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
       }
     }
-    feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
-  }
-  
-  if ((mean_dir_2 < pi / 2.0) | (mean_dir_2 > 3.0 * pi / 2.0)) {
-    for (i in 1:length(feature_2_values)) {
-      if (feature_2_values[i] > pi) {
-        correlation_data[i, feature_2] <- correlation_data[i, feature_2] - 2.0 * pi
+    
+    if (mode_1 == "directional") {
+      if ((mean_dir_2 < pi / 2.0) | (mean_dir_2 > 3.0 * pi / 2.0)) {
+        for (i in 1:length(feature_2_values)) {
+          if (feature_2_values[i] > pi) {
+            correlation_data[i, feature_2] <- correlation_data[i, feature_2] - 2.0 * pi
+          }
+        }
+        feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
+      }
+    } else if  (mode_2 == "undirectional") {
+      if ((mean_dir_2 < pi / 4.0) | (mean_dir_2 > 3.0 * pi / 4.0)) {
+        for (i in 1:length(feature_2_values)) {
+          if (feature_2_values[i] > pi/2.0) {
+            correlation_data[i, feature_2] <- correlation_data[i, feature_2] - pi
+          }
+        }
+        feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
       }
     }
-    feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
   }
   
   reg_coeff <- signif(res$r, digits = 3)
@@ -124,8 +132,8 @@ compute_correlation <- function(feature_1_values, mode_1 = "directional", featur
     }
   }
   
-  if ( mode_2== "directional") {
-    for (i in 1:length(feature_values)) {
+  if ( mode_2== "undirectional") {
+    for (i in 1:length(feature_2_values)) {
       feature_2_values_[i] <- 2.0 *feature_2_values[i]
     }
   }
