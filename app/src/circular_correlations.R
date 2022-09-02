@@ -132,13 +132,34 @@ compute_correlation <- function(feature_1_values, mode_1 = "directional", featur
     }
   }
   
-  if ( mode_2== "undirectional") {
+  if ( mode_2 == "undirectional") {
     for (i in 1:length(feature_2_values)) {
       feature_2_values_[i] <- 2.0 *feature_2_values[i]
     }
   }
   
-  res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
+  res <- NULL
+  
+  if ((mode_1 != "linear") && (mode_2 != "linear")) {
+    
+    res <- circ.cor(feature_1_values_, feature_2_values_, test = TRUE)
+  
+  }
+  
+  #if ((mode_1 == "linear") && (mode_2 != "linear")) {
+  #  
+  #  r_sx <- cor(method= "pearson")
+  #
+  #}
+  
+  if ((mode_1 == "linear") && (mode_2 == "linear")) {
+    
+    res <- cor(feature_1_values_, feature_2_values_, method= "pearson")
+    
+  }
+  #res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
+  
+  
   
   return(res)
   
