@@ -680,7 +680,21 @@ server <- function(input, output, session) {
         results_all_df <- results_all_df[sample(nrow(results_all_df), N), ]
       }
     }
-
+  
+    # TODO: remove this computation and move to python PolarityJaM
+    for(i in 1:nrow(results_all_df)) {
+      row <- results_all_df[i,]
+      A <- row$cell_area
+      P <- row$cell_perimeter
+    
+      cell_circularity <- 4*A/(pi*P*P)
+      results_all_df[i,"cell_circularity"] = cell_circularity
+      
+      A <- row$nuc_area
+      P <- row$nuc_perimeter
+      nuc_circularity <- 4*A/(pi*P*P)
+      results_all_df[i,"nuc_circularity"] = nuc_circularity
+    } 
 
 
     # if (is.null(inFileStackData)) {

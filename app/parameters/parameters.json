@@ -42,6 +42,8 @@
     "neighbors_median_dif_2nd": ["neighbors_median_dif_2nd", "linear", "2nd neighbors median"],
     "neighbors_stddev_dif_2nd": ["neighbors_stddev_dif_2nd", "linear", "2nd neighbors std dev"],
     "neighbors_range_dif_2nd": ["neighbors_range_dif_2nd", "linear", "2nd neighbors range"],
+    "cell_circularity": ["cell_circularity", "linear", "circularity (cell shape)"],
+    "nuc_circularity": ["nuc_circularity", "linear", "circularity (nuclei shape)"],
     "text_size_merged_plot": 32,
     "text_size_multi_plot": 16,
     "pdf_figure_size_inches": 17.35
