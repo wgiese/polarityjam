@@ -574,9 +574,13 @@ server <- function(input, output, session) {
     inFileStackData <- input$stackData
 
     if (input$data_upload_form == "example 1") {
+      
       results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
+    
     } else if ((input$data_upload_source == "single file") & !is.null(inFileStackData)) {
+    
       results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    
     } else if (input$data_upload_source == "folder") {
       datapath <- stack_data_info$datapath
 
@@ -1515,8 +1519,78 @@ server <- function(input, output, session) {
     function that shows the descriptive statistics of the merged data stack in table format
     "
       
-      statistics_df <- mergedStatistics()
+      correlation_data <- mergedStack()
+      
+      source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+      parameters <- fromJSON(file = "parameters/parameters.json")
+      
+      condition_col <- input$condition_col
+      condition_list <- unlist(unique(correlation_data[condition_col]))
+      
+      feature_1 <- parameters[input$feature_select_1][[1]][1]
+      feature_2 <- parameters[input$feature_select_2][[1]][1]
+      
+      feature_1_values <- unlist(correlation_data[feature_1])
+      
+      feature_2_values <- unlist(correlation_data[feature_2])
+      
+      
+      feature_1_name <- parameters[input$feature_select_1][[1]][3]
+      feature_2_name <- parameters[input$feature_select_2][[1]][3]
+      
+      mode_1 <- parameters[input$feature_select_1][[1]][2]
+      mode_2 <- parameters[input$feature_select_2][[1]][2]
+      
+      
+      #    threshold <- input$min_nuclei_golgi_dist
+      #    if ("organelle_distance" %in% colnames(results_df)){
+      #      results_df <- subset(results_df, results_df$distance > threshold)
+      #    }
+      
+      statistics_df <- as.data.frame(matrix(ncol = length(condition_list) + 3, nrow = 0))
+      cols <- c("entity")
+      for (condition in condition_list) {
+        cols <- c(cols, condition)
+      }
+      cols <- c(cols, "all", "description")
+      
+      
+      colnames(statistics_df) <- cols # c("entity", "value") #, "comment")
+      
+      res <- compute_correlation(feature_1_values, mode_1, feature_2_values, mode_2) 
+      
+      ind <- 1
+      statistics_df[ind, 1] <- "pearson r-value"
+      if ( (mode_1 == "linear") | (mode_2 == "linear") ) {
+        statistics_df[ind, "all"] <- res
+      } else {
+        statistics_df[ind, "all"] <- res$r
+      }
+      
+      
+      print("Colnames")
+      print(colnames(statistics_df))
+
+        for (condition in condition_list) {
+          condition_data <- subset(correlation_data, correlation_data[condition_col] == condition)
+          
+          feature_1_values <- unlist(condition_data[feature_1])
+          feature_2_values <- unlist(condition_data[feature_2])
+          
+          res <- compute_correlation(feature_1_values, mode_1, feature_2_values, mode_2) 
+          
+          ind <- 1
+          statistics_df[ind, 1] <- "pearson r-value"
+          if ( (mode_1 == "linear") | (mode_2 == "linear") ) {
+            statistics_df[ind, condition] <- res
+          } else {
+            statistics_df[ind, condition] <- res$r
+          }
+          
+        }
       statistics_df
+      #statistics_df <- mergedStatistics()
+      #statistics_df
     },
     digits = 3
   )
