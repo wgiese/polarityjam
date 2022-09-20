@@ -327,10 +327,18 @@ ui <- navbarPage(
       mainPanel(
         tabsetPanel(
           tabPanel(
-            "Plot", downloadButton("downloadPlotPDF", "Download pdf-file"),
-            downloadButton("downloadPlotEPS", "Download eps-file"),
-            downloadButton("downloadPlotSVG", "Download svg-file"),
-            downloadButton("downloadPlotPNG", "Download png-file"),
+            "Plot", downloadButton("downloadCorrPlotPDF", "Download pdf-file"),
+            downloadButton("downloadCorrPlotEPS", "Download eps-file"),
+            downloadButton("downloadCorrPlotSVG", "Download svg-file"),
+            downloadButton("downloadCorrPlotPNG", "Download png-file"),
+            div(`data-spy` = "affix", `data-offset-top` = "10", withSpinner(plotOutput("multi_corr_display", height = "120%"))),
+            NULL,
+          ),
+          tabPanel(
+            "MergedPlot", downloadButton("downloadMergedCorrPlotPDF", "Download pdf-file"),
+            downloadButton("downloadMergedCorrPlotEPS", "Download eps-file"),
+            downloadButton("downloadMergedCorrPlotSVG", "Download svg-file"),
+            downloadButton("downloadMergedCorrPlotPNG", "Download png-file"),
             div(`data-spy` = "affix", `data-offset-top` = "10", withSpinner(plotOutput("correlation_plot", height = "120%"))),
             NULL,
           ),
@@ -1513,6 +1521,58 @@ server <- function(input, output, session) {
  
   })
   
+  multi_corr_plot <- reactive({ 
+    
+    parameters <- fromJSON(file = "parameters/parameters.json")
+    source(file = paste0(getwd(), "/src/plot_functions.R"), local = T)
+    source(file = paste0(getwd(), "/src/circular_statistics.R"), local = T)
+    source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+    
+    text_size <- input$text_size_corr
+    
+    correlation_data <- mergedStack() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+    
+    feature_1 <- parameters[input$feature_select_1][[1]][1]
+    feature_2 <- parameters[input$feature_select_2][[1]][1]
+    
+    
+    feature_1_values <- unlist(correlation_data[feature_1])
+    feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
+    feature_2_values <- unlist(correlation_data[feature_2])
+    feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
+    
+    # feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+    # feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+    
+    feature_1_name <- parameters[input$feature_select_1][[1]][3]
+    feature_2_name <- parameters[input$feature_select_2][[1]][3]
+    
+    conditions <- correlation_data[input$condition_col]
+    
+    condition_list <- unlist(unique(correlation_data[input$condition_col]))
+    plist <- vector("list", length(condition_list))
+    
+    n <- length(condition_list)
+    nCol <- floor(sqrt(n))
+    
+    bin_size <- 360 / input$bins
+    
+    plotseries <- function(i) {
+      data <- subset(correlation_data, correlation_data[input$condition_col] == condition_list[i])
+      p <- plot_circular_circular(data, input, parameters, plot_nr = i, text_size = text_size) 
+    }
+    
+    myplots <- lapply(1:n, plotseries)
+    
+    # print(myplots)
+    grid.arrange(grobs = myplots, nrow = nCol) # , widths = list(10,10))
+    
+  })
+  
+  output$multi_corr_display <- renderPlot(width = width_A, height = height_A, {
+    multi_corr_plot()
+  })
+  
   output$correlation_statistics <- renderTable(
     {
       "
@@ -1743,7 +1803,7 @@ server <- function(input, output, session) {
     p
   })
 
-  output$downloadPlotPDF <- downloadHandler(
+  output$downloadMergedCorrPlotPDF <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
     },
@@ -1755,7 +1815,7 @@ server <- function(input, output, session) {
     contentType = "application/pdf" # MIME type of the image
   )
 
-  output$downloadPlotSVG <- downloadHandler(
+  output$downloadMergedCorrPlotSVG <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
     },
@@ -1767,7 +1827,7 @@ server <- function(input, output, session) {
     contentType = "application/svg" # MIME type of the image
   )
 
-  output$downloadPlotEPS <- downloadHandler(
+  output$downloadMergedCorrPlotEPS <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
     },
@@ -1779,7 +1839,7 @@ server <- function(input, output, session) {
     contentType = "application/eps" # MIME type of the image
   )
 
-  output$downloadPlotPNG <- downloadHandler(
+  output$downloadMergedCorrPlotPNG <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
     },
@@ -1793,6 +1853,55 @@ server <- function(input, output, session) {
     contentType = "application/png" # MIME type of the image
   )
 
+  output$downloadCorrPlotPDF <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(plot_correlation())
+      dev.off()
+    },
+    contentType = "application/pdf" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotSVG <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
+    },
+    content <- function(file) {
+      svg(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(plot_correlation())
+      dev.off()
+    },
+    contentType = "application/svg" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotEPS <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
+    },
+    content <- function(file) {
+      cairo_ps(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(plot_correlation())
+      dev.off()
+    },
+    contentType = "application/eps" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotPNG <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
+    },
+    content <- function(file) {
+      png(file, width = input$plot_width_corr * 4, height = input$plot_height_corr * 4, res = 300)
+      # if (input$data_form != "dataaspixel") plot(plot_data())
+      # else plot(plot_map())
+      plot(plot_correlation())
+      dev.off()
+    },
+    contentType = "application/png" # MIME type of the image
+  )
 
 
   ### Panel C

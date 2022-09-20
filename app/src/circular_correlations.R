@@ -1,5 +1,8 @@
 # rename to correlation
 plot_circular_circular <- function(correlation_data, input, parameters, plot_nr = 0, text_size = 24) {
+  
+  source(file = paste0(getwd(), "/src/plot_functions.R"), local = T)
+  
   feature_1 <- parameters[input$feature_select_1][[1]][1]
   feature_2 <- parameters[input$feature_select_2][[1]][1]
   feature_1_values <- unlist(correlation_data[feature_1])
@@ -24,6 +27,8 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
   } else {
     feature_2_values_ <- correlation_data[feature_2]
   }
+  
+  color <- select_color(parameters, input, plot_nr)
   
   
   conditions <- correlation_data[input$condition_col]
@@ -91,9 +96,16 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
 
 
   colnames(plot_df) <- c("x", "y", "condition")
-  p <- ggplot(plot_df, aes(x = x, y = y, color = condition)) +
-    geom_point(size = input$marker_size_corr) +
-    theme_minimal(base_size = text_size) # theme_bw()
+  if (plot_nr == 0) {
+    p <- ggplot(plot_df, aes(x = x, y = y, color = condition)) +
+      geom_point(size = input$marker_size_corr) +
+      theme_minimal(base_size = text_size) # theme_bw()
+  } else {
+    p <- ggplot(plot_df, aes(x = x, y = y)) +
+      geom_point(size = input$marker_size_corr, color = color) +
+      theme_minimal(base_size = text_size) # theme_bw()
+  }  
+
   p <- p + theme(aspect.ratio = 3 / 3)
   
   if ( (mode_1 == "linear") | (mode_2 == "linear") ) {
