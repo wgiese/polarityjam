@@ -317,7 +317,7 @@ ui <- navbarPage(
           condition = "input.corr_plot_option == 'spoke plot'",
           numericInput("spoke_subsample_n", "Subsample every n-th row:", value = 1, min = 1, max = 50, step = 1)
         ),
-        numericInput("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
+        numericInput("text_size_corr", "text size", value = 12, min = 4, max = 50, step = 1),
         numericInput("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
         numericInput("plot_height_corr", "Height (# pixels): ", value = 600),
         numericInput("plot_width_corr", "Width (# pixels):", value = 800),
