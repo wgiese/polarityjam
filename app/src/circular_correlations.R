@@ -32,6 +32,15 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
   
   
   conditions <- correlation_data[input$condition_col]
+  
+  condition_list <- unlist(unique(correlation_data[input$condition_col]))
+  color_palette <- list(select_color(parameters, input, 1))
+  
+  for (i in 2:length(condition_list)) {
+    color_palette <- append(color_palette, select_color(parameters, input, i))
+  }
+  
+  print(color_palette)
 
   mean_dir_1 <- compute_mean_circular(feature_1_values, mode_1)
   mean_dir_2 <- compute_mean_circular(feature_2_values, mode_2)
@@ -103,10 +112,13 @@ plot_circular_circular <- function(correlation_data, input, parameters, plot_nr 
         geom_point(size = input$marker_size_corr) +
         theme_minimal(base_size = text_size)
     } else {
+      
+      
       #TODO: add colorblind friendly palette here
       p <- ggplot(plot_df, aes(x = x, y = y, color = condition)) +
         geom_point(size = input$marker_size_corr) +
-        theme_minimal(base_size = text_size)
+        theme_minimal(base_size = text_size) +
+        scale_colour_manual(values=color_palette) 
     }#+
       #scale_colour_manual(values=Okabe_Ito) # theme_bw()
   } else {
