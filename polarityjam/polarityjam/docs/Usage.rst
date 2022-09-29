@@ -113,13 +113,13 @@ Plot Parameter
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
 | plot_polarity            | plot      | bool     |               |                       | Indicates whether to perform the organelle polarity plot.                                 |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
-| plot_orientation         | plot      | bool     |               |                       |                                                                                           |
+| plot_orientation         | plot      | bool     |               |                       | Indicates whether to plot shape eccenticity from an ellipse fit of cell shape.            |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
 | plot_marker              | plot      | bool     |               |                       | Indicates whether to perform the marker polarity plot.                                    |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
 | plot_ratio_method        | plot      | bool     |               |                       | Indicates whether to perform the ratio plot.                                              |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
-| plot_cyclic_orientation  | plot      | bool     |               |                       | Indicates whether to perform the cyclic orientation plot.                                 |
+| plot_cyclic_orientation  | plot      | bool     |               |                       | Indicates whether to perform the cyclic orientation plot of cell shape.                   |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
 | outline_width            | plot      | integer  |               |                       | Outline width of a cell. Default 2.                                                       |
 +--------------------------+-----------+----------+---------------+-----------------------+-------------------------------------------------------------------------------------------+
@@ -176,7 +176,7 @@ Folder structure will also be created in the provided output path. Specify a sho
 .. warning::
     Using OS specific paths here might hurt reproducibility! (e.g. windows paths are different than unix paths!)
 
-Webb app
+Web app
 --------
 
 The R-shiny web app further analyses the results of the feature extraction process in the browser.

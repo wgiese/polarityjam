@@ -184,10 +184,12 @@ def _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation):
     yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
 
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+    
+    cell_orientation_degree = 180.0 * cell_orientation / np.pi
 
     # show cell_orientation everywhere but background label
     cax = ax.imshow(
-        np.ma.masked_where(cell_mask == 0, cell_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
+        np.ma.masked_where(cell_mask == 0, cell_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
         alpha=0.75
     )
 
@@ -202,10 +204,12 @@ def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientatio
 
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
+    nuc_orientation_degree = 180.0 * nuc_orientation / np.pi
+    
     # show nuclei orientation everywhere but background label
     nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
     cax_1 = ax.imshow(np.ma.masked_where(
-        nuclei_mask_ == 0, nuclei_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+        nuclei_mask_ == 0, nuclei_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
     )
 
     # colorbar
