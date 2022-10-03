@@ -216,12 +216,12 @@ def run_key(args):
         get_logger().info("Writing merged features to disk: %s" % merged_file)
         merged_properties_df.to_csv(merged_file, index=False)
 
-    summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
-    get_logger().info("Writing summary table to disk: %s" % summary_df_path)
-    summary_df.to_csv(str(summary_df_path), index=False)
+        summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
+        get_logger().info("Writing summary table to disk: %s" % summary_df_path)
+        summary_df.to_csv(str(summary_df_path), index=False)
 
-    keyfile_path = output_path_base.joinpath("key_file" + ".csv")
-    get_logger().info("Writing key file to disk: %s" % keyfile_path)
-    key_file.to_csv(str(keyfile_path), index=False)
+        keyfile_path = output_path_base.joinpath("key_file" + ".csv")
+        get_logger().info("Writing key file to disk: %s" % keyfile_path)
+        key_file.to_csv(str(keyfile_path), index=False)
 
     _finish(parameters, output_path_base)
