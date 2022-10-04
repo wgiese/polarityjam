@@ -79,7 +79,7 @@ class CellposeSegmenter(Segmenter):
     def _get_cellpose_segmentation(self, im_seg, filepath):
         """Gets the cellpose segmentation. Expects im_seg to have junction channel first, then nucleus channel."""
         get_logger().info("Calculate cellpose segmentation. This might take some time...")
-        get_logger().info("Using model type %s, estimated cell diameter %s and flow threshold %s" % (self.params.model_type, self.params.estimated_cell_diameter, self.params.flow_threshold))
+        get_logger().info("Using model type '%s' with estimated cell diameter %s and flow threshold %s" % (self.params.model_type, self.params.estimated_cell_diameter, self.params.flow_threshold))
         model = self._get_cellpose_model()
         
         if im_seg.ndim > 1:
