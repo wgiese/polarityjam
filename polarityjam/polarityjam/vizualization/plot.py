@@ -209,7 +209,7 @@ def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuc_orientation):
     # show nuclei orientation everywhere but background label
     nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
     cax_1 = ax.imshow(np.ma.masked_where(
-        nuclei_mask_ == 0, nuclei_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+        nuclei_mask_ == 0, nuc_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
     )
 
     # colorbar

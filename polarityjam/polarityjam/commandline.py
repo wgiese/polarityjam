@@ -52,7 +52,7 @@ def _finish(parameters, output_path):
     write_dict_to_yml(out_param, parameters)
 
 
-def _run(infile, param, output_path, fileout_name):
+def _run(infile, param, output_path, fileout_name, save_single_image_csv = True):
     create_path_recursively(output_path)
 
     # read input
@@ -91,10 +91,11 @@ def _run(infile, param, output_path, fileout_name):
     get_logger().info("Head of created dataset: \n %s" % c.dataset.head())
 
     # write output
-    fileout_base, _ = os.path.splitext(fileout_name)
-    fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
-    get_logger().info("Writing features to disk: %s" % fileout_path)
-    c.dataset.to_csv(str(fileout_path), index=False)
+    if save_single_image_csv:  
+        fileout_base, _ = os.path.splitext(fileout_name)
+        fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
+        get_logger().info("Writing features to disk: %s" % fileout_path)
+        c.dataset.to_csv(str(fileout_path), index=False)
 
     return c.dataset, mask
 
@@ -196,7 +197,7 @@ def run_key(args):
             )
 
             # single run
-            properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename)
+            properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename, save_single_image_csv = False)
 
             # append condition
             properties_df["condition"] = row["short_name"]
