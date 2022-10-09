@@ -197,7 +197,7 @@ def _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation):
     _add_colorbar(fig, cax, ax, yticks, "shape orientation (degree)")
 
 
-def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientation):
+def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuc_orientation):
     v_min = 0.0
     v_max = 180.0
     yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
