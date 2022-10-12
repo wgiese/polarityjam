@@ -168,7 +168,8 @@ def run_key(args):
 
     # empty DF summarizing overall results
     summary_df = pd.DataFrame()
-
+    summary_properties_df = pd.DataFrame()
+    
     offset = 0
     for k, row in key_file.iterrows():
         # current stack input sub folder
@@ -183,6 +184,7 @@ def run_key(args):
 
         # empty results dataset for each condition
         merged_properties_df = pd.DataFrame()
+        
 
         file_list = get_tif_list(input_path)
         for file_index, filepath in enumerate(file_list):
@@ -221,6 +223,15 @@ def run_key(args):
         summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
         get_logger().info("Writing summary table to disk: %s" % summary_df_path)
         summary_df.to_csv(str(summary_df_path), index=False)
+
+        if summary_properties_df.empty:
+            summary_properties_df = merged_properties_df.copy()
+        else:
+            summary_properties_df = pd.concat([summary_properties_df, merged_properties_df], ignore_index=True)
+
+        summary_file = str(output_path_base.joinpath("summary_table_properties.csv"))
+        get_logger().info("Writing merged features to disk: %s" % summary_file)
+        summary_properties_df.to_csv(summary_file, index=False)
 
         keyfile_path = output_path_base.joinpath("key_file" + ".csv")
         get_logger().info("Writing key file to disk: %s" % keyfile_path)
