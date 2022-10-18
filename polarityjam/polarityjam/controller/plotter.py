@@ -12,8 +12,9 @@ from polarityjam.model.parameter import PlotParameter, ImageParameter
 from polarityjam.polarityjam_logging import get_logger
 from polarityjam.vizualization.plot import _add_single_cell_polarity_vector, \
     _add_title, \
-    save_current_fig, _add_cell_eccentricity, \
-    _calc_nuc_eccentricity, _add_nuclei_eccentricity, _add_single_cell_eccentricity_axis, _add_cell_orientation, \
+    save_current_fig, _add_cell_eccentricity, _add_cell_circularity, \
+    _calc_nuc_eccentricity, _add_nuclei_eccentricity, _calc_nuc_circularity, _add_nuclei_circularity, \
+    _add_single_cell_eccentricity_axis, _add_cell_orientation, \
     _calc_nuc_orientation, _add_nuclei_orientation, _add_single_cell_orientation_degree_axis, _add_scalebar
 
 # for figure plot resolution  # todo: parameters?
@@ -548,6 +549,48 @@ class Plotter:
         if close:
             plt.close(fig)
 
+    def plot_circularity(self, collection, img_name, close=False):
+        im_junction = collection.img_channel_dict[img_name]["junction"]
+        cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
+        nuclei_mask = collection.masks_dict[img_name].nuclei_mask
+
+        get_logger().info("Plotting: eccentricity")
+
+        # figure and axes
+        number_sub_figs = 1
+        if nuclei_mask is not None:
+            nuclei_mask = nuclei_mask.astype(bool)
+            number_sub_figs = 2
+
+        fig, ax = self._get_figure(number_sub_figs)
+
+        # get cell_eccentricity
+        cell_circularity = self._get_polarity_angle_mask(cell_mask, collection, img_name, "cell_circularity")
+
+        # add cell (and nuclei) eccentricity to the figure
+        if nuclei_mask is not None:
+            _add_cell_circularity(fig, ax[0], im_junction, cell_mask, cell_circularity)
+            # get nuclei eccentricity
+            nuclei_circularity = _calc_nuc_circularity(collection.get_properties_by_img_name(img_name), cell_mask,
+                                                         nuclei_mask)
+            _add_nuclei_circularity(fig, ax[1], im_junction, nuclei_mask, nuclei_circularity)
+        else:
+            _add_cell_circularity(fig, ax, im_junction, cell_mask, cell_circularity)
+
+        # set title and ax limits
+        if nuclei_mask is not None:
+            _add_title(ax[0], "cell circularity", im_junction, self.params.show_graphics_axis)
+            _add_title(ax[1], "nuclei circularity", im_junction, self.params.show_graphics_axis)
+        else:
+            _add_title(ax, "cell circularity", im_junction, self.params.show_graphics_axis)
+
+        # save output & close
+        save_current_fig(
+            self.params.graphics_output_format, collection.get_out_path_by_name(img_name), img_name, "_circularity"
+        )
+        if close:
+            plt.close(fig)
+
     def plot_ratio_method(self, collection, img_name, close=False):
         im_junction = collection.img_channel_dict[img_name]["junction"]
         cell_mask = collection.masks_dict[img_name].cell_mask_rem_island
@@ -726,6 +769,9 @@ class Plotter:
 
             if self.params.plot_orientation:
                 self.plot_eccentricity(collection, key, close)
+
+            if self.params.plot_orientation:
+                self.plot_circularity(collection, key, close)
 
             if self.params.plot_ratio_method:
                 self.plot_ratio_method(collection, key, close)
