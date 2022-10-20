@@ -52,7 +52,7 @@ def _finish(parameters, output_path):
     write_dict_to_yml(out_param, parameters)
 
 
-def _run(infile, param, output_path, fileout_name):
+def _run(infile, param, output_path, fileout_name, save_single_image_csv = True):
     create_path_recursively(output_path)
 
     # read input
@@ -91,10 +91,11 @@ def _run(infile, param, output_path, fileout_name):
     get_logger().info("Head of created dataset: \n %s" % c.dataset.head())
 
     # write output
-    fileout_base, _ = os.path.splitext(fileout_name)
-    fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
-    get_logger().info("Writing features to disk: %s" % fileout_path)
-    c.dataset.to_csv(str(fileout_path), index=False)
+    if save_single_image_csv:  
+        fileout_base, _ = os.path.splitext(fileout_name)
+        fileout_path = Path(output_path).joinpath(fileout_base + ".csv")
+        get_logger().info("Writing features to disk: %s" % fileout_path)
+        c.dataset.to_csv(str(fileout_path), index=False)
 
     return c.dataset, mask
 
@@ -167,7 +168,8 @@ def run_key(args):
 
     # empty DF summarizing overall results
     summary_df = pd.DataFrame()
-
+    summary_properties_df = pd.DataFrame()
+    
     offset = 0
     for k, row in key_file.iterrows():
         # current stack input sub folder
@@ -182,6 +184,7 @@ def run_key(args):
 
         # empty results dataset for each condition
         merged_properties_df = pd.DataFrame()
+        
 
         file_list = get_tif_list(input_path)
         for file_index, filepath in enumerate(file_list):
@@ -196,7 +199,7 @@ def run_key(args):
             )
 
             # single run
-            properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename)
+            properties_df, cellpose_mask = _run(filepath, parameters, output_path, filename, save_single_image_csv = False)
 
             # append condition
             properties_df["condition"] = row["short_name"]
@@ -206,22 +209,32 @@ def run_key(args):
             else:
                 merged_properties_df = pd.concat([merged_properties_df, properties_df], ignore_index=True)
 
+            merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
+            get_logger().info("Writing merged features to disk: %s" % merged_file)
+            merged_properties_df.to_csv(merged_file, index=False)
+
             summary_df.at[offset + file_index, "folder_name"] = row["folder_name"]
             summary_df.at[offset + file_index, "short_name"] = row["short_name"]
             summary_df.at[offset + file_index, "filepath"] = filepath
             summary_df.at[offset + file_index, "cell_number"] = len(np.unique(cellpose_mask))
 
         offset = offset + len(file_list)
-        merged_file = str(output_path.joinpath("merged_table_%s" % row["short_name"] + ".csv"))
-        get_logger().info("Writing merged features to disk: %s" % merged_file)
-        merged_properties_df.to_csv(merged_file, index=False)
+        
+        summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
+        get_logger().info("Writing summary table to disk: %s" % summary_df_path)
+        summary_df.to_csv(str(summary_df_path), index=False)
 
-    summary_df_path = output_path_base.joinpath("summary_table" + ".csv")
-    get_logger().info("Writing summary table to disk: %s" % summary_df_path)
-    summary_df.to_csv(str(summary_df_path), index=False)
+        if summary_properties_df.empty:
+            summary_properties_df = merged_properties_df.copy()
+        else:
+            summary_properties_df = pd.concat([summary_properties_df, merged_properties_df], ignore_index=True)
 
-    keyfile_path = output_path_base.joinpath("key_file" + ".csv")
-    get_logger().info("Writing key file to disk: %s" % keyfile_path)
-    key_file.to_csv(str(keyfile_path), index=False)
+        summary_file = str(output_path_base.joinpath("summary_table_properties.csv"))
+        get_logger().info("Writing merged features to disk: %s" % summary_file)
+        summary_properties_df.to_csv(summary_file, index=False)
+
+        keyfile_path = output_path_base.joinpath("key_file" + ".csv")
+        get_logger().info("Writing key file to disk: %s" % keyfile_path)
+        key_file.to_csv(str(keyfile_path), index=False)
 
     _finish(parameters, output_path_base)
