@@ -30,7 +30,7 @@
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-options(shiny.maxRequestSize = 30 * 1024^2)
+options(shiny.maxRequestSize = 30 * 1024^2) # upload size is limited to 30 MB
 
 library(shiny)
 library(shinyFiles)
@@ -57,7 +57,7 @@ option_list <- list(
 )
 opt <- parse_args(OptionParser(option_list = option_list))
 
-# Discussion of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
+# Review of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
 # Color palettes Paul Tol: https://personal.sron.nl/~pault/
 
 # From Paul Tol: https://personal.sron.nl/~pault/
@@ -79,7 +79,7 @@ vals <- reactiveValues(count = 0)
 ui <- navbarPage(
   "Polarity JaM - a web app for visualizing cell polarity, junction and morphology data",
 
-  ### Panel 0: Data preparation
+  ### Panel 0: Data upload and preparation
 
   tabPanel(
     "Data preparation",
@@ -116,38 +116,43 @@ ui <- navbarPage(
         ),
         conditionalPanel(
           condition = "(input.data_upload_source == 'key file') & (input.terms_of_use == true)",
-          fileInput("keyData", "Upload catalogue",
-            accept = c(
-              "text/csv",
-              "text/comma-separated-values,text/plain",
-              ".csv", ".xlsx"
-            )
-          ),
           tags$hr(),
-          checkboxInput("header_correlation_key", "File upload", TRUE),
-          shinyDirButton("dir_key", "Input directory", "Upload"),
+          shinyDirButton("dir_key", "Data directory", "Upload"),
           verbatimTextOutput("dir_key", placeholder = TRUE),
-          actionButton("refreshStack", "Refresh"),
+          fileInput("keyData", "Upload catalogue",
+                    accept = c(
+                      "text/csv",
+                      "text/comma-separated-values,text/plain",
+                      ".csv", ".xlsx"
+                    )
+          )
         ),
 
-        # in case of a very large spreadsheet file, the rows can be subsampled. In this case only every n-th row is selected.
+        # the data frame can be sub-sampled by selecting only every n-th row. Th
         checkboxInput("subsample_data", "Subsample data", FALSE),
         conditionalPanel(
           condition = "input.subsample_data == true",
           numericInput("subsample_n", "Select every n-th row:", value = 1, min = 1, max = 50, step = 1)
         ),
 
-        # 
-        selectInput("sample_col", "Identifier of samples", choices = ""),
+        #selectInput("sample_col", "Identifier of samples", choices = ""),
         selectInput("condition_col", "Identifier of conditions", choices = ""),
         
-        #TODO: needs to be implemented
-        selectInput("filter_column", "Filter based on this parameter:", choices = ""),
-        #TODO: needs to be implemented
         selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE),
         selectInput("dataset_merged", "Choose a dataset:",
-          choices = c("merged_file")
+                    choices = c("merged_file")
         ),
+        
+        #TODO: needs to be implemented
+        checkboxInput("filter_data", "Filter data", FALSE),
+        conditionalPanel(
+          condition = "input.filter_data == true",
+          selectInput("filter_column", "Filter based on this parameter:", choices = ""),
+          numericInput("min_valuesubsample_n", "Set maximum value:", value = 0),
+          numericInput("max_value", "Set minimum value:", value = 0)
+        ),
+        
+        #TODO: needs to be implemented
         downloadButton("downloadProcessedData", "Download")
       ),
 
@@ -161,10 +166,10 @@ ui <- navbarPage(
   ),
 
 
-  ### Panel A: Image stack analysis
+  ### Panel A: Plot distributions
 
   tabPanel(
-    "Image stack analysis",
+    "Plot distributions",
     sidebarLayout(
       sidebarPanel(
         selectInput("feature_select", "Choose a feature:", choices = ""),
@@ -548,6 +553,7 @@ server <- function(input, output, session) {
   )
 
   observe({
+    data <- mergedStack()
     var_names <- colnames(mergedStack())
     print("var_names")
     print(var_names)
@@ -561,17 +567,37 @@ server <- function(input, output, session) {
     print(var_list)
     # }
  
-    updateSelectInput(session, "sample_col", choices = var_list, selected = "label")
+    #updateSelectInput(session, "sample_col", choices = var_list, selected = "label")
     updateSelectInput(session, "condition_col", choices = var_list, selected = "filename")
     updateSelectInput(session, "feature_select", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_1", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_2", choices = var_list, selected = "nuc_shape_orientation")
     updateSelectInput(session, "feature_comparison", choices = var_list, selected = "nuclei_golgi_polarity")
     updateSelectInput(session, "filter_column", choices = var_list, selected="none")
-    updateSelectInput(session, "filter_column", choices = var_list, selected="none")
+    
+    print("Remove conditions list")
+    #data_ <- data %>% select(for_filterning = !!condition_col)
+    #condition_list <- levels(factor(data_$for_filterning))
+    #if (length(var_names) > 0) {
+    if (input$condition_col %in% colnames(data)) {
+      print(input$condition_col)
+      #condition_list <- unlist(unique(data[input$condition_col]))
+      condition_list <- unique(data[input$condition_col])
+      #data_ <- data %>% select(for_filtering = !!input$condition_col)
+      #condition_list <- levels(factor(data_$for_filtering))
+      
+      print(condition_list)
+      
+
+      updateSelectInput(session, "remove_these_conditions", choices = condition_list)
+    }
+    #}
+    
   })
+  
+  
 
-
+#TODO: rename and split in data_upload and data_filtered
   mergedStack <- reactive({
     "
     reactive function that reads all csv files 
@@ -659,26 +685,6 @@ server <- function(input, output, session) {
           print("Directory does not exist")
         }
 
-
-
-        # if (length(results_all_df) > 1) {
-        #    results_all_df$datapath <- datapath
-        #    results_all_df$experimental_condition <- input$exp_condition
-        # }
-
-
-        # print("data_path")
-        # print(data_path)
-
-        # data_path <- paste0(data_path, "merged_table_", short_name, ".csv")
-        # print("file_path")
-        # print(data_path)
-
-        # split_path <- SplitPath(input$keyData)$dirname
-        # print(split_path)
-        # results_df <- read.csv(data_path)
-        # results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
-        # results_all_df  <- rbind(results_all_df, results_df )
       }
     } else {
       results_all_df <- data.frame()
@@ -703,51 +709,37 @@ server <- function(input, output, session) {
         cell_circularity <- 4*pi*A/(P*P)
         results_all_df[i,"cell_circularity"] <- cell_circularity
       
-        A <- row$nuc_area
-        P <- row$nuc_perimeter
-        nuc_circularity <- 4*pi*A/(P*P)
-        results_all_df[i,"nuc_circularity"] <- nuc_circularity
+        
+        #A <- row$nuc_area
+        #P <- row$nuc_perimeter
+        #nuc_circularity <- 4*pi*A/(P*P)
+        #results_all_df[i,"nuc_circularity"] <- nuc_circularity
       } 
     }
 
+    
+    #### filter data
+    if ( !is.null(input$remove_these_conditions) && input$condition_col != "none")
+    {
+      condition_column <- input$condition_col
+      remove_these_conditions <- input$remove_these_conditions
+      print("remove these considions")
+      observe({print(remove_these_conditions )})
+      results_all_df <- results_all_df %>% filter(!.data[[condition_column[[1]]]] %in% !!remove_these_conditions)
+      
+    }
 
-    # if (is.null(inFileStackData)) {
-    #    datapath <- stack_data_info$datapath
-    #
-    #    # get list of files in the datapath
-    #    file_list <- list.files(datapath)
-    #    print("File_list")
-    #    print(file_list)
-    #
-    #    counter <- 1
-    #    plist <- list()
-    #    results_all_df <-data.frame()
-    #    tag <- FALSE
-    #
-    #    for (file_name in file_list[1:length(file_list)]){
-    #
-    #      if (file_ext(file_name) == "csv") {
-    #        results_df <- read.csv(paste0(datapath,"/",file_name))
-    #        results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
-    #        results_all_df  <- rbind(results_all_df, results_df )
-    #      }
-    #    }
-    #
-    #    if (length(results_all_df) > 1) {
-    #      results_all_df$datapath <- datapath
-    #      results_all_df$experimental_condition <- input$exp_condition
-    #    }
-    # } else {
-    #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
-    # }
-
-#    sample_col <- input$sample_col
-#    print(sample_col)
-#    results_all_df <- results_all_df[!is.na(results_all_df[sample_col]),]
+    
+    
     results_all_df <- na.omit(results_all_df)
     results_all_df
   })
-  # end of merged stack function
+  
+  
+  data_filtered <- reactive({
+    
+    
+  })
 
 
   output$terms_of_use_text <- renderText({
@@ -773,8 +765,8 @@ server <- function(input, output, session) {
     # if ((input$data_upload_form == "upload data")) {
     # HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
     # HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
-    HTML("<p>  <font size='+2'> Terms of Use </font><br>
-           Text </p>")
+    HTML("<p>  <font size='+2'> Terms of Use. </font><br>
+           <font size='-2'> For documentation please visit <a href='https://polarityjam.readthedocs.io/en/latest/'> Link</a> </font>  </p>")
   })
 
 
@@ -1066,7 +1058,7 @@ server <- function(input, output, session) {
   height_A <- reactive({
     input$plot_height_A
   })
-
+  
   output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     parameters <- fromJSON(file = "parameters/parameters.json")
     # parameters[input$feature_select][[1]][1]
@@ -1283,6 +1275,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       parameters <- fromJSON(file = "parameters/parameters.json")
+      # TODO: use width_a
       width_ <- as.double(parameters["pdf_figure_size_inches"])
 
       if (input$dataset == "statistics_file") {
@@ -1523,6 +1516,7 @@ server <- function(input, output, session) {
  
   })
   
+
   multi_corr_plot <- reactive({ 
     
     parameters <- fromJSON(file = "parameters/parameters.json")
@@ -1571,9 +1565,20 @@ server <- function(input, output, session) {
     
   })
   
-  output$multi_corr_display <- renderPlot(width = width_A, height = height_A, {
+  width_corr <- reactive({
+    input$plot_width_corr
+  })
+  height_corr<- reactive({
+    input$plot_height_corr
+  })
+  
+  output$multi_corr_display <- renderPlot(width = width_corr, height = height_corr, {
     multi_corr_plot()
   })
+  
+  #output$multi_corr_display <- renderPlot(width = width_A, height = height_A, {
+  #  multi_corr_plot()
+  #})
   
   output$correlation_statistics <- renderTable(
     {
@@ -1861,7 +1866,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       pdf(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
-      plot(plot_correlation())
+      plot(multi_corr_plot())
       dev.off()
     },
     contentType = "application/pdf" # MIME type of the image
@@ -1873,7 +1878,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       svg(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
-      plot(plot_correlation())
+      plot(multi_corr_plot())
       dev.off()
     },
     contentType = "application/svg" # MIME type of the image
@@ -1885,7 +1890,7 @@ server <- function(input, output, session) {
     },
     content <- function(file) {
       cairo_ps(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
-      plot(plot_correlation())
+      plot(multi_corr_plot())
       dev.off()
     },
     contentType = "application/eps" # MIME type of the image
@@ -1899,7 +1904,7 @@ server <- function(input, output, session) {
       png(file, width = input$plot_width_corr * 4, height = input$plot_height_corr * 4, res = 300)
       # if (input$data_form != "dataaspixel") plot(plot_data())
       # else plot(plot_map())
-      plot(plot_correlation())
+      plot(multi_corr_plot())
       dev.off()
     },
     contentType = "application/png" # MIME type of the image
