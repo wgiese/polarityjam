@@ -148,8 +148,8 @@ ui <- navbarPage(
         conditionalPanel(
           condition = "input.filter_data == true",
           selectInput("filter_column", "Filter based on this parameter:", choices = ""),
-          numericInput("min_valuesubsample_n", "Set maximum value:", value = 0),
-          numericInput("max_value", "Set minimum value:", value = 0)
+          numericInput("max_value", "Set maximum value:", value = 1.0),
+          numericInput("min_value", "Set minimum value:", value = 0.0)
         ),
         
         #TODO: needs to be implemented
@@ -716,7 +716,11 @@ server <- function(input, output, session) {
       print("remove these considions")
       observe({print(remove_these_conditions )})
       df_filtered <- df_filtered %>% filter(!.data[[condition_column[[1]]]] %in% !!remove_these_conditions)
-      
+    }
+    
+    if ( (input$filter_data == TRUE) && (input$filter_column != "none")) {
+      df_filtered <- df_filtered[df_filtered[input$filter_column] > input$min_value, ]
+      df_filtered <- df_filtered[df_filtered[input$filter_column] < input$max_value, ]
     }
     
     df_filtered
