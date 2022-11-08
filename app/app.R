@@ -553,8 +553,8 @@ server <- function(input, output, session) {
   )
 
   observe({
-    data <- mergedStack()
-    var_names <- colnames(mergedStack())
+    data <- data_upload()
+    var_names <- colnames(data_upload())
     print("var_names")
     print(var_names)
     if (length(var_names) > 0) {
@@ -598,7 +598,7 @@ server <- function(input, output, session) {
   
 
 #TODO: rename and split in data_upload and data_filtered
-  mergedStack <- reactive({
+  data_upload <- reactive({
     "
     reactive function that reads all csv files 
     from the directory given in stack_data_info$datapath 
@@ -699,16 +699,7 @@ server <- function(input, output, session) {
       }
     }
   
-    #### filter data
-    if ( !is.null(input$remove_these_conditions) && input$condition_col != "none")
-    {
-      condition_column <- input$condition_col
-      remove_these_conditions <- input$remove_these_conditions
-      print("remove these considions")
-      observe({print(remove_these_conditions )})
-      results_all_df <- results_all_df %>% filter(!.data[[condition_column[[1]]]] %in% !!remove_these_conditions)
-      
-    }
+
 
     results_all_df <- na.omit(results_all_df)
     results_all_df
@@ -716,8 +707,19 @@ server <- function(input, output, session) {
   
   
   data_filtered <- reactive({
+    df_filtered <- data_upload() 
+    #### filter data
+    if ( !is.null(input$remove_these_conditions) && input$condition_col != "none")
+    {
+      condition_column <- input$condition_col
+      remove_these_conditions <- input$remove_these_conditions
+      print("remove these considions")
+      observe({print(remove_these_conditions )})
+      df_filtered <- df_filtered %>% filter(!.data[[condition_column[[1]]]] %in% !!remove_these_conditions)
+      
+    }
     
-    
+    df_filtered
   })
 
 
@@ -757,7 +759,7 @@ server <- function(input, output, session) {
       # data.frame( "Info" = c("Dear user, data upload is currently not possible in the online version.",
       #                       "Please download the Rshiny app from \n and run locally."))
     } else {
-      mergedStack()
+      data_filtered()
     }
   })
 
@@ -772,7 +774,7 @@ server <- function(input, output, session) {
 
     "
 
-    results_df <- mergedStack()
+    results_df <- data_filtered()
 
 
     print("Data Frame in merged statistics:")
@@ -967,7 +969,7 @@ server <- function(input, output, session) {
     parameters <- fromJSON(file = "parameters/parameters.json")
     text_size <- as.integer(parameters["text_size_merged_plot"])
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     # inFileStackData <- input$stackData
 
@@ -1095,7 +1097,7 @@ server <- function(input, output, session) {
     polarity_indices <- list()
     angle_mean_degs <- list()
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     #   for(row_nr in 1:nrow(results_all_df)) {
     #       row <- results_all_df[row_nr,]
@@ -1233,7 +1235,7 @@ server <- function(input, output, session) {
       return(filename)
     },
     content = function(file) {
-      return(write.csv(mergedStack(), file, row.names = FALSE))
+      return(write.csv(data_filtered(), file, row.names = FALSE))
     }
   )
 
@@ -1293,7 +1295,7 @@ server <- function(input, output, session) {
         dev.off()
       } else {
         (
-          return(write.csv(mergedStack(), file, row.names = FALSE))
+          return(write.csv(data_filtered(), file, row.names = FALSE))
         )
       }
     }
@@ -1465,7 +1467,7 @@ server <- function(input, output, session) {
     # print(inFileCorrelationData$datapath)
     # correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
 
-    correlation_data <- mergedStack() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+    correlation_data <- data_filtered() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
 
     
     
@@ -1505,7 +1507,7 @@ server <- function(input, output, session) {
     
     text_size <- input$text_size_corr
     
-    correlation_data <- mergedStack() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+    correlation_data <- data_filtered() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
     
     feature_1 <- parameters[input$feature_select_1][[1]][1]
     feature_2 <- parameters[input$feature_select_2][[1]][1]
@@ -1565,7 +1567,7 @@ server <- function(input, output, session) {
     function that shows the descriptive statistics of the merged data stack in table format
     "
       
-      correlation_data <- mergedStack()
+      correlation_data <- data_filtered()
       
       source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
       parameters <- fromJSON(file = "parameters/parameters.json")
@@ -1662,7 +1664,7 @@ server <- function(input, output, session) {
 
     text_size <- input$text_size_corr
 
-    correlation_data <- mergedStack()
+    correlation_data <- data_filtered()
 
     if (input$spoke_subsample_n > 1) {
       N <- nrow(correlation_data) %/% input$spoke_subsample_n
@@ -1896,7 +1898,7 @@ server <- function(input, output, session) {
     condition_col <- input$condition_col
     condition_col <- "filename"
 
-    data <- mergedStack()
+    data <- data_filtered()
 
     # if (is.data.frame(data)) {
     if (length(colnames(data)) > 3) {
@@ -1930,7 +1932,7 @@ server <- function(input, output, session) {
     polarity_indices <- list()
     angle_mean_degs <- list()
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     #        for(row_nr in 1:nrow(results_all_df)) {
     #            row <- results_all_df[row_nr,]
@@ -2078,7 +2080,7 @@ server <- function(input, output, session) {
         and nearest neighbours for the merged stack of data
         "
 
-    data <- mergedStack()
+    data <- data_filtered()
 
     condition_col <- input$condition_col
     control_condition <- input$control_condition
