@@ -30,7 +30,7 @@
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-options(shiny.maxRequestSize = 30 * 1024^2)
+options(shiny.maxRequestSize = 30 * 1024^2) # upload size is limited to 30 MB
 
 library(shiny)
 library(shinyFiles)
@@ -57,7 +57,7 @@ option_list <- list(
 )
 opt <- parse_args(OptionParser(option_list = option_list))
 
-# Discussion of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
+# Review of color palettes https://thenode.biologists.com/data-visualization-with-flying-colors/research/ and more examples of use see https://huygens.science.uva.nl/PlotTwist/
 # Color palettes Paul Tol: https://personal.sron.nl/~pault/
 
 # From Paul Tol: https://personal.sron.nl/~pault/
@@ -79,7 +79,7 @@ vals <- reactiveValues(count = 0)
 ui <- navbarPage(
   "Polarity JaM - a web app for visualizing cell polarity, junction and morphology data",
 
-  ### Panel 0: Data preparation
+  ### Panel 0: Data upload and preparation
 
   tabPanel(
     "Data preparation",
@@ -116,38 +116,43 @@ ui <- navbarPage(
         ),
         conditionalPanel(
           condition = "(input.data_upload_source == 'key file') & (input.terms_of_use == true)",
-          fileInput("keyData", "Upload catalogue",
-            accept = c(
-              "text/csv",
-              "text/comma-separated-values,text/plain",
-              ".csv", ".xlsx"
-            )
-          ),
           tags$hr(),
-          checkboxInput("header_correlation_key", "File upload", TRUE),
-          shinyDirButton("dir_key", "Input directory", "Upload"),
+          shinyDirButton("dir_key", "Data directory", "Upload"),
           verbatimTextOutput("dir_key", placeholder = TRUE),
-          actionButton("refreshStack", "Refresh"),
+          fileInput("keyData", "Upload catalogue",
+                    accept = c(
+                      "text/csv",
+                      "text/comma-separated-values,text/plain",
+                      ".csv", ".xlsx"
+                    )
+          )
         ),
 
-        # in case of a very large spreadsheet file, the rows can be subsampled. In this case only every n-th row is selected.
+        # the data frame can be sub-sampled by selecting only every n-th row. Th
         checkboxInput("subsample_data", "Subsample data", FALSE),
         conditionalPanel(
           condition = "input.subsample_data == true",
           numericInput("subsample_n", "Select every n-th row:", value = 1, min = 1, max = 50, step = 1)
         ),
 
-        # 
-        selectInput("sample_col", "Identifier of samples", choices = ""),
+        #selectInput("sample_col", "Identifier of samples", choices = ""),
         selectInput("condition_col", "Identifier of conditions", choices = ""),
         
-        #TODO: needs to be implemented
-        selectInput("filter_column", "Filter based on this parameter:", choices = ""),
-        #TODO: needs to be implemented
         selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE),
         selectInput("dataset_merged", "Choose a dataset:",
-          choices = c("merged_file")
+                    choices = c("merged_file")
         ),
+        
+        #TODO: needs to be implemented
+        checkboxInput("filter_data", "Filter data", FALSE),
+        conditionalPanel(
+          condition = "input.filter_data == true",
+          selectInput("filter_column", "Filter based on this parameter:", choices = ""),
+          numericInput("max_value", "Set maximum value:", value = 1.0),
+          numericInput("min_value", "Set minimum value:", value = 0.0)
+        ),
+        
+        #TODO: needs to be implemented
         downloadButton("downloadProcessedData", "Download")
       ),
 
@@ -161,10 +166,10 @@ ui <- navbarPage(
   ),
 
 
-  ### Panel A: Image stack analysis
+  ### Panel A: Plot distributions
 
   tabPanel(
-    "Image stack analysis",
+    "Plot distributions",
     sidebarLayout(
       sidebarPanel(
         selectInput("feature_select", "Choose a feature:", choices = ""),
@@ -202,7 +207,7 @@ ui <- navbarPage(
         checkboxInput("scatter_plot", "Scatter plot", FALSE),
         checkboxInput("kde_plot", "KDE plot", FALSE),
         checkboxInput("area_scaled", "area scaled histogram", TRUE),
-        # checkboxInput("left_axial", "hemirose on left", FALSE),
+        # checkboxInput("left_directional", "hemirose on left", FALSE),
 
         checkboxInput("filter_data", "filter data", FALSE),
         conditionalPanel(
@@ -317,7 +322,7 @@ ui <- navbarPage(
           condition = "input.corr_plot_option == 'spoke plot'",
           numericInput("spoke_subsample_n", "Subsample every n-th row:", value = 1, min = 1, max = 50, step = 1)
         ),
-        numericInput("text_size_corr", "text size", value = 24, min = 4, max = 50, step = 1),
+        numericInput("text_size_corr", "text size", value = 12, min = 4, max = 50, step = 1),
         numericInput("marker_size_corr", "marker size", value = 3, min = 1, max = 20, step = 1),
         numericInput("plot_height_corr", "Height (# pixels): ", value = 600),
         numericInput("plot_width_corr", "Width (# pixels):", value = 800),
@@ -327,13 +332,22 @@ ui <- navbarPage(
       mainPanel(
         tabsetPanel(
           tabPanel(
-            "Plot", downloadButton("downloadPlotPDF", "Download pdf-file"),
-            downloadButton("downloadPlotEPS", "Download eps-file"),
-            downloadButton("downloadPlotSVG", "Download svg-file"),
-            downloadButton("downloadPlotPNG", "Download png-file"),
+            "Plot", downloadButton("downloadCorrPlotPDF", "Download pdf-file"),
+            downloadButton("downloadCorrPlotEPS", "Download eps-file"),
+            downloadButton("downloadCorrPlotSVG", "Download svg-file"),
+            downloadButton("downloadCorrPlotPNG", "Download png-file"),
+            div(`data-spy` = "affix", `data-offset-top` = "10", withSpinner(plotOutput("multi_corr_display", height = "120%"))),
+            NULL,
+          ),
+          tabPanel(
+            "MergedPlot", downloadButton("downloadMergedCorrPlotPDF", "Download pdf-file"),
+            downloadButton("downloadMergedCorrPlotEPS", "Download eps-file"),
+            downloadButton("downloadMergedCorrPlotSVG", "Download svg-file"),
+            downloadButton("downloadMergedCorrPlotPNG", "Download png-file"),
             div(`data-spy` = "affix", `data-offset-top` = "10", withSpinner(plotOutput("correlation_plot", height = "120%"))),
             NULL,
-          )
+          ),
+          tabPanel("Statistics", tableOutput("correlation_statistics"))
           # plotOutput("correlation_plot", height = "1000px")),#,
           # tabPanel("Spoke Plot", plotOutput("spoke_plot", height = "1000px"))#,
           # tabPanel("Statistics", tableOutput("singleImageStatistics"))
@@ -539,7 +553,8 @@ server <- function(input, output, session) {
   )
 
   observe({
-    var_names <- colnames(mergedStack())
+    data <- data_upload()
+    var_names <- colnames(data_upload())
     print("var_names")
     print(var_names)
     if (length(var_names) > 0) {
@@ -552,18 +567,38 @@ server <- function(input, output, session) {
     print(var_list)
     # }
  
-    updateSelectInput(session, "sample_col", choices = var_list, selected = "label")
+    #updateSelectInput(session, "sample_col", choices = var_list, selected = "label")
     updateSelectInput(session, "condition_col", choices = var_list, selected = "filename")
     updateSelectInput(session, "feature_select", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_1", choices = var_list, selected = "cell_shape_orientation")
     updateSelectInput(session, "feature_select_2", choices = var_list, selected = "nuc_shape_orientation")
     updateSelectInput(session, "feature_comparison", choices = var_list, selected = "nuclei_golgi_polarity")
     updateSelectInput(session, "filter_column", choices = var_list, selected="none")
-    updateSelectInput(session, "filter_column", choices = var_list, selected="none")
+    
+    print("Remove conditions list")
+    #data_ <- data %>% select(for_filterning = !!condition_col)
+    #condition_list <- levels(factor(data_$for_filterning))
+    #if (length(var_names) > 0) {
+    if (input$condition_col %in% colnames(data)) {
+      print(input$condition_col)
+      #condition_list <- unlist(unique(data[input$condition_col]))
+      condition_list <- unique(data[input$condition_col])
+      #data_ <- data %>% select(for_filtering = !!input$condition_col)
+      #condition_list <- levels(factor(data_$for_filtering))
+      
+      print(condition_list)
+      
+
+      updateSelectInput(session, "remove_these_conditions", choices = condition_list)
+    }
+    #}
+    
   })
+  
+  
 
-
-  mergedStack <- reactive({
+#TODO: rename and split in data_upload and data_filtered
+  data_upload <- reactive({
     "
     reactive function that reads all csv files 
     from the directory given in stack_data_info$datapath 
@@ -573,9 +608,13 @@ server <- function(input, output, session) {
     inFileStackData <- input$stackData
 
     if (input$data_upload_form == "example 1") {
+      
       results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
+    
     } else if ((input$data_upload_source == "single file") & !is.null(inFileStackData)) {
+    
       results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
+    
     } else if (input$data_upload_source == "folder") {
       datapath <- stack_data_info$datapath
 
@@ -646,26 +685,6 @@ server <- function(input, output, session) {
           print("Directory does not exist")
         }
 
-
-
-        # if (length(results_all_df) > 1) {
-        #    results_all_df$datapath <- datapath
-        #    results_all_df$experimental_condition <- input$exp_condition
-        # }
-
-
-        # print("data_path")
-        # print(data_path)
-
-        # data_path <- paste0(data_path, "merged_table_", short_name, ".csv")
-        # print("file_path")
-        # print(data_path)
-
-        # split_path <- SplitPath(input$keyData)$dirname
-        # print(split_path)
-        # results_df <- read.csv(data_path)
-        # results_df <- cbind(results_df,  data.frame("filename"=rep(data_path, nrow(results_df))) )
-        # results_all_df  <- rbind(results_all_df, results_df )
       }
     } else {
       results_all_df <- data.frame()
@@ -679,46 +698,33 @@ server <- function(input, output, session) {
         results_all_df <- results_all_df[sample(nrow(results_all_df), N), ]
       }
     }
+  
 
 
-
-    # if (is.null(inFileStackData)) {
-    #    datapath <- stack_data_info$datapath
-    #
-    #    # get list of files in the datapath
-    #    file_list <- list.files(datapath)
-    #    print("File_list")
-    #    print(file_list)
-    #
-    #    counter <- 1
-    #    plist <- list()
-    #    results_all_df <-data.frame()
-    #    tag <- FALSE
-    #
-    #    for (file_name in file_list[1:length(file_list)]){
-    #
-    #      if (file_ext(file_name) == "csv") {
-    #        results_df <- read.csv(paste0(datapath,"/",file_name))
-    #        results_df <- cbind(results_df,  data.frame("filename"=rep(file_name, nrow(results_df))) )
-    #        results_all_df  <- rbind(results_all_df, results_df )
-    #      }
-    #    }
-    #
-    #    if (length(results_all_df) > 1) {
-    #      results_all_df$datapath <- datapath
-    #      results_all_df$experimental_condition <- input$exp_condition
-    #    }
-    # } else {
-    #    results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
-    # }
-
-#    sample_col <- input$sample_col
-#    print(sample_col)
-#    results_all_df <- results_all_df[!is.na(results_all_df[sample_col]),]
     results_all_df <- na.omit(results_all_df)
     results_all_df
   })
-  # end of merged stack function
+  
+  
+  data_filtered <- reactive({
+    df_filtered <- data_upload() 
+    #### filter data
+    if ( !is.null(input$remove_these_conditions) && input$condition_col != "none")
+    {
+      condition_column <- input$condition_col
+      remove_these_conditions <- input$remove_these_conditions
+      print("remove these considions")
+      observe({print(remove_these_conditions )})
+      df_filtered <- df_filtered %>% filter(!.data[[condition_column[[1]]]] %in% !!remove_these_conditions)
+    }
+    
+    if ( (input$filter_data == TRUE) && (input$filter_column != "none")) {
+      df_filtered <- df_filtered[df_filtered[input$filter_column] > input$min_value, ]
+      df_filtered <- df_filtered[df_filtered[input$filter_column] < input$max_value, ]
+    }
+    
+    df_filtered
+  })
 
 
   output$terms_of_use_text <- renderText({
@@ -744,8 +750,8 @@ server <- function(input, output, session) {
     # if ((input$data_upload_form == "upload data")) {
     # HTML("Dear user, data upload is currently not possible in the online version. Please download the Rshiny app from <a href='https://github.com/wgiese/polarityjam'>polaritjam</a>! on your computer and run this app locally. </p>")
     # HTML("<p>If you enjoyed this tool, please consider <a href='https://www.gofundme.com/f/fantasy-football-mental-health-initiative?utm_medium=copy_link&utm_source=customer&utm_campaign=p_lico+share-sheet'>donating to the Fantasy Football Mental Health Initiative</a>!</p>")
-    HTML("<p>  <font size='+2'> Terms of Use </font><br>
-           Text </p>")
+    HTML("<p>  <font size='+2'> Terms of Use. </font><br>
+           <font size='-2'> For documentation please visit <a href='https://polarityjam.readthedocs.io/en/latest/'> Link</a> </font>  </p>")
   })
 
 
@@ -757,7 +763,7 @@ server <- function(input, output, session) {
       # data.frame( "Info" = c("Dear user, data upload is currently not possible in the online version.",
       #                       "Please download the Rshiny app from \n and run locally."))
     } else {
-      mergedStack()
+      data_filtered()
     }
   })
 
@@ -772,7 +778,7 @@ server <- function(input, output, session) {
 
     "
 
-    results_df <- mergedStack()
+    results_df <- data_filtered()
 
 
     print("Data Frame in merged statistics:")
@@ -805,7 +811,7 @@ server <- function(input, output, session) {
     print(colnames(statistics_df))
     # print("Feature property")
     # print(parameters[input$feature_select][[1]][2])
-    if (parameters[input$feature_select][[1]][2] == "axial") {
+    if (parameters[input$feature_select][[1]][2] == "directional") {
 
       for (condition in condition_list) {
         condition_data <- subset(results_df, results_df[condition_col] == condition)
@@ -865,8 +871,8 @@ server <- function(input, output, session) {
         statistics_df[ind, 1] <- "V-test p-value (cond. mean = 180): "
         statistics_df[ind, condition] <- p_value_mu
       }
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
-      #statistics <- compute_2_axial_statistics(results_df, feature, parameters)
+    } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
+      #statistics <- compute_undirectional_statistics(results_df, feature, parameters)
 
       #p_value <- signif(statistics[1, "rayleigh_test"], digits = 3)
 
@@ -884,7 +890,7 @@ server <- function(input, output, session) {
         print(head(condition_data))
         
         x_data <- unlist(condition_data[feature]) * 180.0 / pi
-        statistics <- compute_2_axial_statistics(condition_data, feature, parameters)
+        statistics <- compute_undirectional_statistics(condition_data, feature, parameters)
         print("Statistics")
         print(statistics)
         
@@ -967,7 +973,7 @@ server <- function(input, output, session) {
     parameters <- fromJSON(file = "parameters/parameters.json")
     text_size <- as.integer(parameters["text_size_merged_plot"])
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     # inFileStackData <- input$stackData
 
@@ -1001,26 +1007,26 @@ server <- function(input, output, session) {
     print("Feature:")
     print(feature)
 
-    if (parameters[input$feature_select][[1]][2] == "axial") {
-      print("Axial feature!")
+    if (parameters[input$feature_select][[1]][2] == "directional") {
+      print("directional feature!")
 
 
       x_data <- unlist(results_all_df[feature]) * 180.0 / pi
       statistics <- compute_circular_statistics(results_all_df, feature, parameters)
       plot_title <- parameters[input$feature_select][[1]][3]
       p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, 0, text_size)
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+    } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
       x_data <- results_all_df[feature]
-      statistics <- compute_2_axial_statistics(results_all_df, feature, parameters)
-      # if (input$left_axial) {
-      #  x_data <- unlist(transform_2_axial(input,x_data))*180.0/pi
+      statistics <- compute_undirectional_statistics(results_all_df, feature, parameters)
+      # if (input$left_directional) {
+      #  x_data <- unlist(transform_undirectional(input,x_data))*180.0/pi
       # } else {
       #  x_data <- unlist(results_all_df[feature])*180.0/pi
       # }
-      x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+      x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
 
       plot_title <- parameters[input$feature_select][[1]][3]
-      p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, 0, text_size)
+      p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, 0, text_size)
     } else {
       x_data <- unlist(results_all_df[feature])
       statistics <- compute_linear_statistics(results_all_df, feature, parameters)
@@ -1037,7 +1043,7 @@ server <- function(input, output, session) {
   height_A <- reactive({
     input$plot_height_A
   })
-
+  
   output$merged_plot <- renderPlot(width = width_A, height = height_A, {
     parameters <- fromJSON(file = "parameters/parameters.json")
     # parameters[input$feature_select][[1]][1]
@@ -1095,7 +1101,7 @@ server <- function(input, output, session) {
     polarity_indices <- list()
     angle_mean_degs <- list()
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     #   for(row_nr in 1:nrow(results_all_df)) {
     #       row <- results_all_df[row_nr,]
@@ -1189,24 +1195,24 @@ server <- function(input, output, session) {
       # }
 
 
-      if (parameters[input$feature_select][[1]][2] == "axial") {
+      if (parameters[input$feature_select][[1]][2] == "directional") {
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         # statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature]) * 180.0 / pi
         print(paste0("Length of filename", toString(i)))
 
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
-      } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+      } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
         x_data <- results_df[feature]
         # print(x_data)
-        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
-        # if (input$left_axial) {
-        x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+        statistics <- compute_undirectional_statistics(results_df, feature, parameters)
+        # if (input$left_directional) {
+        x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
         # } else {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         # }
         # plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
+        p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, i, text_size)
       } else {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
@@ -1233,7 +1239,7 @@ server <- function(input, output, session) {
       return(filename)
     },
     content = function(file) {
-      return(write.csv(mergedStack(), file, row.names = FALSE))
+      return(write.csv(data_filtered(), file, row.names = FALSE))
     }
   )
 
@@ -1254,6 +1260,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       parameters <- fromJSON(file = "parameters/parameters.json")
+      # TODO: use width_a
       width_ <- as.double(parameters["pdf_figure_size_inches"])
 
       if (input$dataset == "statistics_file") {
@@ -1292,7 +1299,7 @@ server <- function(input, output, session) {
         dev.off()
       } else {
         (
-          return(write.csv(mergedStack(), file, row.names = FALSE))
+          return(write.csv(data_filtered(), file, row.names = FALSE))
         )
       }
     }
@@ -1447,10 +1454,13 @@ server <- function(input, output, session) {
   ### Panel B
 
   plot_correlation <- reactive({
+    
+    
     parameters <- fromJSON(file = "parameters/parameters.json")
     source(file = paste0(getwd(), "/src/plot_functions.R"), local = T)
     source(file = paste0(getwd(), "/src/circular_statistics.R"), local = T)
-
+    source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+    
     text_size <- input$text_size_corr
 
     # inFileCorrelationData <- input$correlationData
@@ -1461,10 +1471,14 @@ server <- function(input, output, session) {
     # print(inFileCorrelationData$datapath)
     # correlation_data <- read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
 
-    correlation_data <- mergedStack() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+    correlation_data <- data_filtered() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
 
+    
+    
     feature_1 <- parameters[input$feature_select_1][[1]][1]
     feature_2 <- parameters[input$feature_select_2][[1]][1]
+    
+    
     feature_1_values <- unlist(correlation_data[feature_1])
     feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
     feature_2_values <- unlist(correlation_data[feature_2])
@@ -1476,134 +1490,162 @@ server <- function(input, output, session) {
     feature_1_name <- parameters[input$feature_select_1][[1]][3]
     feature_2_name <- parameters[input$feature_select_2][[1]][3]
 
+    conditions <- correlation_data[input$condition_col]
+    
     print("feature_values")
 
-    if (parameters[input$feature_select_1][[1]][2] == "axial") {
-      res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
-      mean_dir_1 <- circ.mean(feature_1_values)
-      mean_dir_2 <- circ.mean(feature_2_values)
-
-      if (mean_dir_1 < 0.0) {
-        mean_dir_1 <- mean_dir_1 + 2.0 * pi
-      }
-
-      if (mean_dir_2 < 0.0) {
-        mean_dir_2 <- mean_dir_2 + 2.0 * pi
-      }
-
-
-      print("Mean directions")
-      print(mean_dir_1)
-      print(mean_dir_2)
-
-      # if ( mean_dir_1 < pi/2.0) {
-      #  feature_1_values_ <- feature_1_values_ - pi
-      # }
-
-
-      # if ( mean_dir_2 < pi/2.0) {
-      #  feature_2_values_ <- feature_2_values_ - pi
-      # }
-
-      # if ( mean_dir_1 > 3.0*pi/2.0) {
-      #  feature_1_values_ <- feature_1_values_ - pi
-      # }
-
-
-      # if ( mean_dir_2 > 3.0*pi/2.0) {
-      #
-      #  feature_2_values_ <- feature_2_values_ - pi
-      # }
-
-      feature_1_values_sin <- sin(correlation_data[feature_1] - mean_dir_1)
-      feature_2_values_sin <- sin(correlation_data[feature_2] - mean_dir_2)
-
-      # feature_1_values_ <- 180.0*(correlation_data[feature_1] - mean_dir_1)/pi
-      # feature_2_values_ <- 180.0*(correlation_data[feature_2] - mean_dir_2)/pi
-
-      # for (i in 1:length(feature_1_values)) {
-      #  if (feature_1_values[i] > mean_dir_1 + pi ) {
-      #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] - 2.0*pi)/pi
-      #  }
-      #  if (feature_1_values[i] < mean_dir_1 - pi ) {
-      #      correlation_data[i,paste0(feature_1,"_shift")] <- 180.0*(correlation_data[i,feature_1] + 2.0*pi)/pi
-      #  }
-      # }
-
-      if ((mean_dir_1 < pi / 2.0) | (mean_dir_1 > 3.0 * pi / 2.0)) {
-        for (i in 1:length(feature_2_values)) {
-          if (feature_1_values[i] > pi) {
-            correlation_data[i, feature_1] <- correlation_data[i, feature_1] - 2.0 * pi
-          }
-        }
-        feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
-      }
-
-
-
-      if ((mean_dir_2 < pi / 2.0) | (mean_dir_2 > 3.0 * pi / 2.0)) {
-        for (i in 1:length(feature_2_values)) {
-          if (feature_2_values[i] > pi) {
-            correlation_data[i, feature_2] <- correlation_data[i, feature_2] - 2.0 * pi
-          }
-        }
-        feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
-      }
-
-      reg_coeff <- signif(res$r, digits = 3)
-
-      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
-      # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
-      # plot_df <- as.data.frame(c(correlation_data[paste0(feature_1,"_shift")],  correlation_data[paste0(feature_2,"_shift")]))
-    } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
-      res <- circ.cor(feature_1_values, feature_2_values, test = TRUE)
-      mean_dir_1 <- circ.mean(feature_1_values)
-      mean_dir_2 <- circ.mean(feature_2_values)
-
-      print("Mean directions")
-      print(mean_dir_1)
-      print(mean_dir_2)
-
-      reg_coeff <- signif(res$r, digits = 3)
-
-      # reg_coeff <- res$r
-      # p_value <- res$p.value
-
-      plot_df <- as.data.frame(c(feature_1_values_, feature_2_values_))
-    } else {
-
-    }
-
-
-    print(res)
-    print(str(res))
-    p_value_ <- signif(res$p.value, digits = 3)
-
-    if (p_value_ < 0.001) {
-      p_value <- "P < 0.001"
-    } else if (p_value_ < 0.01) {
-      p_value <- "P < 0.01"
-    } else {
-      p_value <- p_value_
-    }
-
-
-
-
-
-
-    # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
-    # plot_df <- as.data.frame(c(feature_1_values_sin, feature_2_values_sin))
-    # plot_df <- as.data.frame(c(sin(correlation_data[feature_1]), sin(correlation_data[feature_2])))
-    # colnames(plot_df) <- c(feature_1_name, feature_2_name)
-    colnames(plot_df) <- c("x", "y")
-    p <- ggplot(plot_df, aes(x = x, y = y)) +
-      geom_point(color = "black", size = input$marker_size_corr) +
-      theme_minimal(base_size = text_size) # theme_bw()
-    p <- p + theme(aspect.ratio = 3 / 3)
-    p <- p + ggtitle(sprintf("number of cells = : %s \n r = %s, p-value: %s", length(feature_1_values), reg_coeff, p_value))
-    p <- p + xlab(feature_1_name) + ylab(feature_2_name)
+    #if (parameters[input$feature_select_1][[1]][2] != "linear" && parameters[input$feature_select_2][[1]][2] != "linear") {
+      
+    p <- plot_circular_circular(correlation_data, input, parameters, plot_nr = 0, text_size = 24) 
+      
+ 
   })
+  
+
+  multi_corr_plot <- reactive({ 
+    
+    parameters <- fromJSON(file = "parameters/parameters.json")
+    source(file = paste0(getwd(), "/src/plot_functions.R"), local = T)
+    source(file = paste0(getwd(), "/src/circular_statistics.R"), local = T)
+    source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+    
+    text_size <- input$text_size_corr
+    
+    correlation_data <- data_filtered() # read.csv(inFileCorrelationData$datapath, header = input$header_correlation)
+    
+    feature_1 <- parameters[input$feature_select_1][[1]][1]
+    feature_2 <- parameters[input$feature_select_2][[1]][1]
+    
+    
+    feature_1_values <- unlist(correlation_data[feature_1])
+    feature_1_values_ <- correlation_data[feature_1] * 180.0 / pi
+    feature_2_values <- unlist(correlation_data[feature_2])
+    feature_2_values_ <- correlation_data[feature_2] * 180.0 / pi
+    
+    # feature_1_values_sin <- sin(unlist(correlation_data[feature_1]))
+    # feature_2_values_sin <- sin(unlist(correlation_data[feature_2]))
+    
+    feature_1_name <- parameters[input$feature_select_1][[1]][3]
+    feature_2_name <- parameters[input$feature_select_2][[1]][3]
+    
+    conditions <- correlation_data[input$condition_col]
+    
+    condition_list <- unlist(unique(correlation_data[input$condition_col]))
+    plist <- vector("list", length(condition_list))
+    
+    n <- length(condition_list)
+    nCol <- floor(sqrt(n))
+    
+    bin_size <- 360 / input$bins
+    
+    plotseries <- function(i) {
+      data <- subset(correlation_data, correlation_data[input$condition_col] == condition_list[i])
+      p <- plot_circular_circular(data, input, parameters, plot_nr = i, text_size = text_size) 
+    }
+    
+    myplots <- lapply(1:n, plotseries)
+    
+    # print(myplots)
+    grid.arrange(grobs = myplots, nrow = nCol) # , widths = list(10,10))
+    
+  })
+  
+  width_corr <- reactive({
+    input$plot_width_corr
+  })
+  height_corr<- reactive({
+    input$plot_height_corr
+  })
+  
+  output$multi_corr_display <- renderPlot(width = width_corr, height = height_corr, {
+    multi_corr_plot()
+  })
+  
+  #output$multi_corr_display <- renderPlot(width = width_A, height = height_A, {
+  #  multi_corr_plot()
+  #})
+  
+  output$correlation_statistics <- renderTable(
+    {
+      "
+    function that shows the descriptive statistics of the merged data stack in table format
+    "
+      
+      correlation_data <- data_filtered()
+      
+      source(file = paste0(getwd(), "/src/circular_correlations.R"), local = T)
+      parameters <- fromJSON(file = "parameters/parameters.json")
+      
+      condition_col <- input$condition_col
+      condition_list <- unlist(unique(correlation_data[condition_col]))
+      
+      feature_1 <- parameters[input$feature_select_1][[1]][1]
+      feature_2 <- parameters[input$feature_select_2][[1]][1]
+      
+      feature_1_values <- unlist(correlation_data[feature_1])
+      
+      feature_2_values <- unlist(correlation_data[feature_2])
+      
+      
+      feature_1_name <- parameters[input$feature_select_1][[1]][3]
+      feature_2_name <- parameters[input$feature_select_2][[1]][3]
+      
+      mode_1 <- parameters[input$feature_select_1][[1]][2]
+      mode_2 <- parameters[input$feature_select_2][[1]][2]
+      
+      
+      #    threshold <- input$min_nuclei_golgi_dist
+      #    if ("organelle_distance" %in% colnames(results_df)){
+      #      results_df <- subset(results_df, results_df$distance > threshold)
+      #    }
+      
+      statistics_df <- as.data.frame(matrix(ncol = length(condition_list) + 3, nrow = 0))
+      cols <- c("entity")
+      for (condition in condition_list) {
+        cols <- c(cols, condition)
+      }
+      cols <- c(cols, "all", "description")
+      
+      
+      colnames(statistics_df) <- cols # c("entity", "value") #, "comment")
+      
+      res <- compute_correlation(feature_1_values, mode_1, feature_2_values, mode_2) 
+      
+      ind <- 1
+      statistics_df[ind, 1] <- "pearson r-value"
+      if ( (mode_1 == "linear") | (mode_2 == "linear") ) {
+        statistics_df[ind, "all"] <- res
+      } else {
+        statistics_df[ind, "all"] <- res$r
+      }
+      
+      
+      print("Colnames")
+      print(colnames(statistics_df))
+
+        for (condition in condition_list) {
+          condition_data <- subset(correlation_data, correlation_data[condition_col] == condition)
+          
+          feature_1_values <- unlist(condition_data[feature_1])
+          feature_2_values <- unlist(condition_data[feature_2])
+          
+          res <- compute_correlation(feature_1_values, mode_1, feature_2_values, mode_2) 
+          
+          ind <- 1
+          statistics_df[ind, 1] <- "pearson r-value"
+          if ( (mode_1 == "linear") | (mode_2 == "linear") ) {
+            statistics_df[ind, condition] <- res
+          } else {
+            statistics_df[ind, condition] <- res$r
+          }
+          
+        }
+      statistics_df
+      #statistics_df <- mergedStatistics()
+      #statistics_df
+    },
+    digits = 3
+  )
 
   width <- reactive({
     input$plot_width_corr
@@ -1626,7 +1668,7 @@ server <- function(input, output, session) {
 
     text_size <- input$text_size_corr
 
-    correlation_data <- mergedStack()
+    correlation_data <- data_filtered()
 
     if (input$spoke_subsample_n > 1) {
       N <- nrow(correlation_data) %/% input$spoke_subsample_n
@@ -1753,7 +1795,7 @@ server <- function(input, output, session) {
     p
   })
 
-  output$downloadPlotPDF <- downloadHandler(
+  output$downloadMergedCorrPlotPDF <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
     },
@@ -1765,7 +1807,7 @@ server <- function(input, output, session) {
     contentType = "application/pdf" # MIME type of the image
   )
 
-  output$downloadPlotSVG <- downloadHandler(
+  output$downloadMergedCorrPlotSVG <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
     },
@@ -1777,7 +1819,7 @@ server <- function(input, output, session) {
     contentType = "application/svg" # MIME type of the image
   )
 
-  output$downloadPlotEPS <- downloadHandler(
+  output$downloadMergedCorrPlotEPS <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
     },
@@ -1789,7 +1831,7 @@ server <- function(input, output, session) {
     contentType = "application/eps" # MIME type of the image
   )
 
-  output$downloadPlotPNG <- downloadHandler(
+  output$downloadMergedCorrPlotPNG <- downloadHandler(
     filename <- function() {
       paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
     },
@@ -1803,6 +1845,55 @@ server <- function(input, output, session) {
     contentType = "application/png" # MIME type of the image
   )
 
+  output$downloadCorrPlotPDF <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".pdf", sep = "")
+    },
+    content <- function(file) {
+      pdf(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(multi_corr_plot())
+      dev.off()
+    },
+    contentType = "application/pdf" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotSVG <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".svg", sep = "")
+    },
+    content <- function(file) {
+      svg(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(multi_corr_plot())
+      dev.off()
+    },
+    contentType = "application/svg" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotEPS <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".eps", sep = "")
+    },
+    content <- function(file) {
+      cairo_ps(file, width = input$plot_width_corr / 72, height = input$plot_height_corr / 72)
+      plot(multi_corr_plot())
+      dev.off()
+    },
+    contentType = "application/eps" # MIME type of the image
+  )
+  
+  output$downloadCorrPlotPNG <- downloadHandler(
+    filename <- function() {
+      paste("PolarityJaM_Correlation_", Sys.time(), ".png", sep = "")
+    },
+    content <- function(file) {
+      png(file, width = input$plot_width_corr * 4, height = input$plot_height_corr * 4, res = 300)
+      # if (input$data_form != "dataaspixel") plot(plot_data())
+      # else plot(plot_map())
+      plot(multi_corr_plot())
+      dev.off()
+    },
+    contentType = "application/png" # MIME type of the image
+  )
 
 
   ### Panel C
@@ -1811,7 +1902,7 @@ server <- function(input, output, session) {
     condition_col <- input$condition_col
     condition_col <- "filename"
 
-    data <- mergedStack()
+    data <- data_filtered()
 
     # if (is.data.frame(data)) {
     if (length(colnames(data)) > 3) {
@@ -1845,7 +1936,7 @@ server <- function(input, output, session) {
     polarity_indices <- list()
     angle_mean_degs <- list()
 
-    results_all_df <- mergedStack()
+    results_all_df <- data_filtered()
 
     #        for(row_nr in 1:nrow(results_all_df)) {
     #            row <- results_all_df[row_nr,]
@@ -1940,24 +2031,24 @@ server <- function(input, output, session) {
       # }
 
 
-      if (parameters[input$feature_select][[1]][2] == "axial") {
+      if (parameters[input$feature_select][[1]][2] == "directional") {
         statistics <- compute_circular_statistics(results_df, feature, parameters)
         # statistics <- compute_polarity_index(unlist(results_df[feature]))
         x_data <- unlist(results_df[feature]) * 180.0 / pi
         print(paste0("Length of filename", toString(i)))
 
         p <- rose_plot_circular(parameters, input, statistics, x_data, plot_title, i, text_size)
-      } else if (parameters[input$feature_select][[1]][2] == "2-axial") {
+      } else if (parameters[input$feature_select][[1]][2] == "undirectional") {
         x_data <- results_df[feature]
         # print(x_data)
-        statistics <- compute_2_axial_statistics(results_df, feature, parameters)
-        # if (input$left_axial) {
-        x_data <- unlist(transform_2_axial(input, x_data)) * 180.0 / pi
+        statistics <- compute_undirectional_statistics(results_df, feature, parameters)
+        # if (input$left_directional) {
+        x_data <- unlist(transform_undirectional(input, x_data)) * 180.0 / pi
         # } else {
         #  x_data <- unlist(results_df[feature])*180.0/pi
         # }
         # plot_title <- file_name
-        p <- rose_plot_2_axial(parameters, input, statistics, x_data, plot_title, i, text_size)
+        p <- rose_plot_undirectional(parameters, input, statistics, x_data, plot_title, i, text_size)
       } else {
         x_data <- unlist(results_df[feature])
         statistics <- compute_linear_statistics(results_df, feature, parameters)
@@ -1993,7 +2084,7 @@ server <- function(input, output, session) {
         and nearest neighbours for the merged stack of data
         "
 
-    data <- mergedStack()
+    data <- data_filtered()
 
     condition_col <- input$condition_col
     control_condition <- input$control_condition
