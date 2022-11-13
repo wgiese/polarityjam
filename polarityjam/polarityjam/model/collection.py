@@ -60,6 +60,8 @@ class PropertiesCollection:
         self.dataset.at[self._index, "nuc_area"] = props.area
         self.dataset.at[self._index, "nuc_perimeter"] = props.perimeter
         self.dataset.at[self._index, "nuc_eccentricity"] = props.eccentricity
+        self.dataset.at[self._index, "nuc_shape_index"] = props.perimeter / np.sqrt(props.area)
+        self.dataset.at[self._index, "nuc_circularity"] = 4.0*np.pi*props.area/(props.perimeter*props.perimeter)
         self.dataset.at[self._index, "nuc_major_to_minor_ratio"] = props.nuc_major_to_minor_ratio
 
     def add_sc_general_props(self, filename, connected_component_label, props):
@@ -75,6 +77,8 @@ class PropertiesCollection:
         self.dataset.at[self._index, "cell_major_to_minor_ratio"] = props.cell_major_to_minor_ratio
         self.dataset.at[self._index, "cell_area"] = props.area
         self.dataset.at[self._index, "cell_perimeter"] = props.perimeter
+        self.dataset.at[self._index, "cell_shape_index"] = props.perimeter / np.sqrt(props.area)
+        self.dataset.at[self._index, "cell_circularity"] = 4.0*np.pi*props.area/(props.perimeter*props.perimeter)
         self.dataset.at[self._index, "cell_corner_points"] = json.dumps(props.cell_corner_points.tolist())
 
     def add_sc_organelle_props(self, organelle_props):

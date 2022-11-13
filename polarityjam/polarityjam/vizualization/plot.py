@@ -117,6 +117,37 @@ def _add_nuclei_eccentricity(fig, ax, im_junction, nuclei_mask, nuclei_eccentric
     # colorbar
     _add_colorbar(fig, cax_1, ax, yticks, "eccentricity")
 
+def _add_cell_circularity(fig, ax, im_junction, cell_mask, cell_circularity):
+    v_min = 0.0
+    v_max = 1.0
+    yticks = [0.0, 0.5, 1.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show cell_circularity everywhere but background label
+    cax_0 = ax.imshow(
+        np.ma.masked_where(cell_mask == 0, cell_circularity), cmap=plt.cm.RdYlGn, vmin=v_min, vmax=v_max,
+        alpha=0.5
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax_0, ax, yticks, "circularity")
+
+def _add_nuclei_circularity(fig, ax, im_junction, nuclei_mask, nuclei_circularity):
+    v_min = 0.0
+    v_max = 1.0
+    yticks = [0.0, 0.5, 1.0]
+
+    ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+
+    # show nuclei eccentricity everywhere but background label
+    nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
+    cax_1 = ax.imshow(np.ma.masked_where(
+        nuclei_mask_ == 0, nuclei_circularity), cmap=plt.cm.RdYlGn, vmin=v_min, vmax=v_max, alpha=0.5
+    )
+
+    # colorbar
+    _add_colorbar(fig, cax_1, ax, yticks, "circularity")
 
 def _add_title(ax, plot_title, im_junction, axis_on):
     ax.set_title(plot_title)
@@ -143,6 +174,23 @@ def _calc_nuc_eccentricity(single_cell_props, cell_mask, nuclei_mask):
     get_logger().info("Minimal nuclei eccentricity: %s" % str(np.min(nuclei_eccentricity)))
 
     return nuclei_eccentricity
+
+def _calc_nuc_circularity(single_cell_props, cell_mask, nuclei_mask):
+    nuclei_circularity = np.zeros((cell_mask.shape[0], cell_mask.shape[1]))
+    for index, row in single_cell_props.iterrows():
+        row_label = int(row['label'])
+
+        # exclude background
+        if row_label == 0:
+            continue
+        single_cell_mask = np.where(cell_mask == row_label, True, 0)
+        single_nuclei_mask_ = np.logical_and(single_cell_mask, nuclei_mask)
+        nuclei_circularity += np.where(single_nuclei_mask_ == True, 1, 0) * row['nuc_circularity']
+
+    get_logger().info("Maximal nuclei circularity: %s" % str(np.max(nuclei_circularity)))
+    get_logger().info("Minimal nuclei circularity: %s" % str(np.min(nuclei_circularity)))
+
+    return nuclei_circularity
 
 
 def _calc_single_cell_axis_orientation_vector(x, y, orientation, major_axis_length, minor_axis_length):
@@ -184,10 +232,12 @@ def _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation):
     yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
 
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
+    
+    cell_orientation_degree = 180.0 * cell_orientation / np.pi
 
     # show cell_orientation everywhere but background label
     cax = ax.imshow(
-        np.ma.masked_where(cell_mask == 0, cell_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
+        np.ma.masked_where(cell_mask == 0, cell_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max,
         alpha=0.75
     )
 
@@ -195,17 +245,19 @@ def _add_cell_orientation(fig, ax, im_junction, cell_mask, cell_orientation):
     _add_colorbar(fig, cax, ax, yticks, "shape orientation (degree)")
 
 
-def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuclei_orientation):
+def _add_nuclei_orientation(fig, ax, im_junction, nuclei_mask, nuc_orientation):
     v_min = 0.0
     v_max = 180.0
     yticks = [0.0, 45.0, 90.0, 135.0, 180.0]
 
     ax.imshow(im_junction, cmap=plt.cm.gray, alpha=1.0)
 
+    nuc_orientation_degree = 180.0 * nuc_orientation / np.pi
+    
     # show nuclei orientation everywhere but background label
     nuclei_mask_ = np.where(nuclei_mask == True, 1, 0)
     cax_1 = ax.imshow(np.ma.masked_where(
-        nuclei_mask_ == 0, nuclei_orientation), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
+        nuclei_mask_ == 0, nuc_orientation_degree), cmap=cm.cm.phase, vmin=v_min, vmax=v_max, alpha=0.75
     )
 
     # colorbar

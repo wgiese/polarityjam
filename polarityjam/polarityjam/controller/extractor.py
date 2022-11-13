@@ -120,13 +120,13 @@ class Extractor:
             foi_val = self.collector.get_foi(collection, self.params.feature_of_interest)
             rag.nodes[connected_component_label.astype('int')][self.params.feature_of_interest] = foi_val
 
-            get_logger().info(
-                " ".join(
-                    str(x) for x in ["Cell %s - feature \"%s\": %s" % (
-                        connected_component_label, self.params.feature_of_interest, foi_val
-                    )]
-                )
-            )
+            #get_logger().info(
+            #    " ".join(
+            #        str(x) for x in ["Cell %s - feature \"%s\": %s" % (
+            #            connected_component_label, self.params.feature_of_interest, foi_val
+            #        )]
+            #    )
+            #)
 
         get_logger().info("Excluded cells: %s" % str(excluded))
         get_logger().info("Leftover cells: %s" % str(len(np.unique(masks.cell_mask)) - excluded))
