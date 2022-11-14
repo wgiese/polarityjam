@@ -20,6 +20,7 @@
     "marker_mean_expression_cyt": ["marker_mean_expression_cyt", "linear", "mean intensity cytosol"],
     "marker_mean_expression_mem": ["marker_mean_expression_mem", "linear", "mean intensity junction area"],
     "marker_centroid_orientation": ["marker_centroid_orientation_rad", "axial", "marker polarity"],
+    "marker_polarity_rad": ["marker_polarity_rad", "axial", "marker polarity"],
     "angle_rad": ["angle_rad", "axial", "nuclei-golgi polarity"],
     "text_size_merged_plot": 32,
     "text_size_multi_plot": 16,
