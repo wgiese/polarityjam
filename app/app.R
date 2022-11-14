@@ -432,25 +432,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "feature_select_2", choices = var_list, selected = "nuc_shape_orientation")
     updateSelectInput(session, "feature_comparison", choices = var_list, selected = "nuclei_golgi_polarity")
     updateSelectInput(session, "filter_column", choices = var_list, selected="none")
-    
-    print("Remove conditions list")
-    #data_ <- data %>% select(for_filterning = !!condition_col)
-    #condition_list <- levels(factor(data_$for_filterning))
-    #if (length(var_names) > 0) {
-    # if (input$condition_col %in% colnames(data)) {
-    #   print(input$condition_col)
-    #   #condition_list <- unlist(unique(data[input$condition_col]))
-    #   condition_list <- unique(data[input$condition_col])
-    #   #data_ <- data %>% select(for_filtering = !!input$condition_col)
-    #   #condition_list <- levels(factor(data_$for_filtering))
-    #   
-    #   print(condition_list)
-    #   
-    # 
-    #   updateSelectInput(session, "remove_these_conditions", choices = condition_list)
-    # }
-    #}
-    
+
   })
   
   
@@ -469,8 +451,6 @@ server <- function(input, output, session) {
         #condition_list <- levels(factor(data_$for_filtering))
   
         print(condition_list)
-  
-  
         updateSelectInput(session, "remove_these_conditions", choices = condition_list)
       }
     }
