@@ -120,6 +120,7 @@ ui <- navbarPage(
         selectInput("condition_col", "Identifier of conditions", choices = ""),
         
         selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE),
+        
         selectInput("dataset_merged", "Choose a dataset:",
                     choices = c("merged_file")
         ),
@@ -453,8 +454,30 @@ server <- function(input, output, session) {
   })
   
   
+  observeEvent(input$condition_col != 'none', {
+    
+    data <- data_upload()
+    var_names <- colnames(data_upload())
+    #data_ <- data %>% select(for_filterning = !!condition_col)
+    #condition_list <- levels(factor(data_$for_filterning))
+    if (length(var_names) > 0) {
+      if (input$condition_col %in% colnames(data)) {
+        print(input$condition_col)
+        #condition_list <- unlist(unique(data[input$condition_col]))
+        condition_list <- unique(data[input$condition_col])
+        #data_ <- data %>% select(for_filtering = !!input$condition_col)
+        #condition_list <- levels(factor(data_$for_filtering))
+  
+        print(condition_list)
+  
+  
+        updateSelectInput(session, "remove_these_conditions", choices = condition_list)
+      }
+    }
+    
+  })
+  
 
-#TODO: rename and split in data_upload and data_filtered
   data_upload <- reactive({
     "
     reactive function that reads all csv files 
