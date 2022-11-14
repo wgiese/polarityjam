@@ -173,8 +173,8 @@ comparison_circular_statistics <- function(data_1, data_2, feature, parameters) 
 }
 
 
-compute_2_axial_statistics <- function(data, feature, parameters) {
-  p_axial_data <- unlist(data[feature])
+compute_undirectional_statistics <- function(data, feature, parameters) {
+  p_directional_data <- unlist(data[feature])
   circular_data <- unlist(data[feature])
 
   sin_sum <- 0.0
@@ -182,7 +182,7 @@ compute_2_axial_statistics <- function(data, feature, parameters) {
   polarity_index <- 0.0
 
   for (i in 1:length(circular_data)) {
-    circular_data[i] <- 2.0 * p_axial_data[i]
+    circular_data[i] <- 2.0 * p_directional_data[i]
     angle <- circular_data[i]
     sin_sum <- sin_sum + sin(angle)
     cos_sum <- cos_sum + cos(angle)
