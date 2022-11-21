@@ -92,12 +92,12 @@ ui <- navbarPage(
           condition = "input.data_upload_form == 'upload data'",
           checkboxInput("terms_of_use", "I agree to terms of use", FALSE),
         ),
+        #conditionalPanel(
+        #  condition = "input.terms_of_use == true",
+        #  radioButtons("data_upload_source", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
+        #),
         conditionalPanel(
           condition = "input.terms_of_use == true",
-          radioButtons("data_upload_source", "Data from:", choices = list("single file", "folder", "key file"), selected = "single file"),
-        ),
-        conditionalPanel(
-          condition = "(input.data_upload_source == 'single file') & (input.terms_of_use == true)",
           fileInput("stackData", "Upload data file",
             accept = c(
               "text/csv",
@@ -107,25 +107,6 @@ ui <- navbarPage(
           ),
           tags$hr(),
           checkboxInput("header_correlation", "File upload", TRUE),
-        ),
-        conditionalPanel(
-          condition = "(input.data_upload_source == 'folder') & (input.terms_of_use == true)",
-          shinyDirButton("dir", "Input directory", "Upload"),
-          verbatimTextOutput("dir", placeholder = TRUE),
-          actionButton("refreshStack", "Refresh"),
-        ),
-        conditionalPanel(
-          condition = "(input.data_upload_source == 'key file') & (input.terms_of_use == true)",
-          tags$hr(),
-          shinyDirButton("dir_key", "Data directory", "Upload"),
-          verbatimTextOutput("dir_key", placeholder = TRUE),
-          fileInput("keyData", "Upload catalogue",
-                    accept = c(
-                      "text/csv",
-                      "text/comma-separated-values,text/plain",
-                      ".csv", ".xlsx"
-                    )
-          )
         ),
 
         # the data frame can be sub-sampled by selecting only every n-th row. Th
@@ -139,11 +120,11 @@ ui <- navbarPage(
         selectInput("condition_col", "Identifier of conditions", choices = ""),
         
         selectInput("remove_these_conditions", "Deselect these conditions:", "", multiple = TRUE),
+        
         selectInput("dataset_merged", "Choose a dataset:",
                     choices = c("merged_file")
         ),
         
-        #TODO: needs to be implemented
         checkboxInput("filter_data", "Filter data", FALSE),
         conditionalPanel(
           condition = "input.filter_data == true",
@@ -423,134 +404,11 @@ ui <- navbarPage(
 )
 
 
-loadVolumes <- function(exclude = "") {
-  "This function returns all volumes in a named list.
-  TODO: check if built-in function would also work."
-
-  osSystem <- Sys.info()["sysname"]
-  if (osSystem == "Darwin") {
-    volumes <- dir_ls("/Volumes")
-    names(volumes) <- basename(volumes)
-  } else if (osSystem == "Linux") {
-    volumes <- c(Computer = "/")
-    media <- c(media = "/media/")
-    home <- c(home = "~")
-    # media <- dir_ls("/media")
-    # names(media) <- basename(media)
-    volumes <- c(volumes, media, home)
-  } else if (osSystem == "Windows") {
-    wmic <- paste0(Sys.getenv("SystemRoot"), "\\System32\\Wbem\\WMIC.exe")
-    if (!file.exists(wmic)) {
-      message("\nThe wmic program does not seem to be in the default location")
-      message("Please report this problem and include output from the command")
-      message("'where wmic' to https://github.com/thomasp85/shinyFiles/issues")
-      volumes <- Sys.getenv("HOMEDRIVE")
-      volNames <- ""
-    } else {
-      volumes <- system(paste(wmic, "logicaldisk get Caption"),
-        intern = T
-      )
-      volumes <- sub(" *\\r$", "", volumes)
-      keep <- !tolower(volumes) %in% c(
-        "caption",
-        ""
-      )
-      volumes <- volumes[keep]
-      volNames <- system(paste(wmic, "logicaldisk get VolumeName"),
-        intern = T
-      )
-      volNames <- sub(" *\\r$", "", volNames)
-      volNames <- volNames[keep]
-      volNames <- paste0(volNames, ifelse(volNames == "",
-        "", " "
-      ))
-    }
-    volNames <- paste0(volNames, "(", volumes, ")")
-    names(volumes) <- volNames
-    volumes <- gsub(":$", ":/", volumes)
-  } else {
-    stop("unsupported OS")
-  }
-  if (!is.null(exclude)) {
-    volumes <- volumes[!names(volumes) %in% exclude]
-  }
-  volumes
-}
-
 # Define server logic
 server <- function(input, output, session) {
 
 
   ### Panel A
-
-  # function to choose directory for data from image stack
-  volumes <- loadVolumes()
-  print("Volumes")
-  print(volumes)
-  
-  shinyDirChoose(
-    input,
-    "dir",
-    roots = volumes # ,
-  )
-  shinyDirChoose(
-    input,
-    "dir_key",
-    roots = volumes # ,
-  )
-
-  dir <- reactive(input$dir)
-  stack_data_info <- reactiveValues(datapath = getwd())
-
-  output$dir <- renderText({
-    print(stack_data_info$datapath)
-    stack_data_info$datapath
-  })
-
-  observeEvent(
-    ignoreNULL = TRUE,
-    eventExpr = {
-      input$dir
-    },
-    handlerExpr = {
-      if (!"path" %in% names(dir())) {
-        return()
-      }
-
-      rootdir <- normalizePath(paste(volumes[input$dir[[2]]][[1]]))
-      stack_data_info$datapath <- file.path(rootdir, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
-
-      # home <- normalizePath("~")
-      # stack_data_info$datapath <-
-      #  file.path(paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
-    }
-  )
-  dir_key <- reactive(input$dir_key)
-  key_data_info <- reactiveValues(datapath = getwd())
-
-  output$dir_key <- renderText({
-    print(key_data_info$datapath)
-    key_data_info$datapath
-  })
-
-  observeEvent(
-    ignoreNULL = TRUE,
-    eventExpr = {
-      input$dir_key
-    },
-    handlerExpr = {
-      if (!"path" %in% names(dir_key())) {
-        return()
-      }
-
-      rootdir_key <- normalizePath(paste(volumes[input$dir_key[[2]]][[1]]))
-      key_data_info$datapath <- file.path(rootdir_key, paste(unlist(dir_key()$path[-1]), collapse = .Platform$file.sep))
-
-      # home <- normalizePath("~")
-      # stack_data_info$datapath <-
-      #  file.path(paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
-    }
-  )
 
   observe({
     data <- data_upload()
@@ -574,30 +432,32 @@ server <- function(input, output, session) {
     updateSelectInput(session, "feature_select_2", choices = var_list, selected = "nuc_shape_orientation")
     updateSelectInput(session, "feature_comparison", choices = var_list, selected = "nuclei_golgi_polarity")
     updateSelectInput(session, "filter_column", choices = var_list, selected="none")
-    
-    print("Remove conditions list")
-    #data_ <- data %>% select(for_filterning = !!condition_col)
-    #condition_list <- levels(factor(data_$for_filterning))
-    #if (length(var_names) > 0) {
-    if (input$condition_col %in% colnames(data)) {
-      print(input$condition_col)
-      #condition_list <- unlist(unique(data[input$condition_col]))
-      condition_list <- unique(data[input$condition_col])
-      #data_ <- data %>% select(for_filtering = !!input$condition_col)
-      #condition_list <- levels(factor(data_$for_filtering))
-      
-      print(condition_list)
-      
 
-      updateSelectInput(session, "remove_these_conditions", choices = condition_list)
-    }
-    #}
-    
   })
   
   
+  observeEvent(input$condition_col != 'none', {
+    
+    data <- data_upload()
+    var_names <- colnames(data_upload())
+    #data_ <- data %>% select(for_filterning = !!condition_col)
+    #condition_list <- levels(factor(data_$for_filterning))
+    if (length(var_names) > 0) {
+      if (input$condition_col %in% colnames(data)) {
+        print(input$condition_col)
+        #condition_list <- unlist(unique(data[input$condition_col]))
+        condition_list <- unique(data[input$condition_col])
+        #data_ <- data %>% select(for_filtering = !!input$condition_col)
+        #condition_list <- levels(factor(data_$for_filtering))
+  
+        print(condition_list)
+        updateSelectInput(session, "remove_these_conditions", choices = condition_list)
+      }
+    }
+    
+  })
+  
 
-#TODO: rename and split in data_upload and data_filtered
   data_upload <- reactive({
     "
     reactive function that reads all csv files 
@@ -611,81 +471,10 @@ server <- function(input, output, session) {
       
       results_all_df <- read.csv("example_1/example_1.csv", header = TRUE)
     
-    } else if ((input$data_upload_source == "single file") & !is.null(inFileStackData)) {
+    } else if (!is.null(inFileStackData)) {
     
       results_all_df <- read.csv(inFileStackData$datapath, header = input$header_correlation)
     
-    } else if (input$data_upload_source == "folder") {
-      datapath <- stack_data_info$datapath
-
-      file_list <- list.files(datapath)
-      print("File_list")
-      print(file_list)
-
-      counter <- 1
-      plist <- list()
-      results_all_df <- data.frame()
-      tag <- FALSE
-
-      for (file_name in file_list[1:length(file_list)]) {
-        if (file_ext(file_name) == "csv") {
-          results_df <- read.csv(paste0(datapath, "/", file_name))
-          results_df <- cbind(results_df, data.frame("filename" = rep(file_name, nrow(results_df))))
-          results_all_df <- rbind(results_all_df, results_df)
-        }
-      }
-
-      if (length(results_all_df) > 1) {
-        results_all_df$datapath <- datapath
-        results_all_df$experimental_condition <- input$exp_condition
-      }
-    } else if ((input$data_upload_source == "key file") & !is.null(input$keyData)) {
-      results_all_df <- data.frame()
-      print("key data path")
-      print(input$keyData$datapath)
-      key_file <- read.csv(input$keyData$datapath, header = input$header_correlation)
-      print(key_file)
-
-      print("data_root")
-      data_root <- key_data_info$datapath
-      print(data_root)
-
-
-      for (i in 1:nrow(key_file)) {
-
-
-        # data_path <- key_file[i,"feature_table"]
-        folder_path <- key_file[i, "folder_name"]
-        short_name <- key_file[i, "short_name"]
-        data_path <- paste0(data_root, "/", short_name, "/")
-
-        print("Data path")
-        print(data_path)
-
-        if (dir.exists(data_path)) {
-          file_list <- list.files(data_path)
-          print("File_list")
-          print(file_list)
-
-          counter <- 1
-          plist <- list()
-          tag <- FALSE
-
-          for (file_name in file_list[1:length(file_list)]) {
-            print("File name")
-            print(file_list)
-
-            if (file_ext(file_name) == "csv") {
-              results_df <- read.csv(paste0(data_path, "/", file_name))
-              results_df <- cbind(results_df, data.frame("short_name" = rep(short_name, nrow(results_df))))
-              results_all_df <- rbind(results_all_df, results_df)
-            }
-          }
-        } else {
-          print("Directory does not exist")
-        }
-
-      }
     } else {
       results_all_df <- data.frame()
       # datapath = "../test_data/stack_EC_microscopy/120821 BSA #01.csv"
@@ -698,8 +487,6 @@ server <- function(input, output, session) {
         results_all_df <- results_all_df[sample(nrow(results_all_df), N), ]
       }
     }
-  
-
 
     results_all_df <- na.omit(results_all_df)
     results_all_df
@@ -709,7 +496,7 @@ server <- function(input, output, session) {
   data_filtered <- reactive({
     df_filtered <- data_upload() 
     #### filter data
-    if ( !is.null(input$remove_these_conditions) && input$condition_col != "none")
+    if ( !is.null(input$remove_these_conditions) && (input$condition_col != "none"))
     {
       condition_column <- input$condition_col
       remove_these_conditions <- input$remove_these_conditions
@@ -1000,7 +787,7 @@ server <- function(input, output, session) {
 
     bin_size <- 360 / input$bins
     exp_condition <- input$exp_condition
-    datapath <- stack_data_info$datapath
+    #datapath <- stack_data_info$datapath
 
     feature <- parameters[input$feature_select][[1]][1]
 
@@ -1089,11 +876,11 @@ server <- function(input, output, session) {
     parameters <- fromJSON(file = "parameters/parameters.json")
     text_size <- 12
 
-    datapath <- stack_data_info$datapath
-    print(datapath)
+    #datapath <- stack_data_info$datapath
+    #print(datapath)
 
-    file_list <- list.files(datapath)
-    print(file_list)
+    #file_list <- list.files(datapath)
+    #print(file_list)
 
     i <- 1
     angle_dists <- list()
