@@ -1,7 +1,5 @@
 # Polarityjam-app
 
-Polarityjam is a web app to study endothelial cell behaviour and more.
+This repository has been migrated to https://github.com/polarityjam/. Please visit [wiki](https://polarityjam.readthedocs.io/en/latest/) for more information.
 
-For installation, usage, and more read our [wiki](https://polarityjam.readthedocs.io/en/latest/).
 
-Administrators and Maintainers please look here: [admin-wiki](https://github.com/wgiese/polarityjam/wiki)
